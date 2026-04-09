@@ -1,0 +1,642 @@
+{
+  "10001": {
+    "id": 10001,
+    "code": "WCON",
+    "city": "Concord",
+    "province": "ON",
+    "lat": 43.80465749,
+    "lng": -79.5330361,
+    "contact_email": [
+      "order.vaughan@prosol.ca"
+    ],
+    "address": "161 Cidermill Ave",
+    "postal_code": "L4K4G5",
+    "active": true,
+    "shipstation_warehouse_id": 1791764,
+    "is_main_hub": true
+  },
+  "10003": {
+    "id": 10003,
+    "code": "COQL",
+    "city": "Coquitlam",
+    "province": "BC",
+    "lat": 49.22871933,
+    "lng": -122.849437,
+    "contact_email": [
+      "order.coquitlam@prosol.ca"
+    ],
+    "address": "1450 Brigantine Dr",
+    "postal_code": "V3K7C1",
+    "active": true,
+    "shipstation_warehouse_id": 1824505,
+    "is_main_hub": false
+  },
+  "10004": {
+    "id": 10004,
+    "code": "WGRF",
+    "city": "Saint-Laurent",
+    "province": "QC",
+    "lat": 45.48198869,
+    "lng": -73.7036172,
+    "contact_email": [
+      "order.montreal@prosol.ca"
+    ],
+    "address": "4305 rue Griffith",
+    "postal_code": "H4T2A2",
+    "active": true,
+    "shipstation_warehouse_id": 1791765,
+    "is_main_hub": true
+  },
+  "10007": {
+    "id": 10007,
+    "code": "ABBY",
+    "city": "Abbotsford",
+    "province": "BC",
+    "lat": 49.04638907,
+    "lng": -122.371161,
+    "contact_email": [
+      "order.abbotsford@prosol.ca"
+    ],
+    "address": "#108 - 30799 Simpson Rd.",
+    "postal_code": "V2T6X4",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10010": {
+    "id": 10010,
+    "code": "BURN",
+    "city": "Burnaby",
+    "province": "BC",
+    "lat": 49.2558446,
+    "lng": -122.978095,
+    "contact_email": [
+      "order.burnaby@prosol.ca"
+    ],
+    "address": "2829 Norland Ave",
+    "postal_code": "V5B3A9",
+    "active": true,
+    "shipstation_warehouse_id": 1374417,
+    "is_main_hub": true
+  },
+  "10011": {
+    "id": 10011,
+    "code": "CALN",
+    "city": "Calgary North",
+    "province": "AB",
+    "lat": 51.07990057,
+    "lng": -114.019213,
+    "contact_email": [
+      "order.calgarynorth@prosol.ca"
+    ],
+    "address": "3101 16 St NE",
+    "postal_code": "T2E7K8",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10013": {
+    "id": 10013,
+    "code": "CAMB",
+    "city": "Cambridge",
+    "province": "ON",
+    "lat": 43.39917274,
+    "lng": -80.3007336,
+    "contact_email": [
+      "order.cambridge@prosol.ca"
+    ],
+    "address": "1731 Bishop Street North",
+    "postal_code": "N1T1N5",
+    "active": true,
+    "shipstation_warehouse_id": 1793463,
+    "is_main_hub": false
+  },
+  "10014": {
+    "id": 10014,
+    "code": "CHIC",
+    "city": "Chicoutimi",
+    "province": "QC",
+    "lat": 48.396439,
+    "lng": -71.1119818,
+    "contact_email": [
+      "order.saguenay@prosol.ca"
+    ],
+    "address": "1041, rue de la Rupert",
+    "postal_code": "G7K0A2",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10016": {
+    "id": 10016,
+    "code": "DART",
+    "city": "Dartmouth",
+    "province": "NS",
+    "lat": 44.71223369,
+    "lng": -63.6002618,
+    "contact_email": [
+      "order.dartmouth@prosol.ca"
+    ],
+    "address": "105 Akerley Blvd",
+    "postal_code": "B3B1R7",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10017": {
+    "id": 10017,
+    "code": "DOWN",
+    "city": "Downsview",
+    "province": "ON",
+    "lat": 43.75928536,
+    "lng": -79.4704168,
+    "contact_email": [
+      "order.downsview@prosol.ca"
+    ],
+    "address": "255 Steeprock Drive",
+    "postal_code": "M3J2X1",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10018": {
+    "id": 10018,
+    "code": "EDMN",
+    "city": "Edmonton North",
+    "province": "AB",
+    "lat": 53.56574188,
+    "lng": -113.587389,
+    "contact_email": [
+      "order.edmonton@prosol.ca"
+    ],
+    "address": "11662 - 154 Street",
+    "postal_code": "T5M3N8",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10019": {
+    "id": 10019,
+    "code": "EDMS",
+    "city": "Edmonton South",
+    "province": "AB",
+    "lat": 53.48329712,
+    "lng": -113.479867,
+    "contact_email": [
+      "order.edmsouth@prosol.ca"
+    ],
+    "address": "9779 45th Ave NW",
+    "postal_code": "T6E5V8",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10021": {
+    "id": 10021,
+    "code": "HAMI",
+    "city": "Hamilton",
+    "province": "ON",
+    "lat": 43.19467633,
+    "lng": -79.8329512,
+    "contact_email": [
+      "order.hamilton@prosol.ca"
+    ],
+    "address": "47 Ditton dr",
+    "postal_code": "L8W2E5",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10022": {
+    "id": 10022,
+    "code": "KAML",
+    "city": "Kamloops",
+    "province": "BC",
+    "lat": 50.66338294,
+    "lng": -120.364076,
+    "contact_email": [
+      "order.kamloops@prosol.ca"
+    ],
+    "address": "1370 Dalhousie Dr.",
+    "postal_code": "V2C5P7",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10023": {
+    "id": 10023,
+    "code": "KELO",
+    "city": "Kelowna",
+    "province": "BC",
+    "lat": 49.88549366,
+    "lng": -119.424338,
+    "contact_email": [
+      "order.kelowna@prosol.ca"
+    ],
+    "address": "459 Banks Rd.",
+    "postal_code": "V1X6A3",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10024": {
+    "id": 10024,
+    "code": "KING",
+    "city": "Kingston",
+    "province": "ON",
+    "lat": 44.27747194,
+    "lng": -76.623458,
+    "contact_email": [
+      "order.kingston@prosol.ca"
+    ],
+    "address": "1663 Venture Drive Unit 1D",
+    "postal_code": "K7P0E9",
+    "active": true,
+    "shipstation_warehouse_id": 1504076,
+    "is_main_hub": false
+  },
+  "10025": {
+    "id": 10025,
+    "code": "KITC",
+    "city": "Kitchener",
+    "province": "ON",
+    "lat": 43.46098832,
+    "lng": -80.4581715,
+    "contact_email": [
+      "order.kitchener@prosol.ca"
+    ],
+    "address": "500 Bingemans Center Drive",
+    "postal_code": "N2B1R9",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10026": {
+    "id": 10026,
+    "code": "LANG",
+    "city": "Langley",
+    "province": "BC",
+    "lat": 49.10403258,
+    "lng": -122.643048,
+    "contact_email": [
+      "order.langley@prosol.ca"
+    ],
+    "address": "#5 20555 Langley Bypass",
+    "postal_code": "V3A5E8",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10027": {
+    "id": 10027,
+    "code": "LOND",
+    "city": "London",
+    "province": "ON",
+    "lat": 42.9318625,
+    "lng": -81.2139272,
+    "contact_email": [
+      "order.london@prosol.ca"
+    ],
+    "address": "94 Bessemer Ct",
+    "postal_code": "N6E1K7",
+    "active": true,
+    "shipstation_warehouse_id": 1793487,
+    "is_main_hub": false
+  },
+  "10028": {
+    "id": 10028,
+    "code": "MISS",
+    "city": "Mississauga",
+    "province": "ON",
+    "lat": 43.62060678,
+    "lng": -79.5753846,
+    "contact_email": [
+      "order.mississauga@prosol.ca"
+    ],
+    "address": "3240 Lenworth dr.",
+    "postal_code": "L4X2G1",
+    "active": true,
+    "shipstation_warehouse_id": 1824506,
+    "is_main_hub": false
+  },
+  "10029": {
+    "id": 10029,
+    "code": "MONC",
+    "city": "Moncton",
+    "province": "NB",
+    "lat": 46.0825365,
+    "lng": -64.8380547,
+    "contact_email": [
+      "order.moncton@prosol.ca"
+    ],
+    "address": "400 Edinburgh Drive Unit B",
+    "postal_code": "E1E2L1",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10031": {
+    "id": 10031,
+    "code": "NANA",
+    "city": "Nanaimo",
+    "province": "BC",
+    "lat": 49.20291942,
+    "lng": -124.007983,
+    "contact_email": [
+      "order.nanaimo@prosol.ca"
+    ],
+    "address": "2512 Kenworth Road",
+    "postal_code": "V9T3Y4",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10032": {
+    "id": 10032,
+    "code": "OTTA",
+    "city": "Ottawa",
+    "province": "ON",
+    "lat": 45.40961466,
+    "lng": -75.6237599,
+    "contact_email": [
+      "order.ottawa@prosol.ca"
+    ],
+    "address": "1153 Newmarket",
+    "postal_code": "K1B4N4",
+    "active": true,
+    "shipstation_warehouse_id": 1814007,
+    "is_main_hub": false
+  },
+  "10034": {
+    "id": 10034,
+    "code": "PRIN",
+    "city": "Prince George",
+    "province": "BC",
+    "lat": 53.90768717,
+    "lng": -122.790185,
+    "contact_email": [
+      "order.princegeorge@prosol.ca"
+    ],
+    "address": "1967 South Ogilvie Street",
+    "postal_code": "V2N1X2",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10035": {
+    "id": 10035,
+    "code": "QUEB",
+    "city": "Quebec",
+    "province": "QC",
+    "lat": 46.78746506,
+    "lng": -71.3059213,
+    "contact_email": [
+      "order.quebec@prosol.ca"
+    ],
+    "address": "2555, rue Watt, Porte #4",
+    "postal_code": "G1P3T2",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10036": {
+    "id": 10036,
+    "code": "REDD",
+    "city": "Red Deer",
+    "province": "AB",
+    "lat": 52.30422642,
+    "lng": -113.813733,
+    "contact_email": [
+      "order.reddeer@prosol.ca"
+    ],
+    "address": "7619 Gaetz Ave, #4&5",
+    "postal_code": "T4P1M6",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10037": {
+    "id": 10037,
+    "code": "REGI",
+    "city": "Regina",
+    "province": "SK",
+    "lat": 50.46084322,
+    "lng": -104.577844,
+    "contact_email": [
+      "order.regina@prosol.ca"
+    ],
+    "address": "515 6th Avenue E",
+    "postal_code": "S4N5A3",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10038": {
+    "id": 10038,
+    "code": "RICH",
+    "city": "Richmond",
+    "province": "BC",
+    "lat": 49.18691166,
+    "lng": -123.074013,
+    "contact_email": [
+      "order.richmond@prosol.ca"
+    ],
+    "address": "Unit#140, 12231 Bridgeport Road",
+    "postal_code": "V6V1J4",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10039": {
+    "id": 10039,
+    "code": "SASK",
+    "city": "Saskatoon",
+    "province": "SK",
+    "lat": 52.21898575,
+    "lng": -106.641375,
+    "contact_email": [
+      "order.saskatoon@prosol.ca"
+    ],
+    "address": "12 3603 Millar Avenue",
+    "postal_code": "S7P0B2",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10040": {
+    "id": 10040,
+    "code": "SCAR",
+    "city": "Scarborough",
+    "province": "ON",
+    "lat": 43.75875736,
+    "lng": -79.3005155,
+    "contact_email": [
+      "order.scarborough@prosol.ca"
+    ],
+    "address": "1412 Warden Ave.",
+    "postal_code": "M1R5A3",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10041": {
+    "id": 10041,
+    "code": "STCA",
+    "city": "St-Catharines",
+    "province": "ON",
+    "lat": 43.17160975,
+    "lng": -79.2001993,
+    "contact_email": [
+      "order.stcatharines@prosol.ca"
+    ],
+    "address": "113 Cushman Road Unit # 54",
+    "postal_code": "L2M6S9",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10043": {
+    "id": 10043,
+    "code": "SUDB",
+    "city": "Sudbury",
+    "province": "ON",
+    "lat": 46.5128157,
+    "lng": -80.9882248,
+    "contact_email": [
+      "order.sudbury@prosol.ca"
+    ],
+    "address": "922 Cambrian Heights Drive Unit 1",
+    "postal_code": "P3C5L8",
+    "active": true,
+    "shipstation_warehouse_id": 1786140,
+    "is_main_hub": false
+  },
+  "10044": {
+    "id": 10044,
+    "code": "SURR",
+    "city": "Surrey",
+    "province": "BC",
+    "lat": 49.14123905,
+    "lng": -122.85182,
+    "contact_email": [
+      "order.surrey@prosol.ca"
+    ],
+    "address": "#101-13375 76th Ave",
+    "postal_code": "V3W6J3",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10045": {
+    "id": 10045,
+    "code": "VICT",
+    "city": "Victoria",
+    "province": "BC",
+    "lat": 48.46576414,
+    "lng": -123.361338,
+    "contact_email": [
+      "order.victoria@prosol.ca"
+    ],
+    "address": "3934 Quadra st. Unit 112",
+    "postal_code": "V8X1J6",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10048": {
+    "id": 10048,
+    "code": "WIND",
+    "city": "Windsor",
+    "province": "ON",
+    "lat": 42.26419989,
+    "lng": -82.9647769,
+    "contact_email": [
+      "order.windsor@prosol.ca"
+    ],
+    "address": "4445 County Road #42",
+    "postal_code": "N9A6J3",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10049": {
+    "id": 10049,
+    "code": "WINN",
+    "city": "Winnipeg",
+    "province": "MB",
+    "lat": 49.9428739,
+    "lng": -97.1820835,
+    "contact_email": [
+      "order.winnipeg@prosol.ca"
+    ],
+    "address": "167 Hutchings, Unit 2",
+    "postal_code": "R2X2R4",
+    "active": true,
+    "shipstation_warehouse_id": 1811347,
+    "is_main_hub": false
+  },
+  "10051": {
+    "id": 10051,
+    "code": "BROS",
+    "city": "Brossard",
+    "province": "QC",
+    "lat": 45.43229512,
+    "lng": -73.4685529,
+    "contact_email": [
+      "order.brossard@prosol.ca"
+    ],
+    "address": "2850 Matte",
+    "postal_code": "J4Y0G5",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10052": {
+    "id": 10052,
+    "code": "BARR",
+    "city": "Barrie",
+    "province": "ON",
+    "lat": 44.45957948,
+    "lng": -79.7211224,
+    "contact_email": [
+      "order.barrie@prosol.ca"
+    ],
+    "address": "230 Bayview Unit 9 - 10",
+    "postal_code": "L4N4Y8",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  },
+  "10054": {
+    "id": 10054,
+    "code": "WCAS",
+    "city": "Calgary",
+    "province": "AB",
+    "lat": 51.00230493,
+    "lng": -114.041387,
+    "contact_email": [
+      "order.calgary@prosol.ca"
+    ],
+    "address": "5760 9 St SE #105",
+    "postal_code": "T2H1Z9",
+    "active": true,
+    "shipstation_warehouse_id": 1284722,
+    "is_main_hub": true
+  },
+  "10055": {
+    "id": 10055,
+    "code": "VERN",
+    "city": "Vernon",
+    "province": "BC",
+    "lat": 50.2972,
+    "lng": -119.224,
+    "contact_email": [
+      "order.vernon@prosol.ca"
+    ],
+    "address": "5000 Silver Star Rd",
+    "postal_code": "V1B0A9",
+    "active": true,
+    "shipstation_warehouse_id": null,
+    "is_main_hub": false
+  }
+}

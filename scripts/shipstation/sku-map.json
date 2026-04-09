@@ -1,0 +1,2454 @@
+{
+  "_comment": "ShipStation SKU → Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
+  "_updated": "2026-04-01T18:44:02.312Z",
+  "_notes": {
+    "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
+    "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
+    "bundles": "Array of {api_sku, prosol_sku} objects for multi-product bundles",
+    "NON_PROSOL": "Products not available through Prosol — source elsewhere",
+    "UNMAPPED": "Could not find in Prosol API — needs manual verification",
+    "SKIP": "Not real products (discount codes, custom items)"
+  },
+  "mappings": {
+    "1530": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Armstrong Shinekeeper Floor Finish 32oz",
+      "note": "Not available through Prosol",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
+    "1531": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Armstrong Satinkeeper Floor Finish 32oz",
+      "note": "Not available through Prosol",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
+    "3055": {
+      "api_sku": "C100978-4",
+      "prosol_sku": "C100978-01",
+      "product": "Aqua Mix - NanoScrub 946ml (Quart)",
+      "verified": true
+    },
+    "3714": {
+      "api_sku": "KD4GRKE",
+      "prosol_sku": "KD4GRKE",
+      "product": "Schluter KERDI-DRAIN 4\" Stainless Steel Square Grate",
+      "note": "Shopify SKU. KD4GRKE = Classic SS Grate 4\"",
+      "verified": true
+    },
+    "4522": {
+      "api_sku": "KBSC1151501220",
+      "prosol_sku": "KBSC1151501220",
+      "product": "Schluter KERDI-BOARD-SC Shower Curb 4-1/2\" x 6\" x 48\"",
+      "note": "Shopify SKU",
+      "verified": true
+    },
+    "8776": {
+      "api_sku": "CPMBP1",
+      "prosol_sku": "CCPMBP1",
+      "product": "Custom Building Products - MBP Multi-Surface Bonding Primer 1 gal",
+      "verified": true
+    },
+    "8784": {
+      "api_sku": "KST965/1525",
+      "prosol_sku": "KST9651525",
+      "product": "Schluter KERDI-SHOWER-T Sloped Shower Tray 38\"x60\"",
+      "note": "Shopify SKU",
+      "verified": true
+    },
+    "8998": {
+      "api_sku": "100MC3MM",
+      "prosol_sku": "100MC3MM",
+      "product": "Perfect Level Master - T-Lock M Clips 3mm 100pcs",
+      "note": "Shopify SKU - same as B00QGC41HY",
+      "verified": true
+    },
+    "9000": {
+      "api_sku": "100WM",
+      "prosol_sku": "100WM",
+      "product": "Perfect Level Master - T-Lock Wedges 100pcs",
+      "note": "Shopify SKU - same as B01LYHSHF7",
+      "verified": true
+    },
+    "9067": {
+      "api_sku": "PF-1",
+      "prosol_sku": "PF-1",
+      "product": "Perfect Level Master - T-Lock Pliers",
+      "note": "Shopify SKU - same as B00X6V9EQQ",
+      "verified": true
+    },
+    "9672": {
+      "api_sku": "KMSMV235/114",
+      "prosol_sku": "KMSMV235114",
+      "product": "Schluter KERDI-SEAL-MV Mixing Valve Seal 4-1/2\"",
+      "note": "Shopify SKU - Kerdi Pipe Seal Mixing Valve",
+      "verified": true
+    },
+    "10173": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Traffic HD Finish 1 gal Extra Matte",
+      "note": "Not available through Prosol",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
+    "10612": {
+      "api_sku": "1945616",
+      "prosol_sku": "ECO975-15",
+      "product": "Mapei - Ultrabond ECO 975 Hardwood Adhesive 5 gal",
+      "verified": true
+    },
+    "11458": {
+      "api_sku": "DHERT102/BW",
+      "prosol_sku": "DHERT102BW",
+      "product": "Schluter Ditra Heat Thermostat Programmable",
+      "note": "Shopify SKU - maps to touch programmable thermostat",
+      "verified": true
+    },
+    "11461": {
+      "api_sku": "UNMAPPED_CABLE",
+      "prosol_sku": "UNMAPPED_CABLE",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V - need sqft from order",
+      "note": "Shopify SKU. Prosol pattern: DHEHK240{sqft}",
+      "cable_sku_pattern": "DHEHK240{sqft}",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "11524": {
+      "api_sku": "C010262-4",
+      "prosol_sku": "C010262-01",
+      "product": "Aqua Mix - Sealer & Coating Remover 946ml (Quart)",
+      "verified": true
+    },
+    "11532": {
+      "api_sku": "UNMAPPED",
+      "prosol_sku": "UNMAPPED",
+      "product": "Aqua Mix - AquaShield 720ml",
+      "note": "NOT FOUND in Prosol API. May be discontinued or not carried. Needs manual verification.",
+      "verified": false
+    },
+    "11539": {
+      "api_sku": "C010263",
+      "prosol_sku": "C010263-04",
+      "product": "Aqua Mix - Sealer & Coating Remover 1 gal",
+      "verified": true
+    },
+    "11547": {
+      "api_sku": "C010332-4",
+      "prosol_sku": "C010332-01",
+      "product": "Aqua Mix - Concentrated Stone & Tile Cleaner 946ml (Quart)",
+      "note": "Shopify SKU - same product as B000CCXB2U",
+      "verified": true
+    },
+    "11556": {
+      "api_sku": "C020552-4",
+      "prosol_sku": "C020552-01",
+      "product": "Aqua Mix - Seal & Finish Low Sheen 946ml (Quart)",
+      "note": "Shopify SKU - same product as B000CD3KWK",
+      "verified": true
+    },
+    "11565": {
+      "api_sku": "C030882-4",
+      "prosol_sku": "C030882-01",
+      "product": "Aqua Mix - Sealers Choice Gold 946ml (Quart)",
+      "note": "Shopify SKU - same product as B000UOJGME",
+      "verified": true
+    },
+    "11568": {
+      "api_sku": "C010383",
+      "prosol_sku": "C010383-04",
+      "product": "Aqua Mix - Heavy Duty Tile & Grout Cleaner 1 gal",
+      "note": "Shopify SKU for gallon",
+      "verified": true
+    },
+    "11569": {
+      "api_sku": "C050231",
+      "prosol_sku": "C050231-01",
+      "product": "Aqua Mix - Sulfamic Acid Crystals 1 lb",
+      "verified": true
+    },
+    "11571": {
+      "api_sku": "C100726-4",
+      "prosol_sku": "C100726-01",
+      "product": "Aqua Mix - High Gloss Sealer 946ml (Quart)",
+      "note": "Shopify SKU - same product as B00H4FKI4C",
+      "verified": true
+    },
+    "11759": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Mega Hardwood Floor Finish 1 Gal Extra Matte",
+      "note": "Not available through Prosol",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
+    "_section_aqua_mix_poultice": "=== AQUA MIX - POULTICE STAIN REMOVER ===",
+    "B000CD1L58": {
+      "api_sku": "C010861",
+      "prosol_sku": "C010861-01",
+      "product": "Aqua Mix - Poultice Stain Remover 3/4 lb",
+      "verified": true
+    },
+    "_section_aqua_mix_enrich_n_seal": "=== AQUA MIX - ENRICH 'N' SEAL ===",
+    "B08HFY5BK4": {
+      "api_sku": "C100250",
+      "prosol_sku": "C100250-05",
+      "product": "Aqua Mix - Enrich 'N' Seal 473ml (Pint)",
+      "verified": true
+    },
+    "B0039ZUSUK": {
+      "api_sku": "C100250",
+      "prosol_sku": "C100250-05",
+      "product": "Aqua Mix - Enrich 'N' Seal 473ml (Pint)",
+      "note": "Duplicate listing of B08HFY5BK4",
+      "verified": true
+    },
+    "B000GFT6IG": {
+      "api_sku": "C100251-4",
+      "prosol_sku": "C100251-01",
+      "product": "Aqua Mix - Enrich 'N' Seal 946ml (Quart)",
+      "verified": true
+    },
+    "B01MSUOPYK": {
+      "api_sku": "C100252-2",
+      "prosol_sku": "C100252-04",
+      "product": "Aqua Mix - Enrich 'N' Seal 1 gal",
+      "verified": true
+    },
+    "B00CI9DXH8": {
+      "api_sku": "C100252-2",
+      "prosol_sku": "C100252-04",
+      "product": "Aqua Mix - Enrich 'N' Seal 1 gal",
+      "note": "Duplicate listing of B01MSUOPYK",
+      "verified": true
+    },
+    "_section_aqua_mix_sealers_choice_gold": "=== AQUA MIX - SEALERS CHOICE GOLD ===",
+    "B0039ZDMLC": {
+      "api_sku": "C030881",
+      "prosol_sku": "C030881-05",
+      "product": "Aqua Mix - Sealers Choice Gold 473ml (Pint)",
+      "verified": true
+    },
+    "B000UOJGME": {
+      "api_sku": "C030882-4",
+      "prosol_sku": "C030882-01",
+      "product": "Aqua Mix - Sealers Choice Gold 946ml (Quart)",
+      "verified": true
+    },
+    "B000GFPNG0": {
+      "api_sku": "C030883",
+      "prosol_sku": "C030883-04",
+      "product": "Aqua Mix - Sealers Choice Gold 1 gal",
+      "verified": true
+    },
+    "B09F5L14HN": {
+      "api_sku": "C030883",
+      "prosol_sku": "C030883-04",
+      "product": "Aqua Mix - Sealers Choice Gold 1 gal",
+      "note": "CSTM BLDG branded listing - same product",
+      "verified": true
+    },
+    "_section_aqua_mix_stone_deep_clean": "=== AQUA MIX - STONE DEEP CLEAN ===",
+    "B000GFUTWI": {
+      "api_sku": "C030192-4",
+      "prosol_sku": "C030192-01",
+      "product": "Aqua Mix - Stone Deep Cleaner 946ml (Quart)",
+      "verified": true
+    },
+    "_section_aqua_mix_heavy_duty": "=== AQUA MIX - HEAVY DUTY TILE & GROUT CLEANER ===",
+    "B000CCOHCS": {
+      "api_sku": "C010382-4",
+      "prosol_sku": "C010382-01",
+      "product": "Aqua Mix - Heavy Duty Tile & Grout Cleaner 946ml (Quart)",
+      "verified": true
+    },
+    "B01MTKNSG5": {
+      "api_sku": "C010383",
+      "prosol_sku": "C010383-04",
+      "product": "Aqua Mix - Heavy Duty Tile & Grout Cleaner 1 gal",
+      "verified": true
+    },
+    "B00290PAV8": {
+      "api_sku": "C010383",
+      "prosol_sku": "C010383-04",
+      "product": "Aqua Mix - Heavy Duty Tile & Grout Cleaner 1 gal",
+      "note": "Duplicate listing of B01MTKNSG5",
+      "verified": true
+    },
+    "_section_aqua_mix_seal_finish_low_sheen": "=== AQUA MIX - SEAL & FINISH LOW SHEEN ===",
+    "B000CD3KWK": {
+      "api_sku": "C020552-4",
+      "prosol_sku": "C020552-01",
+      "product": "Aqua Mix - Seal & Finish Low Sheen 946ml (Quart)",
+      "verified": true
+    },
+    "B000GFUU54": {
+      "api_sku": "C020553",
+      "prosol_sku": "C020553-04",
+      "product": "Aqua Mix - Seal & Finish Low Sheen 1 gal",
+      "verified": true
+    },
+    "_section_aqua_mix_grout_haze": "=== AQUA MIX - GROUT HAZE CLEAN-UP ===",
+    "B01HU3ITMK": {
+      "api_sku": "C050162-4",
+      "prosol_sku": "C050162-01",
+      "product": "Aqua Mix - Grout Haze Clean-Up 946ml (Pint listed but actually 946ml)",
+      "note": "Amazon title says Pint but Prosol lists as 946ml. Verify actual size.",
+      "verified": true
+    },
+    "_section_aqua_mix_high_gloss": "=== AQUA MIX - HIGH GLOSS DURABLE COATING SEALER ===",
+    "B00H4FKI4C": {
+      "api_sku": "C100726-4",
+      "prosol_sku": "C100726-01",
+      "product": "Aqua Mix - High Gloss Sealer 946ml (Quart)",
+      "verified": true
+    },
+    "B08TXZPYDX": {
+      "api_sku": "C100727",
+      "prosol_sku": "C100727-04",
+      "product": "Aqua Mix - High Gloss Sealer 1 gal",
+      "verified": true
+    },
+    "B000GFPNEW": {
+      "api_sku": "C100727",
+      "prosol_sku": "C100727-04",
+      "product": "Aqua Mix - High Gloss Sealer 1 gal",
+      "note": "Duplicate listing of B08TXZPYDX",
+      "verified": true
+    },
+    "_section_aqua_mix_penetrating_sealer": "=== AQUA MIX - PENETRATING SEALER ===",
+    "B08TX64CVW": {
+      "api_sku": "C020373",
+      "prosol_sku": "C020373-04",
+      "product": "Aqua Mix - Penetrating Sealer 1 gal",
+      "verified": true
+    },
+    "B000CCXEMM": {
+      "api_sku": "C020373",
+      "prosol_sku": "C020373-04",
+      "product": "Aqua Mix - Penetrating Sealer 1 gal",
+      "note": "Duplicate listing of B08TX64CVW",
+      "verified": true
+    },
+    "_section_aqua_mix_concentrated_stone_tile": "=== AQUA MIX - CONCENTRATED STONE & TILE CLEANER ===",
+    "B000CCXB2U": {
+      "api_sku": "C010332-4",
+      "prosol_sku": "C010332-01",
+      "product": "Aqua Mix - Concentrated Stone & Tile Cleaner 946ml (Quart)",
+      "verified": true
+    },
+    "00492": {
+      "api_sku": "C010333",
+      "prosol_sku": "C010333-04",
+      "product": "Aqua Mix - Concentrated Stone & Tile Cleaner 1 gal",
+      "note": "Shopify SKU for gallon",
+      "verified": true
+    },
+    "_section_aqua_mix_sealer_coating_remover": "=== AQUA MIX - SEALER & COATING REMOVER ===",
+    "_section_aqua_mix_grout_release": "=== AQUA MIX - GROUT RELEASE ===",
+    "B00290JOJM": {
+      "api_sku": "C010772-4",
+      "prosol_sku": "C010772-01",
+      "product": "Aqua Mix - Grout Release 946ml (Quart)",
+      "verified": true
+    },
+    "_section_aqua_mix_sulfamic_acid": "=== AQUA MIX - SULFAMIC ACID CRYSTALS ===",
+    "_section_aqua_mix_aquashield": "=== AQUA MIX - AQUASHIELD ===",
+    "_section_aqua_mix_nano_scrub": "=== AQUA MIX - NANO SCRUB ===",
+    "_section_aqua_mix_bundles": "=== AQUA MIX - BUNDLES ===",
+    "B0947K5X3X": {
+      "bundle": true,
+      "components": [
+        {
+          "api_sku": "C030882-4",
+          "prosol_sku": "C030882-01",
+          "product": "Sealers Choice Gold Qt"
+        },
+        {
+          "api_sku": "C010382-4",
+          "prosol_sku": "C010382-01",
+          "product": "Heavy Duty Cleaner Qt"
+        }
+      ],
+      "product": "Aqua Mix - Cleaner & Sealer Savings Bundle (SCG Qt + HD Cleaner Qt)",
+      "verified": true
+    },
+    "B0949ND48N": {
+      "bundle": true,
+      "components": [
+        {
+          "api_sku": "C030882-4",
+          "prosol_sku": "C030882-01",
+          "product": "Sealers Choice Gold Qt"
+        },
+        {
+          "api_sku": "C010382-4",
+          "prosol_sku": "C010382-01",
+          "product": "Heavy Duty Cleaner Qt"
+        }
+      ],
+      "product": "Aqua Mix - Cleaner & Sealer Savings Combo (alternate bundle listing)",
+      "note": "Same bundle as B0947K5X3X",
+      "verified": true
+    },
+    "_section_stainblocker": "=== STAINBLOCKER / CUSTOM BUILDING PRODUCTS ===",
+    "B00KYTJF4O": {
+      "api_sku": "CSBG32-4",
+      "prosol_sku": "CSBG32-01",
+      "product": "Custom Building Products - StainBlocker Additive for Grout 946ml",
+      "note": "Prosol lists as 'SatinBlocker' but this is the same product (StainBlocker)",
+      "verified": true
+    },
+    "_section_schluter_ditra_heat_cables": "=== SCHLUTER - DITRA-HEAT CABLES ===",
+    "B071VFHLJS": {
+      "api_sku": "DHEHK24053",
+      "prosol_sku": "DHEHK24053",
+      "product": "Schluter DITRA-HEAT-E Cable 240V 53 sq ft",
+      "verified": true
+    },
+    "B01MRA8WQS": {
+      "api_sku": "DHEHK24016",
+      "prosol_sku": "DHEHK24016",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 52.9ft (16 sqft)",
+      "note": "DHEHK24016 confirmed from ShipStation title",
+      "verified": true
+    },
+    "B01N9VNLR4": {
+      "api_sku": "DHEHK24038",
+      "prosol_sku": "DHEHK24038",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 37.5 sqft",
+      "verified": true
+    },
+    "B01N4S7VJ2": {
+      "api_sku": "DHEHK240129",
+      "prosol_sku": "DHEHK240129",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 128.8 sqft",
+      "verified": true
+    },
+    "B01MSBNBH3": {
+      "api_sku": "DHEHK240145",
+      "prosol_sku": "DHEHK240145",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 145.3 sqft",
+      "verified": true
+    },
+    "B071RTWHQB": {
+      "api_sku": "DHEHK24085",
+      "prosol_sku": "DHEHK24085",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 85.3 sqft",
+      "verified": true
+    },
+    "B01N26KH0N": {
+      "api_sku": "DHEHK24021",
+      "prosol_sku": "DHEHK24021",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 21.4 sqft",
+      "verified": true
+    },
+    "B071DWN788": {
+      "api_sku": "UNMAPPED_CABLE",
+      "prosol_sku": "UNMAPPED_CABLE",
+      "product": "Schluter DHEHK Cable — delisted on Amazon, SKU unknown",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "B071L2YMNZ": {
+      "api_sku": "UNMAPPED_CABLE",
+      "prosol_sku": "UNMAPPED_CABLE",
+      "product": "Schluter DHEHK Cable — delisted on Amazon, SKU unknown",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "B01N5TJEGJ": {
+      "api_sku": "DHEHK240167",
+      "prosol_sku": "DHEHK240167",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 166.7 sqft",
+      "verified": true
+    },
+    "B071YVTQ5X": {
+      "api_sku": "DHEHK240167",
+      "prosol_sku": "DHEHK240167",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 166.7 sqft",
+      "verified": true
+    },
+    "B072BJG9P2": {
+      "api_sku": "DHEHK12051",
+      "prosol_sku": "DHEHK12051",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 120V 51.4 sqft",
+      "verified": true
+    },
+    "B01N3845HQ": {
+      "api_sku": "DHEHK24043",
+      "prosol_sku": "DHEHK24043",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 43.1 sqft",
+      "verified": true
+    },
+    "B0713Z14KJ": {
+      "api_sku": "DHEHK12043",
+      "prosol_sku": "DHEHK12043",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 120V 42.7 sqft",
+      "verified": true
+    },
+    "_section_schluter_cable_kits": "=== SCHLUTER - CABLE KITS WITH THERMOSTAT ===",
+    "B010MQ7L9O": {
+      "bundle": true,
+      "components": [
+        {
+          "api_sku": "UNMAPPED_CABLE",
+          "prosol_sku": "UNMAPPED_CABLE",
+          "product": "DHEHK Cable - check order for sqft/voltage"
+        },
+        {
+          "api_sku": "DHERT103/BW",
+          "prosol_sku": "DHERT103BW",
+          "product": "Non-Programmable Thermostat"
+        }
+      ],
+      "product": "Schluter Cable Kit with Non-Programmable Thermostat",
+      "note": "Cable model varies by order. Kit includes cable + DHERT103/BW thermostat.",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "B018A2XQSC": {
+      "bundle": true,
+      "components": [
+        {
+          "api_sku": "UNMAPPED_CABLE",
+          "prosol_sku": "UNMAPPED_CABLE",
+          "product": "DHEHK Cable - check order for sqft/voltage"
+        },
+        {
+          "api_sku": "DHERT103/BW",
+          "prosol_sku": "DHERT103BW",
+          "product": "Non-Programmable Thermostat"
+        }
+      ],
+      "product": "Schluter Cable Kit with Thermostat (variant)",
+      "note": "Cable model varies by order",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "B01MRNGVAY": {
+      "bundle": true,
+      "components": [
+        {
+          "api_sku": "UNMAPPED_CABLE",
+          "prosol_sku": "UNMAPPED_CABLE",
+          "product": "DHEHK Cable - check order for sqft/voltage"
+        },
+        {
+          "api_sku": "DHERT103/BW",
+          "prosol_sku": "DHERT103BW",
+          "product": "Non-Programmable Thermostat"
+        }
+      ],
+      "product": "Schluter Cable Kit with Thermostat (variant)",
+      "note": "Cable model varies by order",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "_section_schluter_ditra_heat_duo": "=== SCHLUTER - DITRA-HEAT-DUO ===",
+    "B079ZC1FWT": {
+      "api_sku": "DHD8MA",
+      "prosol_sku": "DHD8MA",
+      "product": "Schluter DITRA-HEAT-DUO Insulation Membrane Sheet 8.4 sqft",
+      "note": "DUO-TB in Amazon title = DITRA-HEAT-DUO (TB = thermal break). Sheet version.",
+      "verified": true
+    },
+    "00843": {
+      "api_sku": "DHD8MA",
+      "prosol_sku": "DHD8MA",
+      "product": "Schluter DITRA-HEAT-DUO 8.4 sqft sheet",
+      "note": "Shopify SKU - same as B079ZC1FWT",
+      "verified": true
+    },
+    "_section_schluter_ditra_heat_ps": "=== SCHLUTER - DITRA-HEAT-PS (PEEL & STICK) ===",
+    "B0BN6Y63P6": {
+      "api_sku": "DHPS5MA",
+      "prosol_sku": "DHPS5MA",
+      "product": "Schluter DITRA-HEAT-PS Peel & Stick Membrane Sheet 8.4 sqft",
+      "verified": true
+    },
+    "_section_schluter_ditra_heat_membrane": "=== SCHLUTER - DITRA-HEAT MEMBRANE ===",
+    "B018A2XNC6": {
+      "api_sku": "DH512M",
+      "prosol_sku": "DH512M",
+      "product": "Schluter DITRA-HEAT Uncoupling Membrane 134.5 sqft Roll",
+      "verified": true,
+      "note": "Fixed 2026-04-01 — was incorrectly mapped to DH5MA (8.4 sqft sheet). DH512M is the 134.5 sqft roll."
+    },
+    "_section_schluter_thermostats": "=== SCHLUTER - THERMOSTATS ===",
+    "B01E7WHC34": {
+      "api_sku": "DHERT103/BW",
+      "prosol_sku": "DHERT103BW",
+      "product": "Schluter DITRA-HEAT-E-R Non-Programmable Thermostat Bright White",
+      "verified": true
+    },
+    "B01EB8K754": {
+      "api_sku": "DHERT102/BW",
+      "prosol_sku": "DHERT102BW",
+      "product": "Schluter DITRA-HEAT-E-RT Touch Programmable Thermostat Bright White",
+      "verified": true
+    },
+    "DHERT104bw": {
+      "api_sku": "DHERT104/BW",
+      "prosol_sku": "DHERT104BW",
+      "product": "Schluter DITRA-HEAT-E-WIFI Thermostat Wireless Programmable Bright White",
+      "verified": true
+    },
+    "_section_schluter_kerdi_trowel": "=== SCHLUTER - KERDI TROWEL ===",
+    "B087HM7R5F": {
+      "api_sku": "TRL-KER",
+      "prosol_sku": "TRL-KER",
+      "product": "Schluter KERDI-TROWEL Square Notch Trowel 1/8\" x 1/8\"",
+      "verified": true
+    },
+    "_section_schluter_ditra_trowel": "=== SCHLUTER - DITRA TROWEL ===",
+    "B003IS31TS": {
+      "api_sku": "TRL-DIT",
+      "prosol_sku": "TRL-DIT",
+      "product": "Schluter DITRA-TROWEL Square-Notch Trowel 11/64\" x 11/64\"",
+      "verified": true
+    },
+    "_section_schluter_kerdi_board_niche": "=== SCHLUTER - KERDI-BOARD-SN SHOWER NICHE ===",
+    "B0DJG4N9M7": {
+      "api_sku": "KB12SN305305A",
+      "prosol_sku": "KB12SN305305A",
+      "product": "Schluter KERDI-BOARD-SN Shower Niche 12\"x12\"",
+      "note": "Most common niche size. Verify against order details if different size.",
+      "verified": true
+    },
+    "B0DJH5ZZ1K": {
+      "api_sku": "KB12SN305508A1",
+      "prosol_sku": "KB12SN305508A1",
+      "product": "Schluter KERDI-BOARD-SN Shower Niche with Shelf 12\"x20\"",
+      "note": "Larger niche with shelf. Verify size against order.",
+      "verified": true
+    },
+    "B00GUR3B26": {
+      "api_sku": "KB12SN305152A",
+      "prosol_sku": "KB12SN305152AF",
+      "product": "Schluter KERDI-BOARD-SN Shower Niche 12\"x6\"",
+      "note": "Fixed 2026-04-01 — was incorrectly mapped to 305305A (12x12). Amazon title says 12\" Width 6\" Height = KB12SN305152A. SF item 02509.",
+      "verified": true
+    },
+    "_section_schluter_kerdi_band": "=== SCHLUTER - KERDI-BAND ===",
+    "B003C69J1K": {
+      "api_sku": "KEBA10012510M",
+      "prosol_sku": "KEBA10012510M",
+      "product": "Schluter KERDI-BAND Waterproofing Strip 4\" x 32'10\"",
+      "note": "KERDI-BAND 10\" x 32ft10in roll = 33 LF in Salesforce. UOM is Linear Feet — always use qty 33, NOT 1. Confirmed 2026-03-27.",
+      "verified": true,
+      "uom": "LF",
+      "qty_per_unit": 33
+    },
+    "_section_schluter_ditra_membrane": "=== SCHLUTER - DITRA MEMBRANE ===",
+    "B01FT67M4Q": {
+      "api_sku": "DITRA5M",
+      "prosol_sku": "DITRA5M",
+      "product": "Schluter DITRA Uncoupling Membrane 3'3\" x 16'5\" (54 sqft)",
+      "verified": true
+    },
+    "_section_schluter_kerdi_tubkit": "=== SCHLUTER - KERDI-TUBKIT ===",
+    "B074Y66KJ2": {
+      "api_sku": "KKB7",
+      "prosol_sku": "KKB7",
+      "product": "Schluter KERDI-TUBKIT Complete Bathtub Surround Kit 75 sqft",
+      "verified": true
+    },
+    "_section_schluter_kerdi_shower_kit": "=== SCHLUTER - KERDI SHOWER KIT ===",
+    "B0B5VV1GGQ": {
+      "api_sku": "KSK1220ABSE",
+      "prosol_sku": "KSK1220ABSE",
+      "product": "Schluter KERDI-SHOWER-KIT with ABS Flange & SS Grate 48\"x48\"",
+      "note": "Verify exact model from order if different size. Other sizes: KSK9651525ABSE (38x60)",
+      "verified": true
+    },
+    "_section_schluter_kerdi_line_drain": "=== SCHLUTER - KERDI-LINE DRAIN ===",
+    "B07PLNDKQN": {
+      "api_sku": "KL1DRE60",
+      "prosol_sku": "KL1DRE60",
+      "product": "Schluter KERDI-LINE Linear Floor Drain 24\" (23-5/8\")",
+      "note": "Amazon says 24\". Closest Prosol = KL1DRE60 (23-5/8\"). Verify from order.",
+      "verified": true
+    },
+    "B07PLLDCP6": {
+      "api_sku": "UNMAPPED",
+      "prosol_sku": "UNMAPPED",
+      "product": "Schluter KERDI-LINE Frameless Grate",
+      "note": "Grate-only accessory. Need exact size from order to match KL1 grate SKU.",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "_section_schluter_kerdi_seal": "=== SCHLUTER - KERDI-SEAL ===",
+    "B071LJTCVH": {
+      "api_sku": "KMSMV235/114",
+      "prosol_sku": "KMSMV235114",
+      "product": "Schluter KERDI-SEAL-MV Mixing Valve Seal 4-1/2\"",
+      "verified": true
+    },
+    "B09CW9ZTRX": {
+      "bundle": true,
+      "product": "Kerdi Schluter Seal and Bonding Compound Bundle (3 Items)",
+      "components": [
+        {
+          "api_sku": "KMSMV235/114",
+          "prosol_sku": "KMSMV235/114",
+          "product": "Schluter KERDI-SEAL-MV Mixing Valve Seal 4-1/2\""
+        },
+        {
+          "api_sku": "KMS172/20",
+          "prosol_sku": "KMS172/20",
+          "product": "Schluter KERDI-SEAL-PS Pipe Seal 3/4\""
+        },
+        {
+          "api_sku": "KERDIFIX/BW",
+          "prosol_sku": "KERDIFIX/BW",
+          "product": "Schluter KERDI-FIX Bonding Compound Bright White 290ml"
+        }
+      ]
+    },
+    "kerdi-bundle-1-2": {
+      "api_sku": "UNMAPPED",
+      "prosol_sku": "UNMAPPED",
+      "product": "Schluter KERDI Seal Kit (custom bundle)",
+      "note": "Custom Shopify bundle - need to identify components",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "_section_schluter_kerdi_pipe_seal": "=== SCHLUTER - KERDI-SEAL-PS PIPE SEAL ===",
+    "B072J4C3KS": {
+      "api_sku": "KMS172/12",
+      "prosol_sku": "KMS17212",
+      "product": "Schluter KERDI-SEAL-PS Pipe Seal 1/2\"",
+      "verified": true
+    },
+    "B07289LVSQ": {
+      "api_sku": "KMS1017212",
+      "prosol_sku": "KMS1017212",
+      "product": "Schluter KERDI-SEAL-PS Pipe Seal 1/2\" (Pack of 10)",
+      "note": "Amazon says 10-pack",
+      "verified": true
+    },
+    "_section_schluter_kerdi_drain": "=== SCHLUTER - KERDI-DRAIN ===",
+    "_section_schluter_kerdi_board_curb": "=== SCHLUTER - KERDI-BOARD-SC SHOWER CURB ===",
+    "_section_schluter_kerdi_shower_tray": "=== SCHLUTER - KERDI SHOWER TRAY ===",
+    "_section_schluter_primer_ps": "=== SCHLUTER - PRIMER-PS ===",
+    "08526": {
+      "api_sku": "PRMPSQT1",
+      "prosol_sku": "PRMPSQT1",
+      "product": "Schluter PRIMER-PS Peel & Stick Membrane Primer 946ml",
+      "verified": true
+    },
+    "_section_plm": "=== PERFECT LEVEL MASTER ===",
+    "B00X6V9EQQ": {
+      "api_sku": "PF-1",
+      "prosol_sku": "PF-1",
+      "product": "Perfect Level Master - T-Lock Pliers",
+      "verified": true
+    },
+    "B01LYHSHF7": {
+      "api_sku": "100WM",
+      "prosol_sku": "100WM",
+      "product": "Perfect Level Master - T-Lock Wedges 100pcs",
+      "verified": true
+    },
+    "B00QGC41HY": {
+      "api_sku": "100MC3MM",
+      "prosol_sku": "100MC3MM",
+      "product": "Perfect Level Master - T-Lock M Clips 3mm 100pcs",
+      "verified": true
+    },
+    "B00QGA9RO8": {
+      "api_sku": "100MC1MM",
+      "prosol_sku": "100MC1MM",
+      "product": "Perfect Level Master - T-Lock M Clips 1mm 100pcs",
+      "verified": true
+    },
+    "B00X6T9H4W": {
+      "api_sku": "100MC2MM",
+      "prosol_sku": "100MC2MM",
+      "product": "Perfect Level Master - T-Lock M Clips 2mm (1/16\") 100pcs",
+      "note": "Amazon title says 1/16\" = 2mm (not 1mm). PLM 2mm clips.",
+      "verified": true
+    },
+    "_section_polyblend": "=== POLYBLEND PLUS NON-SANDED GROUT (10lb) — all 22 Amazon CA variants ===",
+    "B097CSJ1XM": {
+      "api_sku": "CPBPG33310N",
+      "prosol_sku": "CPBPG33310N",
+      "product": "Polyblend Plus NS Grout #333 Alabaster 10lb",
+      "verified": true
+    },
+    "B097FFRLB1": {
+      "api_sku": "CPBPG38210N",
+      "prosol_sku": "CPBPG38210N",
+      "product": "Polyblend Plus NS Grout #382 Bone 10lb",
+      "verified": true
+    },
+    "B097FV931J": {
+      "api_sku": "CPBPG38110N",
+      "prosol_sku": "CPBPG38110N",
+      "product": "Polyblend Plus NS Grout #381 Bright White 10lb",
+      "verified": true
+    },
+    "B097FFS741": {
+      "api_sku": "CPBPG6010N",
+      "prosol_sku": "CPBPG6010N",
+      "product": "Polyblend Plus NS Grout #60 Charcoal 10lb",
+      "verified": true
+    },
+    "B097FWPGV6": {
+      "api_sku": "CPBPG18310N",
+      "prosol_sku": "CPBPG18310N",
+      "product": "Polyblend Plus NS Grout #183 Chateau 10lb",
+      "verified": true
+    },
+    "B097FY1JRQ": {
+      "api_sku": "CPBPG16510N",
+      "prosol_sku": "CPBPG16510N",
+      "product": "Polyblend Plus NS Grout #165 Delorean Gray 10lb",
+      "verified": true
+    },
+    "B097FG4QLJ": {
+      "api_sku": "CPBPG37010N",
+      "prosol_sku": "CPBPG37010N",
+      "product": "Polyblend Plus NS Grout #370 Dove Gray 10lb",
+      "verified": true
+    },
+    "B097FG8JDG": {
+      "api_sku": "CPBPG10510N",
+      "prosol_sku": "CPBPG10510N",
+      "product": "Polyblend Plus NS Grout #105 Earth 10lb",
+      "verified": true
+    },
+    "B097FG1FJC": {
+      "api_sku": "UNMAPPED_GROUT",
+      "prosol_sku": "UNMAPPED_GROUT",
+      "product": "Polyblend Plus NS Grout Fawn 10lb — not in color chart, may be sanded grout",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "B097FWNGVR": {
+      "api_sku": "CPBPG38010N",
+      "prosol_sku": "CPBPG38010N",
+      "product": "Polyblend Plus NS Grout #380 Haystack 10lb",
+      "verified": true
+    },
+    "B097FZJ8RR": {
+      "api_sku": "CPBPG14510N",
+      "prosol_sku": "CPBPG14510N",
+      "product": "Polyblend Plus NS Grout #145 Light Smoke 10lb",
+      "verified": true
+    },
+    "B097FFN2DB": {
+      "api_sku": "CPBPG12210N",
+      "prosol_sku": "CPBPG12210N",
+      "product": "Polyblend Plus NS Grout #122 Linen 10lb",
+      "verified": true
+    },
+    "B097FWMQZ8": {
+      "api_sku": "CPBPG13510N",
+      "prosol_sku": "CPBPG13510N",
+      "product": "Polyblend Plus NS Grout #135 Mushroom 10lb",
+      "verified": true
+    },
+    "B097FGJQQ7": {
+      "api_sku": "CPBPG0910N",
+      "prosol_sku": "CPBPG0910N",
+      "product": "Polyblend Plus NS Grout #9 Natural Gray 10lb",
+      "verified": true
+    },
+    "B097FGDKRZ": {
+      "api_sku": "CPBPG18510N",
+      "prosol_sku": "CPBPG18510N",
+      "product": "Polyblend Plus NS Grout #185 New Taupe 10lb",
+      "verified": true
+    },
+    "B097FGFND5": {
+      "api_sku": "CPBPG38610N",
+      "prosol_sku": "CPBPG38610N",
+      "product": "Polyblend Plus NS Grout #386 Oyster Gray 10lb",
+      "verified": true
+    },
+    "B097FF8NCC": {
+      "api_sku": "CPBPG1910N",
+      "prosol_sku": "CPBPG1910N",
+      "product": "Polyblend Plus NS Grout #19 Pewter 10lb",
+      "verified": true
+    },
+    "B097FG9B44": {
+      "api_sku": "UNMAPPED_GROUT",
+      "prosol_sku": "UNMAPPED_GROUT",
+      "product": "Polyblend Plus NS Grout Quartz 10lb — color # unknown",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "B097FF7CBY": {
+      "api_sku": "CPBPG9510N",
+      "prosol_sku": "CPBPG9510N",
+      "product": "Polyblend Plus NS Grout #95 Sable Brown 10lb",
+      "verified": true
+    },
+    "B097FG8MMB": {
+      "api_sku": "UNMAPPED_GROUT",
+      "prosol_sku": "UNMAPPED_GROUT",
+      "product": "Polyblend Plus NS Grout Sandstone 10lb — color # unknown",
+      "verified": false,
+      "needs_order_lookup": true
+    },
+    "B097FGLP7K": {
+      "api_sku": "CPBPG64010N",
+      "prosol_sku": "CPBPG64010N",
+      "product": "Polyblend Plus NS Grout #640 Arctic White 10lb",
+      "verified": true
+    },
+    "B097G218PL": {
+      "api_sku": "CPBPG33510N",
+      "prosol_sku": "CPBPG33510N",
+      "product": "Polyblend Plus NS Grout #335 Winter Gray 10lb",
+      "verified": true
+    },
+    "_section_custom_flooring_centres": "=== CUSTOM FLOORING CENTRES ===",
+    "B08X225YBK": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Custom Flooring Centres Floor Protection",
+      "note": "CFC's own product - not sourced from Prosol",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
+    "_section_ardex": "=== ARDEX ===",
+    "B0073IDMMA": {
+      "api_sku": "12479",
+      "prosol_sku": "ARSDFGR-10",
+      "product": "Ardex - FEATHER FINISH 10lb",
+      "verified": true
+    },
+    "B004GUAIT8": {
+      "api_sku": "12479",
+      "prosol_sku": "ARSDFGR-10",
+      "product": "Ardex - FEATHER FINISH 10lb (alt listing)",
+      "verified": true
+    },
+    "_section_bona": "=== BONA ===",
+    "B00793X3Y6": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Mega Semi-Gloss 1 gal",
+      "note": "Not available through Prosol",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
+    "B00793YIEK": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Mega Satin 1 gal",
+      "note": "Not available through Prosol",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
+    "B00B3A86S4": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Traffic HD Satin 1 gal",
+      "note": "Not available through Prosol",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
+    "_section_tibet_almond": "=== TIBET ALMOND STICK ===",
+    "00488": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Tibet Almond Stick Wood Scratch Remover",
+      "note": "Not available through Prosol",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
+    "_section_acrylpro": "=== ACRYLPRO / CUSTOM BUILDING PRODUCTS ADHESIVE ===",
+    "B094JW5VTX": {
+      "api_sku": "CARL40001-2",
+      "prosol_sku": "CARL40001",
+      "product": "Custom Building - AcrylPro Tile Adhesive 1 gal",
+      "verified": true
+    },
+    "B00DD1I2SA": {
+      "api_sku": "CARL40001-2",
+      "prosol_sku": "CARL40001",
+      "product": "Custom Building - AcrylPro Tile Adhesive 1 gal (alt)",
+      "verified": true
+    },
+    "_section_armstrong": "=== ARMSTRONG ===",
+    "_section_mbp": "=== MBP PRIMER ===",
+    "_section_mapei": "=== MAPEI ===",
+    "_section_skip": "=== SKIP - NOT REAL PRODUCTS ===",
+    "UNKNOWN": "SKIP",
+    "WELCOME10": "SKIP",
+    "nosings": "SKIP",
+    "ruck": "SKIP",
+    "B0987ZQFW3": {
+      "api_sku": "CPBPG38010N",
+      "prosol_sku": "CPBPG38010N",
+      "product": "Polyblend Plus NS Grout #380 Haystack 10lb",
+      "verified": true
+    },
+    "B08KWL5NWL": {
+      "api_sku": "CPBPG64010N",
+      "prosol_sku": "CPBPG64010N",
+      "product": "Polyblend Plus NS Grout #640 Arctic White 10lb",
+      "verified": true
+    },
+    "B08Q7J8284": {
+      "api_sku": "CPBPG33310N",
+      "prosol_sku": "CPBPG33310N",
+      "product": "Polyblend Plus NS Grout #333 Alabaster 10lb",
+      "verified": true
+    },
+    "B0987YHHLK": {
+      "api_sku": "CPBPG38210N",
+      "prosol_sku": "CPBPG38210N",
+      "product": "Polyblend Plus NS Grout #382 Bone 10lb",
+      "verified": true
+    },
+    "B082WFLX26": {
+      "api_sku": "KB12SN305305A",
+      "prosol_sku": "KB12SN305305A",
+      "product": "Schluter KERDI-Board-SN Shower Niche 12x12 Frameless",
+      "verified": true
+    },
+    "B01BMZOE6W": {
+      "api_sku": "DHERT102BW",
+      "prosol_sku": "DHERT102BW",
+      "product": "DITRA-HEAT-E-RT TOUCH PROGRAM THERMOSTAT WHITE",
+      "category": "DITRA",
+      "barcode": "4011832149849",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PV4JQ13": {
+      "api_sku": "KD2FLKPVC",
+      "prosol_sku": "KD2FLKPVC",
+      "product": "KERDI-DRAIN FLANGE KIT 2\" PVC",
+      "category": "KERDI",
+      "barcode": "4011832168833",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PNJX29J": {
+      "api_sku": "KD4GRKAMGB",
+      "prosol_sku": "KD4GRKAMGB",
+      "product": "KERDI-DRAIN GRATE KIT 4\" BRUSHED BRASS",
+      "category": "KERDI",
+      "barcode": "4011832168758",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07K7VVB75": {
+      "api_sku": "KST9651525",
+      "prosol_sku": "KST9651525",
+      "product": "KERDI-SHOWER-TRAY 38\" X 60\" CEN",
+      "category": "KERDI",
+      "barcode": "4011832163951",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003CMDH8A": {
+      "api_sku": "TRL-KER",
+      "prosol_sku": "TRL-KER",
+      "product": "KERDI TROWEL 1/8\" X 1/8\" SQUARE NOTCH",
+      "category": "TOOLS",
+      "barcode": "4011832096471",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B0BN6TKGZ1": {
+      "api_sku": "DHERT105BW",
+      "prosol_sku": "DHERT105BW",
+      "product": "DITRA-HEAT-E-RS1 SMART THERMOSTAT",
+      "category": "DITRA",
+      "barcode": "4011832202599",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003K1NVY8": {
+      "api_sku": "KERDIFIXBW",
+      "prosol_sku": "KERDIFIXBW",
+      "product": "KERDI-FIX SEALING/BONDING 290ML BRT WHT",
+      "category": "KERDI",
+      "barcode": "4011832078385",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B007NWYP40": {
+      "api_sku": "KEBA100125",
+      "prosol_sku": "KEBA100125",
+      "product": "KERDI-BAND 5\" WATERPROOFING STRIP 98' 5\"",
+      "category": "KERDI",
+      "barcode": "4011832018459",
+      "verified": true,
+      "source": "schluter-reference",
+      "uom": "LF",
+      "qty_per_unit": 98.417,
+      "note": "KERDI-BAND 5\" x 98ft5in roll = 99 LF in Salesforce. Confirm exact qty on first real order."
+    },
+    "B07F1DS2JV": {
+      "api_sku": "KBZS35GT32Z100",
+      "prosol_sku": "KBZS35GT32Z100",
+      "product": "KERDI-BOARD 1-5/8\" SCREWS (100) + WASHERS (100)",
+      "category": "KERDI",
+      "barcode": "4011832165986",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B083X83Q44": {
+      "api_sku": "KDIF4GRKMGSD5",
+      "prosol_sku": "KDIF4GRKMGSD5",
+      "product": "KERDI-DRAIN GRATE KIT 4\" MATTE BLACK FLORAL",
+      "category": "KERDI",
+      "barcode": "4011832178863",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B0047UXJ84": {
+      "api_sku": "KD2PVCE",
+      "prosol_sku": "KD2PVCE",
+      "product": "KERDI-DRAIN PVC 2\" FLANGE / 4\" GRATE STN STEEL",
+      "category": "KERDI",
+      "barcode": "4011832039638",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00GUR3C9S": {
+      "api_sku": "KB12SN305305A",
+      "prosol_sku": "KB12SN305305A",
+      "product": "KERDI-BOARD-SN SHOWER NICHE 12\" X 12\"",
+      "category": "KERDI",
+      "barcode": "4011832142512",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PMLHBJ3": {
+      "api_sku": "KD4GRKE",
+      "prosol_sku": "KD4GRKE",
+      "product": "KERDI-DRAIN GRATE KIT 4\" STN STEEL",
+      "category": "KERDI",
+      "barcode": "4011832168697",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003VKYKWA": {
+      "api_sku": "DITRA5M",
+      "prosol_sku": "DITRA5M",
+      "product": "DITRA UNCOUPLING MEMBRANE 3'3\" X 16'5\" = 54 SF",
+      "category": "DITRA",
+      "barcode": "4011832035982",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00GUR3FGI": {
+      "api_sku": "KB12SN305711A1",
+      "prosol_sku": "KB12SN305711A1",
+      "product": "KERDI-BOARD-SN SHOWER NICHE 12\" X 28\"",
+      "category": "KERDI",
+      "barcode": "4011832142536",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07ST43DG3": {
+      "api_sku": "KBSC1151501524",
+      "prosol_sku": "KBSC1151501524",
+      "product": "KERDI-BOARD-SC CURB 60\" X 6\" X 4-1/2\"",
+      "category": "KERDI",
+      "barcode": "4011832169991",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003C6EQPE": {
+      "api_sku": "KERDI20010M",
+      "prosol_sku": "KERDI20010M",
+      "product": "KERDI WATERPROOFING MEMBRANE 3'3\" X 33' = 108 SF",
+      "category": "KERDI",
+      "barcode": "4011832057588",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00FJ9LJ16": {
+      "api_sku": "KERECKFI2",
+      "prosol_sku": "KERECKFI2",
+      "product": "KERDI-KERECK INSIDE CORNER 90° (2)",
+      "category": "KERDI",
+      "barcode": "4011832078361",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PQTCZ4M": {
+      "api_sku": "KD4GRKEP",
+      "prosol_sku": "KD4GRKEP",
+      "product": "KERDI-DRAIN GRATE KIT 4\" CHROME",
+      "category": "KERDI",
+      "barcode": "4011832168727",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B0057GJ99A": {
+      "api_sku": "KERDIFIXG",
+      "prosol_sku": "KERDIFIXG",
+      "product": "KERDI-FIX SEALING/BONDING 290ML GREY",
+      "category": "KERDI",
+      "barcode": "4011832056222",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PVZ93TW": {
+      "api_sku": "KD2FLKABS",
+      "prosol_sku": "KD2FLKABS",
+      "product": "KERDI-DRAIN FLANGE KIT 2\" ABS",
+      "category": "KERDI",
+      "barcode": "4011832168864",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QSBKDK": {
+      "api_sku": "SNS1D5MGS",
+      "prosol_sku": "SNS1D5MGS",
+      "product": "SHELF RECTANGULAR NICHE FLORAL MATTE BLACK",
+      "category": "SHELF",
+      "barcode": "4011832176739",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PMLG8QV": {
+      "api_sku": "KD4GRKEOB",
+      "prosol_sku": "KD4GRKEOB",
+      "product": "KERDI-DRAIN GRATE KIT 4\" OIL-RUBBED BRONZE",
+      "category": "KERDI",
+      "barcode": "4011832168734",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B01MU8354O": {
+      "api_sku": "KBSC115150970",
+      "prosol_sku": "KBSC115150970",
+      "product": "KERDI-BOARD-SC CURB 38\" X 6\" X 4-1/2\"",
+      "category": "KERDI",
+      "barcode": "4011832149412",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003K1LWGM": {
+      "api_sku": "KMSMV235114",
+      "prosol_sku": "KMSMV235114",
+      "product": "KERDI-SEAL MIXING VALVE SEAL 4-1/2\"",
+      "category": "KERDI",
+      "barcode": "4011832115431",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B0BRTJS9Y3": {
+      "api_sku": "KD4GRKECG",
+      "prosol_sku": "KD4GRKECG",
+      "product": "KERDI-DRAIN GRATE KIT 4\" CLASSIC GOLD DES1",
+      "category": "KERDI",
+      "barcode": "4011832177415",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003FJ6G1U": {
+      "api_sku": "KERECKFA2",
+      "prosol_sku": "KERECKFA2",
+      "product": "KERDI-KERECK OUTSIDE CORNER 90° (2)",
+      "category": "KERDI",
+      "barcode": "4011832078347",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07BKST1ZY": {
+      "api_sku": "DHERT104BW",
+      "prosol_sku": "DHERT104BW",
+      "product": "DITRA-HEAT-E-WIFI THERMOSTAT WIRELESS PROGRAMMABLE",
+      "category": "DITRA",
+      "barcode": "4011832163906",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07Q2J4BJJ": {
+      "api_sku": "KST12201525",
+      "prosol_sku": "KST12201525",
+      "product": "KERDI-SHOWER-TRAY 48\" X 60\" CEN",
+      "category": "KERDI",
+      "barcode": "4011832164033",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003C6AMCA": {
+      "api_sku": "KERDI2005M",
+      "prosol_sku": "KERDI2005M",
+      "product": "KERDI WATERPROOFING MEMBRANE 3'3\" X 16'5\" = 54 SF",
+      "category": "KERDI",
+      "barcode": "4011832038341",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PZFBH4T": {
+      "api_sku": "KST9151220BF",
+      "prosol_sku": "KST9151220BF",
+      "product": "KERDI-SHOWER-TRAY-THIN 36\" X 48\" CEN",
+      "category": "KERDI",
+      "barcode": "4011832166174",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07KB44XWC": {
+      "api_sku": "KST1220BF",
+      "prosol_sku": "KST1220BF",
+      "product": "KERDI-SHOWER-TRAY-THIN 48\" X 48\" CEN",
+      "category": "KERDI",
+      "barcode": "4011832163623",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PPPMHYH": {
+      "api_sku": "KSK9651525SPVC",
+      "prosol_sku": "KSK9651525SPVC",
+      "product": "KERDI-SHOWER-KIT 38\" X 60\" OFFSET PVC FLANGE 2\"",
+      "category": "KERDI",
+      "barcode": "4011832168529",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PPPP4L2": {
+      "api_sku": "KD4GRKECS",
+      "prosol_sku": "KD4GRKECS",
+      "product": "KERDI-DRAIN GRATE KIT 4\" TILEABLE",
+      "category": "KERDI",
+      "barcode": "4011832168826",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003K1LB8Q": {
+      "api_sku": "KERECKFI10",
+      "prosol_sku": "KERECKFI10",
+      "product": "KERDI-KERECK INSIDE CORNER 90° (10)",
+      "category": "KERDI",
+      "barcode": "4011832078354",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00JU79YTW": {
+      "api_sku": "DH5MA",
+      "prosol_sku": "DH5MA",
+      "product": "DITRA-HEAT MEMBRANE SHEET 3'2-5/8\" X 2'7-3/8\" = 8.4 SF",
+      "category": "DITRA",
+      "barcode": "4011832142185",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07QBD54D5": {
+      "api_sku": "SNS1D5EB",
+      "prosol_sku": "SNS1D5EB",
+      "product": "SHELF RECTANGULAR NICHE FLORAL BRUSH STN STEEL",
+      "category": "SHELF",
+      "barcode": "4011832170690",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B01N7PMVF5": {
+      "api_sku": "KBSC1151501220",
+      "prosol_sku": "KBSC1151501220",
+      "product": "KERDI-BOARD-SC CURB 48\" X 6\" X 4-1/2\"",
+      "category": "KERDI",
+      "barcode": "4011832149405",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B01M3SOVIC": {
+      "api_sku": "KERSB135K",
+      "prosol_sku": "KERSB135K",
+      "product": "KERDI-KERECK KIT 2 IN + 1 RIGHT + 1 LEFT CORNER",
+      "category": "KERDI",
+      "barcode": "4011832145247",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PQT5DG6": {
+      "api_sku": "KSK12201830PVC",
+      "prosol_sku": "KSK12201830PVC",
+      "product": "KERDI-SHOWER-KIT 48\" X 72\" PVC FLANGE 2\"",
+      "category": "KERDI",
+      "barcode": "4011832168550",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07STDL6PJ": {
+      "api_sku": "KDIF4GRKEBD5",
+      "prosol_sku": "KDIF4GRKEBD5",
+      "product": "KERDI-DRAIN GRATE KIT 4\" BRUSHED STN STEEL FLORAL",
+      "category": "KERDI",
+      "barcode": "4011832171048",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003YUW3WQ": {
+      "api_sku": "KERDI200",
+      "prosol_sku": "KERDI200",
+      "product": "KERDI WATERPROOFING MEMBRANE 3'3\" X 98'5\" = 323 SF",
+      "category": "KERDI",
+      "barcode": "4011832018428",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QY7RCD": {
+      "api_sku": "SNS1D6MGS",
+      "prosol_sku": "SNS1D6MGS",
+      "product": "SHELF RECTANGULAR NICHE CURVE MATTE BLACK",
+      "category": "SHELF",
+      "barcode": "4011832176791",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B0B7Q9P2BX": {
+      "api_sku": "PRMU1",
+      "prosol_sku": "PRMU1",
+      "product": "PRIMER-U UNIVERSAL PRIMER 1 GAL (3.78L)",
+      "category": "PRIMER",
+      "barcode": "4011832175886",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07KB651KP": {
+      "api_sku": "KSLT9651930S",
+      "prosol_sku": "KSLT9651930S",
+      "product": "KERDI-SHOWER-LINEAR-TRAY 38\" X 76\" SIDE",
+      "category": "KERDI",
+      "barcode": "4011832163968",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PPPR6P1": {
+      "api_sku": "KD4GRKATGB",
+      "prosol_sku": "KD4GRKATGB",
+      "product": "KERDI-DRAIN GRATE KIT 4\" BRUSHED NICKEL",
+      "category": "KERDI",
+      "barcode": "4011832168765",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PQT2THF": {
+      "api_sku": "KSK9651525PVC",
+      "prosol_sku": "KSK9651525PVC",
+      "product": "KERDI-SHOWER-KIT 38\" X 60\" PVC FLANGE 2\"",
+      "category": "KERDI",
+      "barcode": "4011832168512",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B0057GJ0IA": {
+      "api_sku": "KERECKFA10",
+      "prosol_sku": "KERECKFA10",
+      "product": "KERDI-KERECK OUTSIDE CORNER 90° (10)",
+      "category": "KERDI",
+      "barcode": "4011832078378",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07K7T4NFW": {
+      "api_sku": "KST915BF",
+      "prosol_sku": "KST915BF",
+      "product": "KERDI-SHOWER-TRAY-THIN 36\" X 36\" CEN",
+      "category": "KERDI",
+      "barcode": "4011832163944",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B007NMQ2VE": {
+      "api_sku": "KEBA1001255M",
+      "prosol_sku": "KEBA1001255M",
+      "product": "KERDI-BAND 5\" WATERPROOFING STRIP 16' 5\"",
+      "category": "KERDI",
+      "barcode": "4011832038402",
+      "verified": true,
+      "source": "schluter-reference",
+      "uom": "LF",
+      "qty_per_unit": 16.417,
+      "note": "KERDI-BAND 5\" x 16ft5in roll = ~16 LF in Salesforce. Confirm exact qty on first real order."
+    },
+    "B07Q2GR6GV": {
+      "api_sku": "KST1525",
+      "prosol_sku": "KST1525",
+      "product": "KERDI-SHOWER-TRAY 60\" X 60\" CEN",
+      "category": "KERDI",
+      "barcode": "4011832163999",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00TJ4CQ1E": {
+      "api_sku": "KEBA1002505M",
+      "prosol_sku": "KEBA1002505M",
+      "product": "KERDI-BAND 10\" WATERPROOFING STRIP 16' 5\"",
+      "category": "KERDI",
+      "barcode": "4011832038433",
+      "verified": true,
+      "source": "schluter-reference",
+      "uom": "LF",
+      "qty_per_unit": 16.417,
+      "note": "KERDI-BAND 10\" x 16ft5in roll = ~16 LF in Salesforce. Confirm exact qty on first real order."
+    },
+    "B07PLVDGSN": {
+      "api_sku": "KL1V60E90",
+      "prosol_sku": "KL1V60E90",
+      "product": "KERDI-LINE CHANNEL BODY 36\"",
+      "category": "KERDI",
+      "barcode": "4011832172588",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07H4YSH3Y": {
+      "api_sku": "KBKIT",
+      "prosol_sku": "KBKIT",
+      "product": "KERDI-BOARD KIT",
+      "category": "KERDI",
+      "barcode": "4011832165979",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003G7L9S6": {
+      "api_sku": "DITRA150",
+      "prosol_sku": "DITRA150",
+      "product": "DITRA UNCOUPLING MEMBRANE 3'3\" X 45'9\" = 150 SF",
+      "category": "DITRA",
+      "barcode": "4011832054280",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07K7TH321": {
+      "api_sku": "KST9651525S",
+      "prosol_sku": "KST9651525S",
+      "product": "KERDI-SHOWER-TRAY 38\" X 60\" SIDE",
+      "category": "KERDI",
+      "barcode": "4011832163920",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B01LBD7SEK": {
+      "api_sku": "KBSB610TA",
+      "prosol_sku": "KBSB610TA",
+      "product": "KERDI-BOARD-SB BENCH 24\" X 24\" TRIANGULAR",
+      "category": "KERDI",
+      "barcode": "4011832149351",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PKRWMMM": {
+      "api_sku": "KL1V60E80",
+      "prosol_sku": "KL1V60E80",
+      "product": "KERDI-LINE CHANNEL BODY 32\"",
+      "category": "KERDI",
+      "barcode": "4011832172564",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PZFB3ZW": {
+      "api_sku": "SNS1D6EB",
+      "prosol_sku": "SNS1D6EB",
+      "product": "SHELF RECTANGULAR NICHE CURVE BRUSH STN STEEL",
+      "category": "SHELF",
+      "barcode": "4011832170683",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B084ZVBB2X": {
+      "api_sku": "KDH2FLKPVC",
+      "prosol_sku": "KDH2FLKPVC",
+      "product": "KERDI-DRAIN PVC HORIZ OUTLET - WITH CORNERS AND SEALS",
+      "category": "KERDI",
+      "barcode": "4011832172946",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B077GGYHJ4": {
+      "api_sku": "KERDI2007M",
+      "prosol_sku": "KERDI2007M",
+      "product": "KERDI WATERPROOFING MEMBRANE 3' 3\" x 23' = 75 SF",
+      "category": "KERDI",
+      "barcode": "4011832157813",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PQT5XBP": {
+      "api_sku": "KSK1220PVC",
+      "prosol_sku": "KSK1220PVC",
+      "product": "KERDI-SHOWER-KIT 48\" X 48\" PVC FLANGE 2\"",
+      "category": "KERDI",
+      "barcode": "4011832168543",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B006XXK92W": {
+      "api_sku": "KD2PVCFL",
+      "prosol_sku": "KD2PVCFL",
+      "product": "KERDI-DRAIN FLANGE KIT PVC 2\" OUTLET",
+      "category": "KERDI",
+      "barcode": "4011832135750",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B01N4BUTBF": {
+      "api_sku": "TRL-DHXL",
+      "prosol_sku": "TRL-DHXL",
+      "product": "DITRA-HEAT/-XL TROWEL 1/4\" X 1/4\" SQUARE NOTCH",
+      "category": "TOOLS",
+      "barcode": "4011832157677",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B0057GIXB0": {
+      "api_sku": "KEBA1001855M",
+      "prosol_sku": "KEBA1001855M",
+      "product": "KERDI-BAND 7-1/4\" WATERPROOFING STRIP 16' 5\"",
+      "category": "KERDI",
+      "barcode": "4011832038426",
+      "verified": true,
+      "source": "schluter-reference",
+      "uom": "LF",
+      "qty_per_unit": 16.417,
+      "note": "KERDI-BAND 7-1/4\" x 16ft5in roll = ~16 LF in Salesforce. Confirm exact qty on first real order."
+    },
+    "B07PLV3TY7": {
+      "api_sku": "KL1V60E70",
+      "prosol_sku": "KL1V60E70",
+      "product": "KERDI-LINE CHANNEL BODY 28\"",
+      "category": "KERDI",
+      "barcode": "4011832172557",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00BUAXH6S": {
+      "api_sku": "KD2ABSE",
+      "prosol_sku": "KD2ABSE",
+      "product": "KERDI-DRAIN ABS 2\" FLANGE / 4\" GRATE STN STEEL",
+      "category": "KERDI",
+      "barcode": "4011832054716",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07Q78BD3M": {
+      "api_sku": "SES2D5EB",
+      "prosol_sku": "SES2D5EB",
+      "product": "SHELF PENTAGON CORNER FLORAL BRUSH STN STEEL",
+      "category": "SHELF",
+      "barcode": "4011832170607",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QMB8JZ": {
+      "api_sku": "SES2D5MGS",
+      "prosol_sku": "SES2D5MGS",
+      "product": "SHELF PENTAGON CORNER FLORAL MATTE BLACK",
+      "category": "SHELF",
+      "barcode": "4011832177064",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B01H4CXNNM": {
+      "api_sku": "KBSB290970RA",
+      "prosol_sku": "KBSB290970RA",
+      "product": "KERDI-BOARD-SB BENCH 11-1/2\" X 38\" RECTANGULAR",
+      "category": "KERDI",
+      "barcode": "4011832149344",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B083M8FS9S": {
+      "api_sku": "KDIF4GRKMBWD8",
+      "prosol_sku": "KDIF4GRKMBWD8",
+      "product": "KERDI-DRAIN GRATE KIT 4\" MATTE WHITE PURE",
+      "category": "KERDI",
+      "barcode": "4011832178931",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00JU79ZVE": {
+      "api_sku": "DHEHK12027",
+      "prosol_sku": "DHEHK12027",
+      "product": "DITRA-HEAT CABLE 120V 88.2 FT",
+      "category": "DITRA",
+      "barcode": "4011832146213",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B003VNBT76": {
+      "api_sku": "DITRA30M",
+      "prosol_sku": "DITRA30M",
+      "product": "DITRA UNCOUPLING MEMBRANE 3'3\" X 98'5\" = 323 SF",
+      "category": "DITRA",
+      "barcode": "4011832007262",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00JU7A0BI": {
+      "api_sku": "DHEHK12032",
+      "prosol_sku": "DHEHK12032",
+      "product": "DITRA-HEAT CABLE 120V 105.8 FT",
+      "category": "DITRA",
+      "barcode": "4011832146220",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B018A2WO1W": {
+      "api_sku": "DITRA-XL175",
+      "prosol_sku": "DITRA-XL175",
+      "product": "DITRA-XL UNCOUPLING MEMBRANE 3'3\" X 53'3\" = 175 SF",
+      "category": "DITRA",
+      "barcode": "4011832107092",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07KB2HJNP": {
+      "api_sku": "KST1830",
+      "prosol_sku": "KST1830",
+      "product": "KERDI-SHOWER-TRAY 72\" X 72\" CEN",
+      "category": "KERDI",
+      "barcode": "4011832163715",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PLMHLML": {
+      "api_sku": "KL1V60E120",
+      "prosol_sku": "KL1V60E120",
+      "product": "KERDI-LINE CHANNEL BODY 48\"",
+      "category": "KERDI",
+      "barcode": "4011832172625",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PGBSNLV": {
+      "api_sku": "KL1DRE60",
+      "prosol_sku": "KL1DRE60",
+      "product": "KERDI-LINE FRAMELESS 24\" TILEABLE GRATE",
+      "category": "KERDI",
+      "barcode": "4011832172069",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B083W34W14": {
+      "api_sku": "KDIF4GRKMGSD6",
+      "prosol_sku": "KDIF4GRKMGSD6",
+      "product": "KERDI-DRAIN GRATE KIT 4\" MATTE BLACK CURVE",
+      "category": "KERDI",
+      "barcode": "4011832178887",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07Q1K9B2Z": {
+      "api_sku": "KSLT9151395S",
+      "prosol_sku": "KSLT9151395S",
+      "product": "KERDI-SHOWER-LINEAR-TRAY 36\" X 55\" SIDE",
+      "category": "KERDI",
+      "barcode": "4011832164064",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PQT7PPB": {
+      "api_sku": "KSK9651525ABS",
+      "prosol_sku": "KSK9651525ABS",
+      "product": "KERDI-SHOWER-KIT 38\" X 60\" ABS FLANGE 2\"",
+      "category": "KERDI",
+      "barcode": "4011832168574",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QW1PGK": {
+      "api_sku": "SNS1D5MBW",
+      "prosol_sku": "SNS1D5MBW",
+      "product": "SHELF RECTANGULAR NICHE FLORAL MATTE WHITE",
+      "category": "SHELF",
+      "barcode": "4011832176722",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B0CN9QSC32": {
+      "api_sku": "KLVR2FLK",
+      "prosol_sku": "KLVR2FLK",
+      "product": "KERDI-LINE-VARIO FLANGE KIT 2\" ABS & PVC",
+      "category": "KERDI",
+      "barcode": "4011832189661",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07Q8DGC69": {
+      "api_sku": "SES1D5EB",
+      "prosol_sku": "SES1D5EB",
+      "product": "SHELF TRIANGULAR CORNER FLORAL BRUSH STN STEEL",
+      "category": "SHELF",
+      "barcode": "4011832170423",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B010GSFQ8Q": {
+      "api_sku": "DHEHK12021",
+      "prosol_sku": "DHEHK12021",
+      "product": "DITRA-HEAT CABLE 120V 70.5 FT",
+      "category": "DITRA",
+      "barcode": "4011832146190",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07QFFRZ43": {
+      "api_sku": "SES1D6EB",
+      "prosol_sku": "SES1D6EB",
+      "product": "SHELF TRIANGULAR CORNER CURVE BRUSH STN STEEL",
+      "category": "SHELF",
+      "barcode": "4011832170416",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00EUEVHS6": {
+      "api_sku": "KERDI20020M",
+      "prosol_sku": "KERDI20020M",
+      "product": "KERDI WATERPROOFING MEMBRANE 3'3\" X 66' = 215 SF",
+      "category": "KERDI",
+      "barcode": "4011832128318",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PQT4GXH": {
+      "api_sku": "KSK9651525SABS",
+      "prosol_sku": "KSK9651525SABS",
+      "product": "KERDI-SHOWER-KIT 38\" X 60\" OFFSET ABS FLANGE 2\"",
+      "category": "KERDI",
+      "barcode": "4011832168581",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B010GSVVJE": {
+      "api_sku": "DHEHK120134",
+      "prosol_sku": "DHEHK120134",
+      "product": "DITRA-HEAT CABLE 120V 444.0 FT",
+      "category": "DITRA",
+      "barcode": "4011832146305",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QQQKNN": {
+      "api_sku": "SWS1D5MGS",
+      "prosol_sku": "SWS1D5MGS",
+      "product": "SHELF RECTANGULAR WALL FLORAL MATTE BLACK",
+      "category": "SHELF",
+      "barcode": "4011832176852",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PV2CP5Z": {
+      "api_sku": "KDA5FLKABS",
+      "prosol_sku": "KDA5FLKABS",
+      "product": "KERDI-DRAIN ADAPTOR FLANGE KIT 5-1/4\" ABS",
+      "category": "KERDI",
+      "barcode": "4011832168925",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QWYRWT": {
+      "api_sku": "SES2D6MGS",
+      "prosol_sku": "SES2D6MGS",
+      "product": "SHELF PENTAGON CORNER CURVE MATTE BLACK",
+      "category": "SHELF",
+      "barcode": "4011832177118",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QZL1NC": {
+      "api_sku": "SNS1D5TSOB",
+      "prosol_sku": "SNS1D5TSOB",
+      "product": "SHELF RECTANGULAR NICHE FLORAL BRONZE",
+      "category": "SHELF",
+      "barcode": "4011832176708",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B083XGV4PT": {
+      "api_sku": "KDIF4GRKTSOBD5",
+      "prosol_sku": "KDIF4GRKTSOBD5",
+      "product": "KERDI-DRAIN GRATE KIT 4\" BRONZE FLORAL",
+      "category": "KERDI",
+      "barcode": "4011832179037",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07KB1STVW": {
+      "api_sku": "KSLT9151830S",
+      "prosol_sku": "KSLT9151830S",
+      "product": "KERDI-SHOWER-LINEAR-TRAY 36\" X 72\" SIDE",
+      "category": "KERDI",
+      "barcode": "4011832163883",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B083XHMC5Q": {
+      "api_sku": "KDIF4GRKMBWD5",
+      "prosol_sku": "KDIF4GRKMBWD5",
+      "product": "KERDI-DRAIN GRATE KIT 4\" MATTE WHITE FLORAL",
+      "category": "KERDI",
+      "barcode": "4011832178917",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PX447C7": {
+      "api_sku": "KDIF4GRKEBD6",
+      "prosol_sku": "KDIF4GRKEBD6",
+      "product": "KERDI-DRAIN GRATE KIT 4\" BRUSHED STN STEEL CURVE",
+      "category": "KERDI",
+      "barcode": "4011832168789",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PLL7XXQ": {
+      "api_sku": "KL1VO60E90",
+      "prosol_sku": "KL1VO60E90",
+      "product": "KERDI-LINE CHANNEL BODY OFFSET 36\"",
+      "category": "KERDI",
+      "barcode": "4011832172717",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QTBTT7": {
+      "api_sku": "SES1D5MGS",
+      "prosol_sku": "SES1D5MGS",
+      "product": "SHELF TRIANGULAR CORNER FLORAL MATTE BLACK",
+      "category": "SHELF",
+      "barcode": "4011832176968",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B007VQFGBO": {
+      "api_sku": "REMA",
+      "prosol_sku": "REMA",
+      "product": "REMA ACCESS PANEL KIT",
+      "category": "REMA",
+      "barcode": "4011832001765",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PLNG2VZ": {
+      "api_sku": "KL1V60E100",
+      "prosol_sku": "KL1V60E100",
+      "product": "KERDI-LINE CHANNEL BODY 40\"",
+      "category": "KERDI",
+      "barcode": "4011832172595",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B006XXK8NM": {
+      "api_sku": "KD2ABSFL",
+      "prosol_sku": "KD2ABSFL",
+      "product": "KERDI-DRAIN FLANGE KIT ABS 2\" OUTLET",
+      "category": "KERDI",
+      "barcode": "4011832135774",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QZ7YK7": {
+      "api_sku": "SES1D5TSOB",
+      "prosol_sku": "SES1D5TSOB",
+      "product": "SHELF TRIANGULAR CORNER FLORAL BRONZE",
+      "category": "SHELF",
+      "barcode": "4011832176920",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PGB2PFP": {
+      "api_sku": "KL1VO60E70",
+      "prosol_sku": "KL1VO60E70",
+      "product": "KERDI-LINE CHANNEL BODY OFFSET 28\"",
+      "category": "KERDI",
+      "barcode": "4011832172694",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PLNJ5B7": {
+      "api_sku": "KL1V60E110",
+      "prosol_sku": "KL1V60E110",
+      "product": "KERDI-LINE CHANNEL BODY 44\"",
+      "category": "KERDI",
+      "barcode": "4011832172618",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07Q1K92VZ": {
+      "api_sku": "KDIF4GRKEBD8",
+      "prosol_sku": "KDIF4GRKEBD8",
+      "product": "KERDI-DRAIN GRATE KIT 4\" BRUSHED STN STEEL PURE",
+      "category": "KERDI",
+      "barcode": "4011832168772",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B071NL3XJF": {
+      "api_sku": "DHERR1BW",
+      "prosol_sku": "DHERR1BW",
+      "product": "DITRA-HEAT-E-RR POWER MODULE WHITE",
+      "category": "DITRA",
+      "barcode": "4011832149856",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PKRWJNL": {
+      "api_sku": "KL1V60E150",
+      "prosol_sku": "KL1V60E150",
+      "product": "KERDI-LINE CHANNEL BODY 60\"",
+      "category": "KERDI",
+      "barcode": "4011832172656",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QR3Q3S": {
+      "api_sku": "SES1D6MGS",
+      "prosol_sku": "SES1D6MGS",
+      "product": "SHELF TRIANGULAR CORNER CURVE MATTE BLACK",
+      "category": "SHELF",
+      "barcode": "4011832177019",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B084ZTRLYT": {
+      "api_sku": "KDH2FLKABS",
+      "prosol_sku": "KDH2FLKABS",
+      "product": "KERDI-DRAIN ABS HORIZ OUTLET - WITH CORNERS AND SEALS",
+      "category": "KERDI",
+      "barcode": "4011832172922",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B006XXO0VI": {
+      "api_sku": "KBZT32ZL",
+      "prosol_sku": "KBZT32ZL",
+      "product": "KERDI-BOARD-ZT TAB WASHER GALV STEEL 1-1/4\" (1000)",
+      "category": "KERDI",
+      "barcode": "4011832137532",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PYVMPJN": {
+      "api_sku": "SWS1D5EB",
+      "prosol_sku": "SWS1D5EB",
+      "product": "SHELF RECTANGULAR WALL FLORAL BRUSH STN STEEL",
+      "category": "SHELF",
+      "barcode": "4011832170775",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07R8R4LJ6": {
+      "api_sku": "KSK1220PVCE",
+      "prosol_sku": "KSK1220PVCE",
+      "product": "KERDI-SHOWER-KIT 48\" X 48\" PVC STN STEEL",
+      "category": "KERDI",
+      "barcode": "4011832168642",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B01MRNYPAN": {
+      "api_sku": "DHEHK12051",
+      "prosol_sku": "DHEHK12051",
+      "product": "DITRA-HEAT CABLE 120V 169.8 FT",
+      "category": "DITRA",
+      "barcode": "4011832146244",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PLK8T35": {
+      "api_sku": "KL1DROE70",
+      "prosol_sku": "KL1DROE70",
+      "product": "KERDI-LINE OFFSET FRAMELESS 28\" TILEABLE GRATE",
+      "category": "KERDI",
+      "barcode": "4011832172212",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07QGKT1XM": {
+      "api_sku": "SES2D6EB",
+      "prosol_sku": "SES2D6EB",
+      "product": "SHELF PENTAGON CORNER CURVE BRUSH STN STEEL",
+      "category": "SHELF",
+      "barcode": "4011832170591",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B0CNBGZ3V2": {
+      "api_sku": "KLVRID13EB122",
+      "prosol_sku": "KLVRID13EB122",
+      "product": "KERDI-LINE-VARIO 4' D13-HERRINGBONE EB",
+      "category": "KERDI",
+      "barcode": "4011832189388",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B018A2Y4GA": {
+      "api_sku": "DHEHK120102",
+      "prosol_sku": "DHEHK120102",
+      "product": "DITRA-HEAT CABLE 120V 336.9 FT",
+      "category": "DITRA",
+      "barcode": "4011832146282",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00JU7A0QI": {
+      "api_sku": "DHEHK12038",
+      "prosol_sku": "DHEHK12038",
+      "product": "DITRA-HEAT CABLE 120V 124.1 FT",
+      "category": "DITRA",
+      "barcode": "4011832145810",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B010GSNT1M": {
+      "api_sku": "DHEHK12073",
+      "prosol_sku": "DHEHK12073",
+      "product": "DITRA-HEAT CABLE 120V 240.2 FT",
+      "category": "DITRA",
+      "barcode": "4011832146251",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PHHKRTF": {
+      "api_sku": "KL1DRE120",
+      "prosol_sku": "KL1DRE120",
+      "product": "KERDI-LINE FRAMELESS 48\" TILEABLE GRATE",
+      "category": "KERDI",
+      "barcode": "4011832172144",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PLMQNZN": {
+      "api_sku": "KL1VO60E80",
+      "prosol_sku": "KL1VO60E80",
+      "product": "KERDI-LINE CHANNEL BODY OFFSET 32\"",
+      "category": "KERDI",
+      "barcode": "4011832172700",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QQHQ76": {
+      "api_sku": "SES3D5MGS",
+      "prosol_sku": "SES3D5MGS",
+      "product": "SHELF QUADRILAT CORNER FLORAL MATTE BLACK",
+      "category": "SHELF",
+      "barcode": "4011832177170",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B010MPT80U": {
+      "api_sku": "DHEHK24043",
+      "prosol_sku": "DHEHK24043",
+      "product": "DITRA-HEAT CABLE 240V 141.0 FT",
+      "category": "DITRA",
+      "barcode": "4011832146374",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PNJXKY7": {
+      "api_sku": "KD4GRKAKGB",
+      "prosol_sku": "KD4GRKAKGB",
+      "product": "KERDI-DRAIN GRATE KIT 4\" BRUSHED COPPER",
+      "category": "KERDI",
+      "barcode": "4011832168741",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B082QZLBSL": {
+      "api_sku": "SNS1D5TSBG",
+      "prosol_sku": "SNS1D5TSBG",
+      "product": "SHELF RECTANGULAR NICHE FLORAL GREIGE",
+      "category": "SHELF",
+      "barcode": "4011832176715",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B010MPKMG4": {
+      "api_sku": "DHEHK24027",
+      "prosol_sku": "DHEHK24027",
+      "product": "DITRA-HEAT CABLE 240V 88.2 FT",
+      "category": "DITRA",
+      "barcode": "4011832146350",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00K1I8E8G": {
+      "api_sku": "DHEHK12043",
+      "prosol_sku": "DHEHK12043",
+      "product": "DITRA-HEAT CABLE 120V 141.1 FT",
+      "category": "DITRA",
+      "barcode": "4011832146237",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B00NYCUC2C": {
+      "api_sku": "KBZS35GT32Z",
+      "prosol_sku": "KBZS35GT32Z",
+      "product": "KERDI-BOARD 1-5/8\" SCREWS (40) + WASHERS (40)",
+      "category": "KERDI",
+      "barcode": "4011832132919",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B07PLJS54D": {
+      "api_sku": "KL1V60E140",
+      "prosol_sku": "KL1V60E140",
+      "product": "KERDI-LINE CHANNEL BODY 56\"",
+      "category": "KERDI",
+      "barcode": "4011832172649",
+      "verified": true,
+      "source": "schluter-reference"
+    },
+    "B079G7NFRQ": {
+      "api_sku": "KD2ABSFL",
+      "prosol_sku": "KD2ABSFL",
+      "product": "Schluter KERDI-DRAIN Flange Drain Outlet 2\"",
+      "category": "DRAIN",
+      "sf_item": "02538",
+      "verified": true,
+      "source": "mac-confirmed-2026-03-27"
+    },
+    "B082QR14F2": {
+      "api_sku": "SES2D6MBW",
+      "prosol_sku": "SES2D6MBW",
+      "product": "Schluter SHELF PENTAGON CORNER CURVE BRIGHT WHITE",
+      "category": "SHELF",
+      "verified": true,
+      "source": "mac-confirmed-2026-03-27"
+    }
+  },
+  "cable_lookup": {
+    "_comment": "DHEHK cables are mapped by voltage and sqft. Use this table to resolve UNMAPPED_CABLE entries from order item names.",
+    "_pattern": "DHEHK{voltage}{sqft_rounded} - voltage is 120 or 240",
+    "available_skus": [
+      "DHEHK12011",
+      "DHEHK12016",
+      "DHEHK12021",
+      "DHEHK12027",
+      "DHEHK12032",
+      "DHEHK12038",
+      "DHEHK12043",
+      "DHEHK12051",
+      "DHEHK12064",
+      "DHEHK12073",
+      "DHEHK12083",
+      "DHEHK12092",
+      "DHEHK120102",
+      "DHEHK120113",
+      "DHEHK120134",
+      "DHEHK24011",
+      "DHEHK24016",
+      "DHEHK24027",
+      "DHEHK24032",
+      "DHEHK24038",
+      "DHEHK24043",
+      "DHEHK24053",
+      "DHEHK24064",
+      "DHEHK24075",
+      "DHEHK24085",
+      "DHEHK240103",
+      "DHEHK240129",
+      "DHEHK240145",
+      "DHEHK240167",
+      "DHEHK240183",
+      "DHEHK240204",
+      "DHEHK240225"
+    ],
+    "sqft_to_sku_120v": {
+      "16": "DHEHK12016",
+      "32": "DHEHK12032",
+      "10.7": "DHEHK12011",
+      "21.3": "DHEHK12021",
+      "26.7": "DHEHK12027",
+      "37.5": "DHEHK12038",
+      "43.1": "DHEHK12043",
+      "51.4": "DHEHK12051",
+      "64.4": "DHEHK12064",
+      "72.7": "DHEHK12073",
+      "83.3": "DHEHK12083",
+      "91.7": "DHEHK12092",
+      "101.9": "DHEHK120102",
+      "112.6": "DHEHK120113",
+      "134.5": "DHEHK120134"
+    },
+    "sqft_to_sku_240v": {
+      "16": "DHEHK24016",
+      "32": "DHEHK24032",
+      "54": "DHEHK24053",
+      "75": "DHEHK24075",
+      "10.7": "DHEHK24011",
+      "26.7": "DHEHK24027",
+      "37.5": "DHEHK24038",
+      "43.1": "DHEHK24043",
+      "64.4": "DHEHK24064",
+      "85.3": "DHEHK24085",
+      "101.9": "DHEHK240103",
+      "128.8": "DHEHK240129",
+      "145.3": "DHEHK240145",
+      "166.7": "DHEHK240167",
+      "183.3": "DHEHK240183",
+      "203.8": "DHEHK240204",
+      "225.2": "DHEHK240225"
+    }
+  },
+  "grout_lookup": {
+    "_comment": "Polyblend Plus Non-Sanded Grout colors. Use grout color from order name to build SKU: CPBPG{color_num}10N",
+    "_pattern": "CPBPG{color_number}10N",
+    "colors": {
+      "9": {
+        "name": "Natural Gray",
+        "sku": "CPBPG0910N"
+      },
+      "10": {
+        "name": "Antique White",
+        "sku": "CPBPG1010N"
+      },
+      "11": {
+        "name": "Snow White",
+        "sku": "CPBPG1110N"
+      },
+      "19": {
+        "name": "Pewter",
+        "sku": "CPBPG1910N"
+      },
+      "52": {
+        "name": "#52",
+        "sku": "CPBPG5210N"
+      },
+      "60": {
+        "name": "Charcoal",
+        "sku": "CPBPG6010N"
+      },
+      "95": {
+        "name": "Sable Brown",
+        "sku": "CPBPG9510N"
+      },
+      "105": {
+        "name": "Earth",
+        "sku": "CPBPG10510N"
+      },
+      "115": {
+        "name": "Platinum",
+        "sku": "CPBPG11510N"
+      },
+      "122": {
+        "name": "Linen",
+        "sku": "CPBPG12210N"
+      },
+      "135": {
+        "name": "Mushroom",
+        "sku": "CPBPG13510N"
+      },
+      "145": {
+        "name": "Light Smoke",
+        "sku": "CPBPG14510N"
+      },
+      "165": {
+        "name": "Delorean Gray",
+        "sku": "CPBPG16510N"
+      },
+      "172": {
+        "name": "Urban Putty",
+        "sku": "CPBPG17210N"
+      },
+      "183": {
+        "name": "Chateau",
+        "sku": "CPBPG18310N"
+      },
+      "185": {
+        "name": "#185",
+        "sku": "CPBPG18510N"
+      },
+      "333": {
+        "name": "Alabaster",
+        "sku": "CPBPG33310N"
+      },
+      "335": {
+        "name": "Winter Gray",
+        "sku": "CPBPG33510N"
+      },
+      "370": {
+        "name": "Dove Gray",
+        "sku": "CPBPG37010N"
+      },
+      "380": {
+        "name": "Haystack",
+        "sku": "CPBPG38010N"
+      },
+      "381": {
+        "name": "Bright White",
+        "sku": "CPBPG38110N"
+      },
+      "382": {
+        "name": "Bone",
+        "sku": "CPBPG38210N"
+      },
+      "386": {
+        "name": "Oyster Gray",
+        "sku": "CPBPG38610N"
+      },
+      "540": {
+        "name": "Truffle",
+        "sku": "CPBPG54010N"
+      },
+      "542": {
+        "name": "Graystone",
+        "sku": "CPBPG54210N"
+      },
+      "543": {
+        "name": "Driftwood",
+        "sku": "CPBPG54310N"
+      },
+      "544": {
+        "name": "Rolling Fog",
+        "sku": "CPBPG54410N"
+      },
+      "545": {
+        "name": "Bleached Wood",
+        "sku": "CPBPG54510N"
+      },
+      "546": {
+        "name": "Cape Gray",
+        "sku": "CPBPG54610N"
+      },
+      "640": {
+        "name": "Arctic White",
+        "sku": "CPBPG64010N"
+      },
+      "641": {
+        "name": "Cool White",
+        "sku": "CPBPG64110N"
+      },
+      "642": {
+        "name": "Ash",
+        "sku": "CPBPG64210N"
+      },
+      "643": {
+        "name": "Warm Gray",
+        "sku": "CPBPG64310N"
+      },
+      "644": {
+        "name": "Shadow",
+        "sku": "CPBPG64410N"
+      }
+    }
+  },
+  "stats": {
+    "total_skus": 118,
+    "mapped_entries": 115,
+    "fully_verified": 74,
+    "needs_order_lookup": 28,
+    "non_prosol": 13,
+    "bundles": 5,
+    "skip": 4,
+    "note": "28 'needs_order_lookup' items are Schluter cables (need voltage+sqft), Polyblend grout (need color), and a few Schluter bundles. Use cable_lookup and grout_lookup tables to resolve at order time."
+  }
+}
