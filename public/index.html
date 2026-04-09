@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YourFloors Ops</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+  header { background: #1a1a2e; color: #fff; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+  header h1 { font-size: 18px; font-weight: 600; }
+  .tabs { display: flex; gap: 2px; }
+  .tabs button { background: transparent; border: none; color: #8888aa; padding: 8px 16px; cursor: pointer; font-size: 14px; border-radius: 4px 4px 0 0; }
+  .tabs button.active { background: #2a2a4e; color: #fff; }
+  .tabs button:hover { color: #ccc; }
+  .env-status { margin-left: auto; font-size: 12px; display: flex; gap: 8px; }
+  .env-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .env-dot.ok { background: #4ade80; }
+  .env-dot.missing { background: #f87171; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 16px; margin-bottom: 12px; color: #333; }
+
+  .actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  button.btn { padding: 8px 20px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; }
+  button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: #3b82f6; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #2563eb; }
+  .btn-warn { background: #f59e0b; color: #fff; }
+  .btn-warn:hover:not(:disabled) { background: #d97706; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-success:hover:not(:disabled) { background: #059669; }
+  .btn-danger { background: #ef4444; color: #fff; }
+  .btn-sm { padding: 4px 12px; font-size: 12px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; background: #f8f9fa; border-bottom: 2px solid #e2e8f0; font-weight: 600; font-size: 12px; text-transform: uppercase; color: #64748b; }
+  td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; }
+  tr:hover td { background: #f8fafc; }
+
+  .status-bar { padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; display: none; }
+  .status-bar.info { display: block; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+  .status-bar.success { display: block; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  .status-bar.error { display: block; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+  .progress-log { max-height: 200px; overflow-y: auto; background: #1a1a2e; color: #a5b4fc; border-radius: 6px; padding: 12px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; display: none; margin-bottom: 12px; }
+  .progress-log.active { display: block; }
+  .progress-log .ev-status { color: #93c5fd; }
+  .progress-log .ev-planned { color: #4ade80; }
+  .progress-log .ev-staged { color: #34d399; }
+  .progress-log .ev-error { color: #f87171; }
+  .progress-log .ev-inventory { color: #fbbf24; }
+  .progress-log .ev-rates { color: #c4b5fd; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge-ok { background: #dcfce7; color: #166534; }
+  .badge-warn { background: #fef3c7; color: #92400e; }
+  .badge-err { background: #fee2e2; color: #991b1b; }
+  .badge-info { background: #e0e7ff; color: #3730a3; }
+
+  .manual-review { margin-top: 12px; }
+  .manual-review li { padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #92400e; }
+  .manual-review li:last-child { border-bottom: none; }
+
+  input[type="text"], input[type="number"] { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+  input[type="text"]:focus, input[type="number"]:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+
+  .form-row { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .form-row label { font-size: 13px; font-weight: 500; color: #374151; min-width: 100px; }
+
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .summary-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; text-align: center; }
+  .summary-box .num { font-size: 28px; font-weight: 700; color: #1e293b; }
+  .summary-box .label { font-size: 11px; text-transform: uppercase; color: #64748b; margin-top: 2px; }
+
+  .log-entry { padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  .log-ts { color: #94a3b8; font-family: monospace; font-size: 12px; }
+  .log-action { font-weight: 600; }
+
+  .shopify-order-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .shopify-order-detail .field { font-size: 13px; }
+  .shopify-order-detail .field-label { font-weight: 600; color: #64748b; font-size: 11px; text-transform: uppercase; }
+
+  @media (max-width: 768px) {
+    .shopify-order-detail { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>YourFloors Ops</h1>
+  <div class="tabs">
+    <button class="active" onclick="showTab('run-orders')">Run Orders</button>
+    <button onclick="showTab('amazon-po')">Amazon POs</button>
+    <button onclick="showTab('pickups')">Pickups</button>
+    <button onclick="showTab('shopify')">Shopify SO/PO</button>
+    <button onclick="showTab('logs')">Logs</button>
+  </div>
+  <div class="env-status" id="envStatus"></div>
+</header>
+
+<main>
+
+  <!-- ═══ RUN ORDERS ═══ -->
+  <div id="tab-run-orders" class="tab-content active">
+    <div class="card">
+      <h2>Run Orders</h2>
+      <div class="actions">
+        <button class="btn btn-primary" id="btnDryRun" onclick="startRunOrders(true)">Dry Run (Preview)</button>
+        <button class="btn btn-warn" id="btnStage" onclick="startRunOrders(false)">Stage in ShipStation</button>
+      </div>
+      <div id="roStatus" class="status-bar"></div>
+      <div id="roProgress" class="progress-log"></div>
+      <div id="roSummary"></div>
+      <div id="roResults"></div>
+      <div id="roManual"></div>
+    </div>
+  </div>
+
+  <!-- ═══ AMAZON POs ═══ -->
+  <div id="tab-amazon-po" class="tab-content">
+    <div class="card">
+      <h2>Amazon PO Creation</h2>
+      <div id="amazonSoInfo" style="margin-bottom:12px;font-size:13px;color:#64748b;">Loading current Amazon SO...</div>
+      <div class="actions">
+        <button class="btn btn-primary" id="btnCreatePOs" onclick="createAmazonPOs()">Create POs for Shipped Orders</button>
+      </div>
+      <div id="amazonStatus" class="status-bar"></div>
+      <div id="amazonResults"></div>
+    </div>
+  </div>
+
+  <!-- ═══ PICKUPS ═══ -->
+  <div id="tab-pickups" class="tab-content">
+    <div class="card">
+      <h2>Pickup Booking</h2>
+      <div class="actions">
+        <button class="btn btn-primary" id="btnScanLabels" onclick="scanLabels()">Scan Shipped Labels (7 days)</button>
+      </div>
+      <div id="pickupStatus" class="status-bar"></div>
+      <div id="pickupBuckets"></div>
+      <div id="pickupResults"></div>
+    </div>
+  </div>
+
+  <!-- ═══ SHOPIFY SO/PO ═══ -->
+  <div id="tab-shopify" class="tab-content">
+    <div class="card">
+      <h2>Shopify SO/PO Creation</h2>
+      <div class="form-row">
+        <label>Order #</label>
+        <input type="text" id="shopifyOrderInput" placeholder="e.g. 1241 or #1241" style="width: 200px;">
+        <button class="btn btn-primary" onclick="fetchShopifyOrder()">Fetch Order</button>
+      </div>
+      <div id="shopifyStatus" class="status-bar"></div>
+      <div id="shopifyOrderDetail"></div>
+      <div id="shopifyResults"></div>
+    </div>
+  </div>
+
+  <!-- ═══ LOGS ═══ -->
+  <div id="tab-logs" class="tab-content">
+    <div class="card">
+      <h2>Audit Log</h2>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="loadLogs()">Refresh</button>
+      </div>
+      <div id="logEntries"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Tab switching ────────────────────────────────────────────────────────────
+
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'logs') loadLogs();
+}
+
+// ── Health check ─────────────────────────────────────────────────────────────
+
+fetch('/api/health').then(r => r.json()).then(data => {
+  const el = document.getElementById('envStatus');
+  const services = ['shipstation_v1', 'shipstation_v2', 'prosol', 'canada_post', 'salesforce', 'shopify'];
+  el.innerHTML = services.map(s => {
+    const ok = data.env[s];
+    const label = s.replace(/_/g, ' ');
+    return `<span title="${label}"><span class="env-dot ${ok ? 'ok' : 'missing'}"></span> ${label}</span>`;
+  }).join('');
+});
+
+// ── Run Orders ───────────────────────────────────────────────────────────────
+
+let runOrdersSource = null;
+
+function startRunOrders(dryRun) {
+  const btnDry = document.getElementById('btnDryRun');
+  const btnStage = document.getElementById('btnStage');
+  btnDry.disabled = true;
+  btnStage.disabled = true;
+
+  const status = document.getElementById('roStatus');
+  const progress = document.getElementById('roProgress');
+  const summary = document.getElementById('roSummary');
+  const results = document.getElementById('roResults');
+  const manual = document.getElementById('roManual');
+
+  status.className = 'status-bar info';
+  status.textContent = dryRun ? 'Starting dry run...' : 'Starting staging run...';
+  progress.className = 'progress-log active';
+  progress.innerHTML = '';
+  summary.innerHTML = '';
+  results.innerHTML = '';
+  manual.innerHTML = '';
+
+  if (runOrdersSource) runOrdersSource.close();
+  runOrdersSource = new EventSource('/api/run-orders/stream?dryRun=' + dryRun);
+
+  runOrdersSource.addEventListener('progress', (e) => {
+    const ev = JSON.parse(e.data);
+    const cls = {
+      status: 'ev-status', inventory: 'ev-inventory', rates: 'ev-rates',
+      'order-planned': 'ev-planned', 'order-staged': 'ev-staged', 'order-error': 'ev-error',
+    }[ev.type] || 'ev-status';
+    const msg = ev.message || `${ev.type}: ${ev.orderNumber || ''} ${ev.reason || ''}`;
+    progress.innerHTML += `<div class="${cls}">${esc(msg)}</div>`;
+    progress.scrollTop = progress.scrollHeight;
+    status.textContent = msg;
+  });
+
+  runOrdersSource.addEventListener('complete', (e) => {
+    const result = JSON.parse(e.data);
+    runOrdersSource.close();
+    runOrdersSource = null;
+    btnDry.disabled = false;
+    btnStage.disabled = false;
+
+    status.className = result.errors.length ? 'status-bar error' : 'status-bar success';
+    status.textContent = result.errors.length
+      ? `Completed with ${result.errors.length} error(s)`
+      : `${dryRun ? 'Dry run' : 'Staging'} complete. ${result.assignments.length} orders ${dryRun ? 'planned' : 'staged'}.`;
+
+    renderRunOrdersResult(result, dryRun);
+  });
+
+  runOrdersSource.addEventListener('error', (e) => {
+    let msg = 'Connection error';
+    try { msg = JSON.parse(e.data).error; } catch {}
+    runOrdersSource.close();
+    runOrdersSource = null;
+    btnDry.disabled = false;
+    btnStage.disabled = false;
+    status.className = 'status-bar error';
+    status.textContent = msg;
+  });
+}
+
+function renderRunOrdersResult(result, dryRun) {
+  const summary = document.getElementById('roSummary');
+  const s = result.summary;
+  summary.innerHTML = `<div class="summary-grid">
+    <div class="summary-box"><div class="num">${s.totalAwaiting}</div><div class="label">Total Awaiting</div></div>
+    <div class="summary-box"><div class="num">${s.amazonAwaiting}</div><div class="label">Amazon</div></div>
+    <div class="summary-box"><div class="num">${s.plannable}</div><div class="label">${dryRun ? 'Plannable' : 'Staged'}</div></div>
+    <div class="summary-box"><div class="num">${s.rejected}</div><div class="label">Manual Review</div></div>
+    <div class="summary-box"><div class="num">${s.errors}</div><div class="label">Errors</div></div>
+  </div>`;
+
+  const results = document.getElementById('roResults');
+  if (result.assignments.length) {
+    results.innerHTML = `<table>
+      <thead><tr><th>Order #</th><th>Item</th><th>To</th><th>From</th><th>Carrier</th><th>Cost</th><th>Status</th></tr></thead>
+      <tbody>${result.assignments.map(a => `<tr>
+        <td><strong>${esc(a.orderNumber)}</strong></td>
+        <td>${esc(a.item)}</td>
+        <td>${esc(a.to)}</td>
+        <td>${esc(a.from)}</td>
+        <td>${esc(a.carrier)}</td>
+        <td>${esc(a.cost)}</td>
+        <td><span class="badge ${a.status === 'dry-run' ? 'badge-info' : a.status === 'already-correct' ? 'badge-ok' : a.status === 'updated' ? 'badge-ok' : 'badge-warn'}">${esc(a.notes)}</span></td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  const manual = document.getElementById('roManual');
+  if (result.manualReview.length) {
+    manual.innerHTML = `<h3 style="margin:12px 0 8px;font-size:14px;color:#92400e;">Manual Review Required</h3>
+      <ul class="manual-review">${result.manualReview.map(r => `<li><strong>${esc(r.orderNumber)}</strong>: ${esc(r.reason)}</li>`).join('')}</ul>`;
+  }
+}
+
+// ── Amazon POs ───────────────────────────────────────────────────────────
+
+function loadAmazonSO() {
+  fetch('/api/amazon/current-so').then(r => r.json()).then(data => {
+    const el = document.getElementById('amazonSoInfo');
+    if (data.success && data.so) {
+      el.innerHTML = `Current Amazon SO: <strong>${esc(data.so.Name)}</strong> (${esc(data.so.PBSI__Customer_Purchase_Order__c)}) — Status: ${esc(data.so.PBSI__Status__c)}`;
+    } else {
+      el.innerHTML = `<span style="color:#f59e0b">No current Amazon SO found — one will be created automatically</span>`;
+    }
+  }).catch(() => {
+    document.getElementById('amazonSoInfo').textContent = 'Could not load Amazon SO info';
+  });
+}
+loadAmazonSO();
+
+async function createAmazonPOs() {
+  const btn = document.getElementById('btnCreatePOs');
+  const status = document.getElementById('amazonStatus');
+  const results = document.getElementById('amazonResults');
+  btn.disabled = true;
+  status.className = 'status-bar info';
+  status.textContent = 'Creating POs for shipped Amazon orders...';
+  results.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/amazon/create-pos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days: 7 }),
+    });
+    const data = await res.json();
+    if (!data.success && data.error) throw new Error(data.error);
+
+    const created = data.orders.filter(o => o.status === 'created');
+    const skipped = data.orders.filter(o => o.status === 'skipped');
+    const errored = data.orders.filter(o => o.status === 'error' || o.status === 'partial');
+
+    status.className = errored.length ? 'status-bar error' : 'status-bar success';
+    status.textContent = errored.length
+      ? `Done with ${errored.length} error(s). ${created.length} POs created, ${skipped.length} skipped.`
+      : `${created.length} POs created, ${skipped.length} already had POs.`;
+
+    let html = '';
+
+    if (data.soCreated) {
+      html += `<div style="margin-bottom:12px;padding:8px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-size:13px">
+        New Amazon SO created: <strong>${esc(data.soName)}</strong></div>`;
+    } else if (data.soName) {
+      html += `<div style="margin-bottom:12px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:13px">
+        Using SO: <strong>${esc(data.soName)}</strong></div>`;
+    }
+
+    if (created.length) {
+      html += `<h3 style="font-size:14px;margin:12px 0 8px">Created POs</h3>
+      <table><thead><tr><th>Order #</th><th>PO #</th><th>Tracking</th><th>Items</th></tr></thead>
+      <tbody>${created.map(o => `<tr>
+        <td><strong>${esc(o.orderNumber)}</strong></td>
+        <td><span class="badge badge-ok">${esc(o.poNumber)}</span></td>
+        <td style="font-family:monospace;font-size:12px">${esc(o.trackingNumber)}</td>
+        <td>${o.items.map(i => esc(i.pbsiItem) + ' x' + i.qty).join(', ')}</td>
+      </tr>`).join('')}</tbody></table>`;
+    }
+
+    if (skipped.length) {
+      html += `<h3 style="font-size:14px;margin:12px 0 8px;color:#64748b">Skipped (PO already exists)</h3>
+      <table><thead><tr><th>Order #</th><th>Tracking</th><th>Reason</th></tr></thead>
+      <tbody>${skipped.map(o => `<tr>
+        <td>${esc(o.orderNumber)}</td>
+        <td style="font-family:monospace;font-size:12px">${esc(o.trackingNumber)}</td>
+        <td>${esc(o.reason)}</td>
+      </tr>`).join('')}</tbody></table>`;
+    }
+
+    if (errored.length) {
+      html += `<h3 style="font-size:14px;margin:12px 0 8px;color:#991b1b">Errors</h3>
+      <ul class="manual-review">${errored.map(o => `<li><strong>${esc(o.orderNumber)}</strong>: ${o.errors.map(e => esc(typeof e === 'string' ? e : e.error || JSON.stringify(e))).join('; ')}</li>`).join('')}</ul>`;
+    }
+
+    if (!data.orders.length) {
+      html = '<div style="color:#64748b;font-size:13px;padding:12px">No shipped Amazon orders found in the last 7 days.</div>';
+    }
+
+    results.innerHTML = html;
+    loadAmazonSO(); // Refresh SO info
+  } catch (err) {
+    status.className = 'status-bar error';
+    status.textContent = err.message;
+  }
+  btn.disabled = false;
+}
+
+// ── Pickups ──────────────────────────────────────────────────────────────────
+
+let pickupData = null;
+
+async function scanLabels() {
+  const btn = document.getElementById('btnScanLabels');
+  const status = document.getElementById('pickupStatus');
+  const bucketsEl = document.getElementById('pickupBuckets');
+  const resultsEl = document.getElementById('pickupResults');
+  btn.disabled = true;
+  status.className = 'status-bar info';
+  status.textContent = 'Scanning shipped labels...';
+  bucketsEl.innerHTML = '';
+  resultsEl.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/pickups/scan');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    pickupData = data.buckets;
+    if (!pickupData.length) {
+      status.className = 'status-bar info';
+      status.textContent = 'No shipped labels found in the last 7 days.';
+      btn.disabled = false;
+      return;
+    }
+
+    status.className = 'status-bar success';
+    status.textContent = `Found ${pickupData.reduce((n, b) => n + b.shipments.length, 0)} shipments in ${pickupData.length} bucket(s).`;
+
+    bucketsEl.innerHTML = `<table>
+      <thead><tr><th>Warehouse</th><th>Carrier</th><th>Labels</th><th>Orders</th><th>Action</th></tr></thead>
+      <tbody>${pickupData.map((b, i) => `<tr>
+        <td><strong>${esc(b.warehouseName)}</strong></td>
+        <td>${esc(b.carrierDisplay)}</td>
+        <td>${b.shipments.length}</td>
+        <td>${b.shipments.map(s => esc(s.orderNumber)).join(', ')}</td>
+        <td><button class="btn btn-success btn-sm" onclick="bookBucket(${i})">Book Pickup</button></td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  } catch (err) {
+    status.className = 'status-bar error';
+    status.textContent = err.message;
+  }
+  btn.disabled = false;
+}
+
+async function bookBucket(idx) {
+  const bucket = pickupData[idx];
+  const status = document.getElementById('pickupStatus');
+  const resultsEl = document.getElementById('pickupResults');
+
+  status.className = 'status-bar info';
+  status.textContent = `Booking ${bucket.carrierDisplay} pickup at ${bucket.warehouseName}...`;
+
+  try {
+    const res = await fetch('/api/pickups/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        warehouseId: bucket.warehouseId,
+        carrier: bucket.carrier,
+        shipmentIds: bucket.shipments.map(s => s.shipmentId),
+      }),
+    });
+    const data = await res.json();
+
+    const html = `<div style="margin-top:8px;padding:12px;border-radius:6px;background:${data.success ? '#f0fdf4' : '#fef2f2'};border:1px solid ${data.success ? '#bbf7d0' : '#fecaca'}">
+      <strong>${esc(bucket.warehouseName)} / ${esc(bucket.carrierDisplay)}</strong><br>
+      ${data.success
+        ? `<span class="badge badge-ok">Booked</span> Pickup ID: ${esc(data.pickupId || data.confirmation || 'N/A')}${data.cost ? ' / Cost: ' + esc(data.cost) : ''}`
+        : `<span class="badge badge-err">Failed</span> ${esc(data.error || 'Unknown error')}`}
+    </div>`;
+    resultsEl.innerHTML += html;
+
+    status.className = data.success ? 'status-bar success' : 'status-bar error';
+    status.textContent = data.success
+      ? `Pickup booked: ${data.pickupId || data.confirmation || 'OK'}`
+      : `Booking failed: ${data.error}`;
+  } catch (err) {
+    status.className = 'status-bar error';
+    status.textContent = err.message;
+  }
+}
+
+// ── Shopify SO/PO ────────────────────────────────────────────────────────────
+
+let currentShopifyOrder = null;
+
+async function fetchShopifyOrder() {
+  const input = document.getElementById('shopifyOrderInput');
+  const status = document.getElementById('shopifyStatus');
+  const detail = document.getElementById('shopifyOrderDetail');
+  const results = document.getElementById('shopifyResults');
+  const id = input.value.trim();
+  if (!id) return;
+
+  status.className = 'status-bar info';
+  status.textContent = 'Fetching Shopify order...';
+  detail.innerHTML = '';
+  results.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/shopify/order/' + encodeURIComponent(id));
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    currentShopifyOrder = data.order;
+    status.className = 'status-bar success';
+    status.textContent = `Found order ${data.order.orderNumber}`;
+
+    const o = data.order;
+    detail.innerHTML = `<div class="shopify-order-detail">
+      <div><div class="field"><div class="field-label">Order</div>${esc(o.orderNumber)}</div></div>
+      <div><div class="field"><div class="field-label">Customer</div>${esc(o.customer ? o.customer.firstName + ' ' + o.customer.lastName : 'N/A')}</div></div>
+      <div><div class="field"><div class="field-label">Email</div>${esc(o.email || 'N/A')}</div></div>
+      <div><div class="field"><div class="field-label">Total</div>$${esc(o.totalPrice || '0')}</div></div>
+      <div><div class="field"><div class="field-label">Ship To</div>${o.shippingAddress ? esc(o.shippingAddress.name + ', ' + o.shippingAddress.city + ' ' + o.shippingAddress.province) : 'N/A'}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>SKU</th><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
+      <tbody>${o.items.map(i => `<tr><td>${esc(i.sku || 'N/A')}</td><td>${esc(i.title)}</td><td>${i.quantity}</td><td>$${esc(i.price)}</td></tr>`).join('')}</tbody>
+    </table>
+    <div style="margin-top:12px">
+      <button class="btn btn-warn" onclick="createSoPo()">Create SO + PO in Salesforce</button>
+    </div>`;
+  } catch (err) {
+    status.className = 'status-bar error';
+    status.textContent = err.message;
+  }
+}
+
+async function createSoPo() {
+  const input = document.getElementById('shopifyOrderInput');
+  const status = document.getElementById('shopifyStatus');
+  const results = document.getElementById('shopifyResults');
+  const id = input.value.trim();
+  if (!id) return;
+
+  status.className = 'status-bar info';
+  status.textContent = 'Creating SO/PO in Salesforce...';
+
+  try {
+    const res = await fetch('/api/shopify/create-so-po', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderIdOrNumber: id }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      status.className = 'status-bar success';
+      status.textContent = `Created ${data.soNumber} + ${data.poNumber}`;
+    } else {
+      status.className = 'status-bar error';
+      status.textContent = `Errors during creation: ${data.errors.map(e => e.error).join('; ')}`;
+    }
+
+    results.innerHTML = `<div style="margin-top:12px">
+      <div class="summary-grid">
+        <div class="summary-box"><div class="num">${esc(data.soNumber || '—')}</div><div class="label">Sales Order</div></div>
+        <div class="summary-box"><div class="num">${esc(data.poNumber || '—')}</div><div class="label">Purchase Order</div></div>
+      </div>
+      ${data.steps.length ? `<h3 style="font-size:14px;margin:8px 0">Steps</h3>
+      <table><thead><tr><th>Step</th><th>Status</th><th>Detail</th></tr></thead>
+      <tbody>${data.steps.map(s => `<tr>
+        <td>${esc(s.step)}</td>
+        <td><span class="badge ${s.success ? 'badge-ok' : 'badge-err'}">${s.success ? 'OK' : 'FAIL'}</span></td>
+        <td>${esc(s.soId || s.lineId || s.contactId || s.sfItemId || s.note || s.error || '')}</td>
+      </tr>`).join('')}</tbody></table>` : ''}
+      ${data.errors.length ? `<h3 style="font-size:14px;margin:8px 0;color:#991b1b;">Errors</h3>
+      <ul class="manual-review">${data.errors.map(e => `<li><strong>${esc(e.step)}</strong>: ${esc(e.error)}</li>`).join('')}</ul>` : ''}
+    </div>`;
+  } catch (err) {
+    status.className = 'status-bar error';
+    status.textContent = err.message;
+  }
+}
+
+// ── Logs ─────────────────────────────────────────────────────────────────────
+
+async function loadLogs() {
+  const el = document.getElementById('logEntries');
+  el.innerHTML = '<div style="color:#94a3b8;font-size:13px">Loading...</div>';
+  try {
+    const res = await fetch('/api/logs?limit=50');
+    const data = await res.json();
+    if (!data.logs.length) {
+      el.innerHTML = '<div style="color:#94a3b8;font-size:13px">No log entries yet.</div>';
+      return;
+    }
+    el.innerHTML = `<table>
+      <thead><tr><th>Time</th><th>Action</th><th>Result</th><th>Details</th></tr></thead>
+      <tbody>${data.logs.map(l => {
+        const ts = l.timestamp ? new Date(l.timestamp).toLocaleString() : '—';
+        const badge = l.success ? 'badge-ok' : 'badge-err';
+        const detail = detailStr(l);
+        return `<tr>
+          <td class="log-ts">${esc(ts)}</td>
+          <td class="log-action">${esc(l.action || '—')}</td>
+          <td><span class="badge ${badge}">${l.success ? 'OK' : 'FAIL'}</span></td>
+          <td>${esc(detail)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  } catch (err) {
+    el.innerHTML = `<div style="color:#991b1b">${esc(err.message)}</div>`;
+  }
+}
+
+function detailStr(log) {
+  if (log.action === 'run-orders') return `${log.dryRun ? 'Dry run' : 'Staged'}: ${log.assignmentCount || 0} orders, ${log.manualReviewCount || 0} manual review`;
+  if (log.action === 'book-pickup') return `${log.warehouseName || ''} / ${log.carrier || ''} — ID: ${log.pickupId || log.confirmation || 'N/A'}`;
+  if (log.action === 'shopify-so-po') return `${log.shopifyOrder || ''} → ${log.soNumber || '—'} / ${log.poNumber || '—'}`;
+  return log.error || '';
+}
+
+// ── Util ─────────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s || '');
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>

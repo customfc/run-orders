@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
@@ -384,13 +386,16 @@ function renderTable(rows) {
   return [line(headers), line(widths.map((w) => '-'.repeat(w))), ...matrix.map(line)].join('\n');
 }
 
-async function main() {
-  const args = new Set(process.argv.slice(2));
-  const dryRun = args.has('--dry-run') || args.has('--plan');
+// ── Core exported function ───────────────────────────────────────────────────
+
+async function runOrders({ dryRun = false, onProgress = () => {} } = {}) {
+  onProgress({ type: 'status', message: 'Fetching awaiting_shipment orders from ShipStation...' });
   const allOrders = await fetchAwaitingOrders();
   const amazonOrders = allOrders.filter(isAmazonOrder);
   const scopeOrders = [];
   const rejected = [];
+
+  onProgress({ type: 'status', message: `Found ${allOrders.length} total, ${amazonOrders.length} Amazon. Filtering...` });
 
   for (const order of amazonOrders) {
     const province = normalizeProvince(order.shipTo?.state);
@@ -430,12 +435,15 @@ async function main() {
     });
   }
 
+  onProgress({ type: 'status', message: `${scopeOrders.length} orders in scope, ${rejected.length} flagged. Logging into Prosol...` });
+
   const client = new ProsolClientV2();
   await client.init();
+  onProgress({ type: 'status', message: 'Prosol session ready. Checking inventory and rates...' });
+
   try {
     const inventoryCache = new Map();
     const plannedAssignments = [];
-    const planRows = [];
     const planningErrors = [];
     const stagingErrors = [];
 
@@ -457,6 +465,7 @@ async function main() {
           const uniqueSkus = [...new Set(order.resolvedItems.map((item) => item.apiSku))];
           for (const sku of uniqueSkus) {
             if (!inventoryCache.has(sku)) {
+              onProgress({ type: 'inventory', message: `Checking Prosol stock: ${sku}`, orderNumber: order.orderNumber });
               inventoryCache.set(sku, await client.checkInventory(sku));
               await sleep(5000);
             }
@@ -472,9 +481,11 @@ async function main() {
           fromPostalCode = warehouse.location.postal_code;
         }
 
+        onProgress({ type: 'rates', message: `Rate shopping for ${order.orderNumber}...`, orderNumber: order.orderNumber });
         const rate = await getRates(order, fromPostalCode);
         const itemSummary = itemPool.map((item) => `${item.qty}x ${item.label}`).join('; ');
-        plannedAssignments.push({
+
+        const assignment = {
           orderId: order.orderId,
           orderNumber: order.orderNumber,
           itemSummary,
@@ -487,13 +498,22 @@ async function main() {
           serviceName: rate.winner.serviceName,
           shipmentCost: rate.winner.shipmentCost,
           rateNote: rate.note,
-        });
+          compared: rate.compared,
+        };
+        plannedAssignments.push(assignment);
+        onProgress({ type: 'order-planned', orderNumber: order.orderNumber, warehouse: warehouseLabel, carrier: formatCarrier(rate.winner.carrierCode), cost: formatMoney(rate.winner.shipmentCost) });
       } catch (error) {
         planningErrors.push({ orderNumber: order.orderNumber, reason: error.message });
+        onProgress({ type: 'order-error', orderNumber: order.orderNumber, reason: error.message });
       }
     }
 
     plannedAssignments.sort((a, b) => String(a.orderNumber).localeCompare(String(b.orderNumber)));
+
+    const assignments = [];
+    if (!dryRun) {
+      onProgress({ type: 'status', message: 'Staging assignments in ShipStation...' });
+    }
 
     for (const assignment of plannedAssignments) {
       try {
@@ -501,47 +521,86 @@ async function main() {
           ? { status: 'planned', order: await fetchOrder(assignment.orderId) }
           : await stageAssignment(assignment, assignment);
         const actualWarehouse = SHIPSTATION_WAREHOUSE_META[String(staged.order.advancedOptions?.warehouseId || '')];
-        planRows.push({
+
+        const row = {
           orderNumber: assignment.orderNumber,
           item: assignment.itemSummary,
           to: assignment.destination,
-          from: actualWarehouse ? `${actualWarehouse.city} (${actualWarehouse.code})` : assignment.warehouseLabel,
-          carrier: `${formatCarrier(staged.order.carrierCode || assignment.carrierCode)} / ${staged.order.serviceCode || assignment.serviceCode}`,
+          from: dryRun ? assignment.warehouseLabel : (actualWarehouse ? `${actualWarehouse.city} (${actualWarehouse.code})` : assignment.warehouseLabel),
+          carrier: dryRun
+            ? `${formatCarrier(assignment.carrierCode)} / ${assignment.serviceCode}`
+            : `${formatCarrier(staged.order.carrierCode || assignment.carrierCode)} / ${staged.order.serviceCode || assignment.serviceCode}`,
           cost: formatMoney(assignment.shipmentCost),
           notes: [
-            dryRun ? 'DRY RUN — not staged' : (staged.status === 'already-correct' ? 'Already staged' : 'Staged in ShipStation'),
+            dryRun ? 'DRY RUN' : (staged.status === 'already-correct' ? 'Already staged' : 'Staged'),
             assignment.rateNote,
           ].filter(Boolean).join('; '),
-        });
+          status: dryRun ? 'dry-run' : staged.status,
+          compared: assignment.compared,
+        };
+        assignments.push(row);
+
+        if (!dryRun) {
+          onProgress({ type: 'order-staged', orderNumber: assignment.orderNumber, status: staged.status });
+        }
       } catch (error) {
         stagingErrors.push({ orderNumber: assignment.orderNumber, reason: error.message });
+        onProgress({ type: 'order-error', orderNumber: assignment.orderNumber, reason: error.message });
       }
     }
 
-    planRows.sort((a, b) => String(a.orderNumber).localeCompare(String(b.orderNumber)));
+    assignments.sort((a, b) => String(a.orderNumber).localeCompare(String(b.orderNumber)));
 
-    console.log(`Run-Orders ${dryRun ? 'planning snapshot (dry run)' : 'staging snapshot'}`);
-    console.log(`Awaiting shipment total: ${allOrders.length}`);
-    console.log(`Amazon awaiting shipment: ${amazonOrders.length}`);
-    console.log(`Plannable run-orders: ${planRows.length}`);
-    console.log('');
-    if (planRows.length) console.log(renderTable(planRows));
-    else console.log('No plannable run-orders found.');
-
-    if (rejected.length || planningErrors.length || stagingErrors.length) {
-      console.log('\nFlags / manual review');
-      for (const row of [...rejected, ...planningErrors, ...stagingErrors].sort((a, b) => String(a.orderNumber).localeCompare(String(b.orderNumber)))) {
-        console.log(`- ${row.orderNumber}: ${row.reason}`);
-      }
-    }
-
-    process.exit((planningErrors.length || stagingErrors.length) ? 2 : 0);
+    return {
+      dryRun,
+      summary: {
+        totalAwaiting: allOrders.length,
+        amazonAwaiting: amazonOrders.length,
+        plannable: assignments.length,
+        rejected: rejected.length,
+        errors: planningErrors.length + stagingErrors.length,
+      },
+      assignments,
+      manualReview: [...rejected, ...planningErrors].sort((a, b) => String(a.orderNumber).localeCompare(String(b.orderNumber))),
+      errors: stagingErrors,
+    };
   } finally {
     await client.close();
   }
 }
 
-main().catch((error) => {
-  console.error(`Fatal: ${error.message}`);
-  process.exit(1);
-});
+// ── CLI mode ─────────────────────────────────────────────────────────────────
+
+if (require.main === module) {
+  const args = new Set(process.argv.slice(2));
+  const dryRun = args.has('--dry-run') || args.has('--plan');
+
+  runOrders({
+    dryRun,
+    onProgress: (ev) => {
+      if (ev.type === 'status') console.log(ev.message);
+      else if (ev.type === 'inventory') console.log(`  ${ev.message}`);
+      else if (ev.type === 'order-planned') console.log(`  Planned: ${ev.orderNumber} → ${ev.warehouse} via ${ev.carrier} (${ev.cost})`);
+      else if (ev.type === 'order-staged') console.log(`  Staged: ${ev.orderNumber} (${ev.status})`);
+      else if (ev.type === 'order-error') console.log(`  ERROR: ${ev.orderNumber} — ${ev.reason}`);
+    },
+  }).then((result) => {
+    console.log(`\nRun-Orders ${dryRun ? 'planning snapshot (dry run)' : 'staging snapshot'}`);
+    console.log(`Awaiting shipment total: ${result.summary.totalAwaiting}`);
+    console.log(`Amazon awaiting shipment: ${result.summary.amazonAwaiting}`);
+    console.log(`Plannable run-orders: ${result.summary.plannable}`);
+    console.log('');
+    if (result.assignments.length) console.log(renderTable(result.assignments));
+    else console.log('No plannable run-orders found.');
+    if (result.manualReview.length) {
+      console.log('\nFlags / manual review');
+      for (const row of result.manualReview) console.log(`- ${row.orderNumber}: ${row.reason}`);
+    }
+    process.exit(result.errors.length ? 2 : 0);
+  }).catch((error) => {
+    console.error(`Fatal: ${error.message}`);
+    process.exit(1);
+  });
+}
+
+module.exports = { runOrders };

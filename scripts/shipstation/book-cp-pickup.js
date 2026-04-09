@@ -17,14 +17,23 @@
  *   --closing   17:00
  */
 
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+// ─── Config from env ─────────────────────────────────────────────────────────
 
-const CP_CUSTOMER = '0007237598';
-const CP_AUTH = Buffer.from('77bf695fa55861da:67445ca2d2a777667e34f2').toString('base64');
+const CP_CUSTOMER = process.env.CANADA_POST_CUSTOMER_NUMBER;
+const CP_KEY = process.env.CANADA_POST_API_KEY;
+const CP_SECRET = process.env.CANADA_POST_API_SECRET;
+
+if (!CP_CUSTOMER || !CP_KEY || !CP_SECRET) {
+  throw new Error('Missing CANADA_POST_CUSTOMER_NUMBER, CANADA_POST_API_KEY, or CANADA_POST_API_SECRET');
+}
+
+const CP_AUTH = Buffer.from(`${CP_KEY}:${CP_SECRET}`).toString('base64');
 const CP_BASE = 'soa-gw.canadapost.ca';
 const CONTACT_EMAIL = 'mac@customfc.ca';
 
@@ -73,7 +82,6 @@ function cpRequest(method, urlPath, body = null) {
 
 function buildXml(loc, date, boxes, preferred, closing) {
   const addr = (loc.address || '').replace('rue', 'St').trim();
-  // Normalise: "4305 rue Griffith" → "4305 Griffith St" etc
   const addressLine = addr.replace(/^(\d+)\s+rue\s+/i, '$1 ').replace(/^(\d+)\s+Rue\s+/i, '$1 ');
   const postal = formatPostal(loc.postal_code);
   const province = loc.province || 'QC';
@@ -116,60 +124,23 @@ function buildXml(loc, date, boxes, preferred, closing) {
 </pickup-request-details>`;
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+function nextBusinessDay() {
+  const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Toronto' }));
+  const useToday = etNow.getHours() < 14;
+  const d = useToday ? etNow : new Date(etNow.getTime() + 86400000);
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
 
-async function main() {
-  const args = process.argv.slice(2);
+// ── Core exported function ───────────────────────────────────────────────────
 
-  if (args.includes('--list')) {
-    console.log('\nProsol locations with ShipStation warehouse mapping:\n');
-    console.log('  Code   City                  Province  Address');
-    console.log('  ─────  ────────────────────  ────────  ──────────────────────────────');
-    for (const loc of Object.values(LOCATION_MAP)) {
-      if (!loc.shipstation_warehouse_id) continue;
-      console.log(`  ${(loc.code||'').padEnd(6)} ${(loc.city||'').padEnd(22)} ${(loc.province||'').padEnd(8)}  ${loc.address || ''}, ${loc.postal_code || ''}`);
-    }
-    console.log();
-    return;
-  }
-
-  // Parse args
-  const getArg = (flag) => { const i = args.indexOf(flag); return i >= 0 ? args[i + 1] : null; };
-  const locationCode = getArg('--location');
-  if (!locationCode) {
-    console.error('Usage: node book-cp-pickup.js --location <CODE> [--date YYYY-MM-DD] [--boxes N] [--preferred HH:MM] [--closing HH:MM]');
-    console.error('       node book-cp-pickup.js --list');
-    process.exit(1);
-  }
+async function bookCpPickup({ locationCode, date, boxes = 1, preferred = '12:00', closing = '17:00' } = {}) {
+  if (!locationCode) throw new Error('locationCode is required');
 
   const loc = getLocationByCode(locationCode);
-  if (!loc) {
-    console.error(`❌ Location "${locationCode}" not found in prosol-location-map.json`);
-    console.error('   Run with --list to see available codes');
-    process.exit(1);
-  }
+  if (!loc) throw new Error(`Location "${locationCode}" not found in prosol-location-map.json`);
 
-  // Default date: today, or tomorrow if past 14:00 ET
-  let date = getArg('--date');
-  if (!date) {
-    const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Toronto' }));
-    const useToday = etNow.getHours() < 14;
-    const d = useToday ? etNow : new Date(etNow.getTime() + 86400000);
-    // Skip weekends
-    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-    date = d.toISOString().slice(0, 10);
-  }
-
-  const boxes = parseInt(getArg('--boxes') || '1', 10);
-  const preferred = getArg('--preferred') || '12:00';
-  const closing = getArg('--closing') || '17:00';
-
-  console.log(`\n📦 Booking Canada Post pickup:`);
-  console.log(`   Location: ${loc.code} — ${loc.city}, ${loc.province}`);
-  console.log(`   Address:  ${loc.address}, ${loc.city}, ${loc.province} ${loc.postal_code}`);
-  console.log(`   Date:     ${date}  ${preferred}–${closing}`);
-  console.log(`   Boxes:    ${boxes}`);
-  console.log();
+  if (!date) date = nextBusinessDay();
 
   const xml = buildXml(loc, date, boxes, preferred, closing);
   const res = await cpRequest('POST', `/enab/${CP_CUSTOMER}/pickuprequest`, xml);
@@ -178,15 +149,82 @@ async function main() {
     const idMatch = res.body.match(/<request-id>(\d+)<\/request-id>/);
     const statusMatch = res.body.match(/<request-status>([^<]+)<\/request-status>/);
     const costMatch = res.body.match(/<due-amount>([^<]+)<\/due-amount>/);
-    console.log(`✅ Pickup booked!`);
-    console.log(`   Request ID: ${idMatch?.[1]}`);
-    console.log(`   Status:     ${statusMatch?.[1]}`);
-    if (costMatch) console.log(`   Cost:       $${costMatch?.[1]}`);
-  } else {
-    console.error(`❌ Booking failed (HTTP ${res.status}):`);
-    console.error(res.body);
-    process.exit(1);
+    return {
+      success: true,
+      pickupId: idMatch?.[1] || null,
+      status: statusMatch?.[1] || 'Unknown',
+      cost: costMatch?.[1] ? `$${costMatch[1]}` : null,
+      location: { code: loc.code, city: loc.city, province: loc.province },
+      date,
+      boxes,
+    };
   }
+
+  return {
+    success: false,
+    error: `HTTP ${res.status}`,
+    body: res.body,
+    location: { code: loc.code, city: loc.city, province: loc.province },
+    date,
+    boxes,
+  };
 }
 
-main().catch(e => { console.error('Fatal:', e.message); process.exit(1); });
+function listLocations() {
+  return Object.values(LOCATION_MAP)
+    .filter(loc => loc.shipstation_warehouse_id)
+    .map(loc => ({
+      code: loc.code,
+      city: loc.city,
+      province: loc.province,
+      address: `${loc.address}, ${loc.postal_code}`,
+      shipstationWarehouseId: loc.shipstation_warehouse_id,
+    }));
+}
+
+// ── CLI mode ─────────────────────────────────────────────────────────────────
+
+if (require.main === module) {
+  const args = process.argv.slice(2);
+
+  if (args.includes('--list')) {
+    console.log('\nProsol locations with ShipStation warehouse mapping:\n');
+    console.log('  Code   City                  Province  Address');
+    console.log('  ─────  ────────────────────  ────────  ──────────────────────────────');
+    for (const loc of listLocations()) {
+      console.log(`  ${(loc.code||'').padEnd(6)} ${(loc.city||'').padEnd(22)} ${(loc.province||'').padEnd(8)}  ${loc.address}`);
+    }
+    console.log();
+    process.exit(0);
+  }
+
+  const getArg = (flag) => { const i = args.indexOf(flag); return i >= 0 ? args[i + 1] : null; };
+  const locationCode = getArg('--location');
+  if (!locationCode) {
+    console.error('Usage: node book-cp-pickup.js --location <CODE> [--date YYYY-MM-DD] [--boxes N] [--preferred HH:MM] [--closing HH:MM]');
+    console.error('       node book-cp-pickup.js --list');
+    process.exit(1);
+  }
+
+  bookCpPickup({
+    locationCode,
+    date: getArg('--date'),
+    boxes: parseInt(getArg('--boxes') || '1', 10),
+    preferred: getArg('--preferred') || '12:00',
+    closing: getArg('--closing') || '17:00',
+  }).then(result => {
+    if (result.success) {
+      console.log(`\nPickup booked!`);
+      console.log(`   Location:   ${result.location.code} — ${result.location.city}, ${result.location.province}`);
+      console.log(`   Request ID: ${result.pickupId}`);
+      console.log(`   Status:     ${result.status}`);
+      if (result.cost) console.log(`   Cost:       ${result.cost}`);
+    } else {
+      console.error(`\nBooking failed: ${result.error}`);
+      console.error(result.body);
+      process.exit(1);
+    }
+  }).catch(e => { console.error('Fatal:', e.message); process.exit(1); });
+}
+
+module.exports = { bookCpPickup, listLocations };

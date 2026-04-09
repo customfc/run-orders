@@ -61,26 +61,37 @@
       "note": "Shopify SKU",
       "verified": true
     },
+    "8997": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Perfect Level Master - T-Lock M Clips 1mm 100pcs",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "note": "Ships from CFC Sechelt — no Prosol PO needed"
+    },
     "8998": {
-      "api_sku": "100MC3MM",
-      "prosol_sku": "100MC3MM",
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
       "product": "Perfect Level Master - T-Lock M Clips 3mm 100pcs",
-      "note": "Shopify SKU - same as B00QGC41HY",
-      "verified": true
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "note": "Ships from CFC Sechelt — no Prosol PO needed"
     },
     "9000": {
-      "api_sku": "100WM",
-      "prosol_sku": "100WM",
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
       "product": "Perfect Level Master - T-Lock Wedges 100pcs",
-      "note": "Shopify SKU - same as B01LYHSHF7",
-      "verified": true
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "note": "Ships from CFC Sechelt — no Prosol PO needed"
     },
     "9067": {
-      "api_sku": "PF-1",
-      "prosol_sku": "PF-1",
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
       "product": "Perfect Level Master - T-Lock Pliers",
-      "note": "Shopify SKU - same as B00X6V9EQQ",
-      "verified": true
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "note": "Ships from CFC Sechelt — no Prosol PO needed"
     },
     "9672": {
       "api_sku": "KMSMV235/114",
@@ -747,35 +758,49 @@
     },
     "_section_plm": "=== PERFECT LEVEL MASTER ===",
     "B00X6V9EQQ": {
-      "api_sku": "PF-1",
-      "prosol_sku": "PF-1",
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
       "product": "Perfect Level Master - T-Lock Pliers",
-      "verified": true
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "note": "Ships from CFC Sechelt — no Prosol PO needed",
+      "sf_item_name": "9067"
     },
     "B01LYHSHF7": {
-      "api_sku": "100WM",
-      "prosol_sku": "100WM",
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
       "product": "Perfect Level Master - T-Lock Wedges 100pcs",
-      "verified": true
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "note": "Ships from CFC Sechelt — no Prosol PO needed",
+      "sf_item_name": "9000"
     },
     "B00QGC41HY": {
-      "api_sku": "100MC3MM",
-      "prosol_sku": "100MC3MM",
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
       "product": "Perfect Level Master - T-Lock M Clips 3mm 100pcs",
-      "verified": true
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "note": "Ships from CFC Sechelt — no Prosol PO needed",
+      "sf_item_name": "8998"
     },
     "B00QGA9RO8": {
-      "api_sku": "100MC1MM",
-      "prosol_sku": "100MC1MM",
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
       "product": "Perfect Level Master - T-Lock M Clips 1mm 100pcs",
-      "verified": true
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "note": "Ships from CFC Sechelt — no Prosol PO needed",
+      "sf_item_name": "8997"
     },
     "B00X6T9H4W": {
-      "api_sku": "100MC2MM",
-      "prosol_sku": "100MC2MM",
-      "product": "Perfect Level Master - T-Lock M Clips 2mm (1/16\") 100pcs",
-      "note": "Amazon title says 1/16\" = 2mm (not 1mm). PLM 2mm clips.",
-      "verified": true
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Perfect Level Master - T-Lock M Clips 2mm 100pcs",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "note": "Ships from CFC Sechelt — no Prosol PO needed",
+      "sf_item_name": "9154"
     },
     "_section_polyblend": "=== POLYBLEND PLUS NON-SANDED GROUT (10lb) — all 22 Amazon CA variants ===",
     "B097CSJ1XM": {
@@ -925,9 +950,16 @@
     },
     "_section_ardex": "=== ARDEX ===",
     "B0073IDMMA": {
-      "api_sku": "12479",
-      "prosol_sku": "ARSDFGR-10",
-      "product": "Ardex - FEATHER FINISH 10lb",
+      "bundle": true,
+      "components": [
+        {
+          "api_sku": "12479",
+          "prosol_sku": "5079",
+          "product": "Ardex Feather Finish 10lb",
+          "qty": 4
+        }
+      ],
+      "product": "Ardex - FEATHER FINISH 10lb (4-pack)",
       "verified": true
     },
     "B004GUAIT8": {
@@ -2223,6 +2255,12 @@
       "category": "SHELF",
       "verified": true,
       "source": "mac-confirmed-2026-03-27"
+    },
+    "B000NZ73SE": {
+      "api_sku": "CLQWAF1-2",
+      "prosol_sku": "CLQWAF1-2",
+      "product": "Custom Building Products - RedGard Waterproofing Membrane 1 gal",
+      "verified": true
     }
   },
   "cable_lookup": {

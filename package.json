@@ -1,0 +1,18 @@
+{
+  "name": "run-orders",
+  "version": "1.0.0",
+  "private": true,
+  "description": "YourFloors.ca internal ops — order staging, pickup booking, Shopify SO/PO",
+  "scripts": {
+    "start": "node server.js",
+    "run-orders": "node scripts/shipstation/run-orders.js",
+    "run-orders:dry": "node scripts/shipstation/run-orders.js --dry-run",
+    "book-cp": "node scripts/shipstation/book-cp-pickup.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsforce": "^1.11.1",
+    "puppeteer": "^24.40.0"
+  }
+}
