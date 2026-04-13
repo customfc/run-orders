@@ -59,12 +59,22 @@ class ProsolClientV2 {
     const page = await this.browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    // Login
-    await page.goto('https://shop.prosol.ca/login', { waitUntil: 'networkidle2' });
+    // Login (with retry — page sometimes loads slow)
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await page.goto('https://shop.prosol.ca/login', { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.waitForSelector('input[type="email"]', { timeout: 10000 });
+        break;
+      } catch (e) {
+        if (attempt === 3) throw new Error('Prosol login page failed to load after 3 attempts');
+        log(`⚠️  Login page load attempt ${attempt} failed, retrying...`);
+        await sleep(2000);
+      }
+    }
     await page.type('input[type="email"]', PROSOL_EMAIL);
     await page.type('input[type="password"]', PROSOL_PASSWORD);
     await page.click('button[type="submit"]');
-    await page.waitForNavigation({ waitUntil: 'networkidle2' });
+    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
 
     if (page.url().includes('/login')) {
       throw new Error('Prosol login failed');

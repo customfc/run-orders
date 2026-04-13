@@ -638,5 +638,201 @@
     "active": true,
     "shipstation_warehouse_id": null,
     "is_main_hub": false
+  },
+  "biyork_markham": {
+    "id": "biyork_markham",
+    "code": "BIYK",
+    "city": "Markham",
+    "province": "ON",
+    "lat": 43.8563,
+    "lng": -79.3289,
+    "contact_email": [
+      "mac@customfc.ca"
+    ],
+    "contact_phone": [
+      "9059409663"
+    ],
+    "address": "7400 Woodbine Ave #1",
+    "postal_code": "L3R1A5",
+    "active": true,
+    "shipstation_warehouse_id": 1274501,
+    "is_main_hub": false,
+    "non_prosol": true,
+    "vendor": "Biyork Materials Canada Inc."
+  },
+  "cfc_sechelt": {
+    "id": "cfc_sechelt",
+    "code": "SECH",
+    "city": "Sechelt",
+    "province": "BC",
+    "lat": 49.4742,
+    "lng": -123.7545,
+    "contact_email": [
+      "mac@customfc.ca"
+    ],
+    "contact_phone": [
+      "604-885-7101"
+    ],
+    "address": "5-5824 Sechelt Inlet Rd",
+    "postal_code": "V0N3A3",
+    "active": true,
+    "shipstation_warehouse_id": 147654,
+    "is_main_hub": false,
+    "non_prosol": true,
+    "vendor": "CFC Sechelt",
+    "pickup_window": [11, 16]
+  },
+  "torlys_ont": {
+    "id": "torlys_ont",
+    "active": true,
+    "is_main_hub": false,
+    "contact_email": [],
+    "contact_phone": [],
+    "lat": 0,
+    "lng": 0,
+    "code": "TRLO",
+    "city": "Mississauga",
+    "province": "ON",
+    "address": "",
+    "postal_code": "",
+    "shipstation_warehouse_id": 1521293,
+    "non_prosol": true,
+    "vendor": "TORLYS"
+  },
+  "torlys_cal": {
+    "id": "torlys_cal",
+    "active": true,
+    "is_main_hub": false,
+    "contact_email": [],
+    "contact_phone": [],
+    "lat": 0,
+    "lng": 0,
+    "code": "TRLC",
+    "city": "Calgary",
+    "province": "AB",
+    "address": "",
+    "postal_code": "",
+    "shipstation_warehouse_id": 1493581,
+    "non_prosol": true,
+    "vendor": "TORLYS"
+  },
+  "treeco_edm": {
+    "id": "treeco_edm",
+    "active": true,
+    "is_main_hub": false,
+    "contact_email": [],
+    "contact_phone": [],
+    "lat": 0,
+    "lng": 0,
+    "code": "TRCE",
+    "city": "Edmonton",
+    "province": "AB",
+    "address": "",
+    "postal_code": "",
+    "shipstation_warehouse_id": 1637650,
+    "non_prosol": true,
+    "vendor": "TREECO"
+  },
+  "treeco_van": {
+    "id": "treeco_van",
+    "active": true,
+    "is_main_hub": false,
+    "contact_email": [],
+    "contact_phone": [],
+    "lat": 0,
+    "lng": 0,
+    "code": "TRCV",
+    "city": "Delta",
+    "province": "BC",
+    "address": "1230 Cliveden Ave",
+    "postal_code": "V3M6Y1",
+    "shipstation_warehouse_id": 1639877,
+    "non_prosol": true,
+    "vendor": "TREECO"
+  },
+  "json_edm": {
+    "id": "json_edm",
+    "active": true,
+    "is_main_hub": false,
+    "contact_email": [],
+    "contact_phone": [],
+    "lat": 0,
+    "lng": 0,
+    "code": "JSON",
+    "city": "Edmonton",
+    "province": "AB",
+    "address": "",
+    "postal_code": "",
+    "shipstation_warehouse_id": 1753380,
+    "non_prosol": true,
+    "vendor": "JSon"
+  },
+  "pcw_rich": {
+    "id": "pcw_rich",
+    "active": true,
+    "is_main_hub": false,
+    "contact_email": [],
+    "contact_phone": [],
+    "lat": 0,
+    "lng": 0,
+    "code": "PCWR",
+    "city": "Richmond",
+    "province": "BC",
+    "address": "",
+    "postal_code": "",
+    "shipstation_warehouse_id": 1274274,
+    "non_prosol": true,
+    "vendor": "PCW Richmond"
+  },
+  "old_calgary_1837637": {
+    "id": "old_calgary_1837637",
+    "code": "WCAS",
+    "city": "Calgary",
+    "province": "AB",
+    "lat": 51.00230493,
+    "lng": -114.041387,
+    "contact_email": [
+      "order.calgary@prosol.ca"
+    ],
+    "address": "5760 9 St SE #105",
+    "postal_code": "T2H1Z9",
+    "active": true,
+    "shipstation_warehouse_id": 1837637,
+    "is_main_hub": true,
+    "note": "Old/deleted SS warehouse ID — same as Prosol Calgary South"
+  },
+  "old_1837636": {
+    "id": "old_1837636",
+    "code": "WGRF",
+    "city": "Saint-Laurent",
+    "province": "QC",
+    "lat": 45.48198869,
+    "lng": -73.7036172,
+    "contact_email": [
+      "order.montreal@prosol.ca"
+    ],
+    "address": "4305 rue Griffith",
+    "postal_code": "H4T2A2",
+    "active": true,
+    "shipstation_warehouse_id": 1837636,
+    "is_main_hub": true,
+    "note": "Old/deleted SS warehouse ID — same as Prosol Saint-Laurent"
+  },
+  "old_1837638": {
+    "id": "old_1837638",
+    "code": "WCON",
+    "city": "Concord",
+    "province": "ON",
+    "lat": 43.80465749,
+    "lng": -79.5330361,
+    "contact_email": [
+      "order.vaughan@prosol.ca"
+    ],
+    "address": "161 Cidermill Ave",
+    "postal_code": "L4K4G5",
+    "active": true,
+    "shipstation_warehouse_id": 1837638,
+    "is_main_hub": true,
+    "note": "Old/deleted SS warehouse ID — same as Prosol Concord"
   }
 }

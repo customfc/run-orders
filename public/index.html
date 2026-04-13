@@ -18,9 +18,27 @@
   .env-dot.ok { background: #4ade80; }
   .env-dot.missing { background: #f87171; }
 
-  main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .page-layout { display: flex; max-width: 1500px; margin: 0 auto; padding: 24px; gap: 20px; }
+  .page-layout main { flex: 1; min-width: 0; }
+  .sidebar { width: 300px; flex-shrink: 0; }
+  .sidebar .card { position: sticky; top: 24px; }
+  .sidebar h3 { font-size: 14px; margin-bottom: 10px; color: #333; }
+  .sidebar .pickup-item { padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+  .sidebar .pickup-item:last-child { border-bottom: none; }
+  .sidebar .pickup-date { font-weight: 600; font-size: 13px; margin-top: 10px; margin-bottom: 4px; color: #1e293b; }
+  .sidebar .pickup-date:first-child { margin-top: 0; }
+  .sidebar .pickup-carrier { font-weight: 600; }
+  .sidebar .pickup-wh { color: #475569; }
+  .sidebar .pickup-meta { color: #94a3b8; font-size: 11px; }
+  .sidebar .pickup-past { opacity: 0.5; }
+  .sidebar .pickup-today { border-left: 3px solid #3b82f6; padding-left: 8px; }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
+  @media (max-width: 1100px) {
+    .page-layout { flex-direction: column; }
+    .sidebar { width: 100%; order: -1; }
+    .sidebar .card { position: static; }
+  }
 
   .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
   .card h2 { font-size: 16px; margin-bottom: 12px; color: #333; }
@@ -85,6 +103,14 @@
   .shopify-order-detail .field { font-size: 13px; }
   .shopify-order-detail .field-label { font-weight: 600; color: #64748b; font-size: 11px; text-transform: uppercase; }
 
+  .pipeline-bar { display: flex; align-items: center; gap: 6px; padding: 12px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .pipeline-bar .step { padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; }
+  .pipeline-bar .step.done { background: #dcfce7; color: #166534; }
+  .pipeline-bar .step.active { background: #3b82f6; color: #fff; cursor: pointer; border: none; font-size: 13px; font-weight: 600; }
+  .pipeline-bar .step.active:hover { background: #2563eb; }
+  .pipeline-bar .step.active:disabled { opacity: 0.5; cursor: not-allowed; }
+  .pipeline-bar .step.pending { background: #f1f5f9; color: #94a3b8; }
+  .pipeline-bar .step-arrow { color: #cbd5e1; font-size: 16px; }
   @media (max-width: 768px) {
     .shopify-order-detail { grid-template-columns: 1fr; }
     .summary-grid { grid-template-columns: repeat(2, 1fr); }
@@ -100,10 +126,20 @@
     <button onclick="showTab('amazon-po')">Amazon POs</button>
     <button onclick="showTab('pickups')">Pickups</button>
     <button onclick="showTab('shopify')">Shopify SO/PO</button>
+    <button onclick="showTab('tracking')">Tracking</button>
     <button onclick="showTab('logs')">Logs</button>
   </div>
   <div class="env-status" id="envStatus"></div>
 </header>
+
+<div class="page-layout">
+
+<aside class="sidebar">
+  <div class="card">
+    <h3>Booked Pickups</h3>
+    <div id="pickupSidebar"><span style="color:#94a3b8;font-size:12px">Loading...</span></div>
+  </div>
+</aside>
 
 <main>
 
@@ -112,14 +148,23 @@
     <div class="card">
       <h2>Run Orders</h2>
       <div class="actions">
-        <button class="btn btn-primary" id="btnDryRun" onclick="startRunOrders(true)">Dry Run (Preview)</button>
-        <button class="btn btn-warn" id="btnStage" onclick="startRunOrders(false)">Stage in ShipStation</button>
+        <button class="btn btn-success" id="btnRunEverything" onclick="runEverything()" style="font-weight:700">🚀 Run Everything</button>
+        <button class="btn btn-primary" id="btnRunOrders" onclick="startRunOrders(false)">Run Orders (stage only)</button>
+        <div class="form-row" style="margin:0;margin-left:16px">
+          <label style="min-width:auto">Retry:</label>
+          <input type="text" id="retryOrderInput" placeholder="Order #" style="width: 220px;">
+          <button class="btn btn-primary btn-sm" onclick="retrySingleOrder(false)">Go</button>
+        </div>
       </div>
+      <div id="scheduledRunInfo" style="font-size:12px;color:#64748b;margin-bottom:8px"></div>
+      <div id="todayStatus" style="margin-bottom:12px"></div>
       <div id="roStatus" class="status-bar"></div>
       <div id="roProgress" class="progress-log"></div>
       <div id="roSummary"></div>
+      <div id="pipelineBar" style="display:none"></div>
       <div id="roResults"></div>
       <div id="roManual"></div>
+      <div id="emailProgress" class="progress-log"></div>
     </div>
   </div>
 
@@ -141,7 +186,7 @@
     <div class="card">
       <h2>Pickup Booking</h2>
       <div class="actions">
-        <button class="btn btn-primary" id="btnScanLabels" onclick="scanLabels()">Scan Shipped Labels (7 days)</button>
+        <button class="btn btn-primary" id="btnScanLabels" onclick="scanLabels()">Scan All Undelivered Labels</button>
       </div>
       <div id="pickupStatus" class="status-bar"></div>
       <div id="pickupBuckets"></div>
@@ -164,6 +209,19 @@
     </div>
   </div>
 
+  <!-- ═══ TRACKING ═══ -->
+  <div id="tab-tracking" class="tab-content">
+    <div class="card">
+      <h2>Shipment Tracking</h2>
+      <div class="actions">
+        <button class="btn btn-primary" id="btnScanStale" onclick="scanStale()">Scan All Shipments (14 days)</button>
+      </div>
+      <div id="trackingStatus" class="status-bar"></div>
+      <div id="trackingSummary"></div>
+      <div id="trackingResults"></div>
+    </div>
+  </div>
+
   <!-- ═══ LOGS ═══ -->
   <div id="tab-logs" class="tab-content">
     <div class="card">
@@ -176,6 +234,8 @@
   </div>
 
 </main>
+
+</div><!-- .page-layout -->
 
 <script>
 // ── Tab switching ────────────────────────────────────────────────────────────
@@ -200,58 +260,237 @@ fetch('/api/health').then(r => r.json()).then(data => {
   }).join('');
 });
 
-// ── Run Orders ───────────────────────────────────────────────────────────────
+// ── Scheduled run info ───────────────────────────────────────────────────────
+fetch('/api/scheduled-run').then(r => r.json()).then(data => {
+  const el = document.getElementById('scheduledRunInfo');
+  if (data.lastRun) {
+    const ts = new Date(data.lastRun.timestamp).toLocaleString();
+    const count = data.lastRun.assignmentCount || 0;
+    const review = data.lastRun.manualReviewCount || 0;
+    el.innerHTML = `Auto dry run: <strong>${data.nextRun}</strong> | Last: ${esc(ts)} — ${count} plannable, ${review} manual review`;
+  } else {
+    el.innerHTML = `Auto dry run: <strong>every 10 min, 7 AM - 12 PM ET weekdays</strong> | No runs yet`;
+  }
+}).catch(() => {});
+
+// Restore prior run-orders pipeline state on page load (refresh recovery)
+window.addEventListener('DOMContentLoaded', () => { restoreRunState(); });
+
+// ── Run Orders Pipeline ──────────────────────────────────────────────────────
 
 let runOrdersSource = null;
+let lastRunResult = null;
+let labelResults = {};
+let poResults = {};
+
+const RUN_STATE_KEY = 'run-orders-state';
+
+function saveRunState() {
+  try {
+    if (!lastRunResult) { localStorage.removeItem(RUN_STATE_KEY); return; }
+    localStorage.setItem(RUN_STATE_KEY, JSON.stringify({
+      lastRunResult, labelResults, poResults,
+      savedAt: new Date().toISOString(),
+      savedDate: new Date().toISOString().slice(0, 10),
+    }));
+  } catch {}
+}
+
+function restoreRunState() {
+  try {
+    const raw = localStorage.getItem(RUN_STATE_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    // Only restore today's state — stale runs from prior days are misleading
+    if (s.savedDate !== new Date().toISOString().slice(0, 10)) {
+      localStorage.removeItem(RUN_STATE_KEY);
+      return;
+    }
+    lastRunResult = s.lastRunResult || null;
+    labelResults = s.labelResults || {};
+    poResults = s.poResults || {};
+    if (!lastRunResult?.assignments?.length) return;
+    renderRunOrdersResult(lastRunResult);
+    // Derive current pipeline step
+    const assignments = lastRunResult.assignments;
+    const allLabels = assignments.every(a => labelResults[a.orderNumber]?.success);
+    const allPos = Object.keys(poResults).length > 0 && assignments.every(a => {
+      const p = poResults[a.orderNumber];
+      return p && (p.status === 'created' || p.status === 'skipped' || p.poNumber);
+    });
+    const step = allPos ? 'email' : (allLabels ? 'pos' : 'labels');
+    renderPipeline(step);
+    const status = document.getElementById('roStatus');
+    status.className = 'status-bar info';
+    status.textContent = `Restored prior session (saved ${new Date(s.savedAt).toLocaleTimeString()}). ${assignments.length} orders.`;
+  } catch {}
+}
+
+const PIPELINE_STEPS = ['staged', 'labels', 'pos', 'email'];
+
+function renderPipeline(currentStep) {
+  const bar = document.getElementById('pipelineBar');
+  bar.style.display = 'flex';
+  const labels = { staged: 'Staged', labels: 'Buy All Labels', pos: 'Create POs', email: 'Email Kaitlyn' };
+  const idx = currentStep === 'done' ? PIPELINE_STEPS.length : PIPELINE_STEPS.indexOf(currentStep);
+  bar.innerHTML = '<div class="pipeline-bar">' + PIPELINE_STEPS.map((step, i) => {
+    if (i < idx) return `<span class="step done">&#10003; ${labels[step]}</span>`;
+    if (i === idx) {
+      const fn = { labels: 'buyAllLabels()', pos: 'createPipelinePOs()', email: 'emailKaitlyn()' }[step];
+      return fn ? `<button class="step active" id="pipeline-${step}" onclick="${fn}">${labels[step]}</button>` : `<span class="step done">&#10003; ${labels[step]}</span>`;
+    }
+    return `<span class="step pending">${labels[step]}</span>`;
+  }).join('<span class="step-arrow">&rarr;</span>') + '</div>';
+}
+
+// ── Today's Status panel ─────────────────────────────────────────────────────
+
+async function loadTodayStatus() {
+  const el = document.getElementById('todayStatus');
+  if (!el) return;
+  try {
+    const res = await fetch('/api/pipeline/today');
+    const data = await res.json();
+    if (!data.success) return;
+    const s = data.summary;
+    const err = s.lastError ? `<span style="color:#991b1b">⚠ ${esc(s.lastError.phase)}: ${esc(s.lastError.reason)}</span>` : '';
+    el.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#f8fafc;padding:8px 12px;border-radius:6px;border:1px solid #e2e8f0;font-size:12px">
+      <strong>Today (${esc(s.date)}):</strong>
+      <span>${s.staged} staged</span> ·
+      <span>${s.labelsBought} labels${s.totalLabelCost ? ` ($${s.totalLabelCost})` : ''}${s.costWarnings ? ' <span style="color:#b45309">⚠'+s.costWarnings+' cost</span>' : ''}</span> ·
+      <span>${s.posCreated} POs</span> ·
+      <span>${s.emailsSent} emails</span> ·
+      <span>${s.pickupsBooked} pickups (${s.totalPickedLabels} labels)</span>
+      ${s.errorCount ? ' · <span style="color:#991b1b">'+s.errorCount+' error(s)</span>' : ''}
+      ${err ? '<br>' + err : ''}
+    </div>`;
+  } catch {}
+}
+loadTodayStatus();
+setInterval(loadTodayStatus, 60000); // refresh every minute
+
+// ── Run Everything (full pipeline) ───────────────────────────────────────────
+
+async function runEverything() {
+  const btn = document.getElementById('btnRunEverything');
+  const roBtn = document.getElementById('btnRunOrders');
+  const status = document.getElementById('roStatus');
+  const progress = document.getElementById('roProgress');
+  btn.disabled = true; btn.textContent = 'Running...';
+  if (roBtn) roBtn.disabled = true;
+  status.className = 'status-bar info';
+  status.textContent = 'Starting full pipeline...';
+  progress.className = 'progress-log active';
+  progress.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/pipeline/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Pipeline-Source': 'ui-button' },
+      body: JSON.stringify({}),
+    });
+    if (res.status === 409) {
+      status.className = 'status-bar error';
+      status.textContent = 'Pipeline already running.';
+      return;
+    }
+    // Stream SSE
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let finalResult = null;
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      // parse SSE frames
+      const frames = buf.split('\n\n');
+      buf = frames.pop();
+      for (const frame of frames) {
+        const m = frame.match(/^event:\s*(\S+)\ndata:\s*(.*)$/s);
+        if (!m) continue;
+        const [, event, raw] = m;
+        let payload; try { payload = JSON.parse(raw); } catch { payload = { message: raw }; }
+        if (event === 'progress') {
+          const phaseTag = payload.phase ? `[${payload.phase}] ` : '';
+          const cls = payload.type === 'error' || payload.type === 'stuck' ? 'ev-error'
+                     : payload.type === 'bought' || payload.type === 'sent' || payload.type === 'booked' ? 'ev-staged'
+                     : payload.type === 'skip' ? 'ev-inventory'
+                     : 'ev-status';
+          progress.innerHTML += `<div class="${cls}">${esc(phaseTag + (payload.message || payload.type || ''))}</div>`;
+          progress.scrollTop = progress.scrollHeight;
+          if (payload.message) status.textContent = phaseTag + payload.message;
+        } else if (event === 'complete') {
+          finalResult = payload;
+        } else if (event === 'error') {
+          progress.innerHTML += `<div class="ev-error">ERROR: ${esc(payload.error || '')}</div>`;
+        }
+      }
+    }
+    if (finalResult) {
+      status.className = finalResult.halted ? 'status-bar error' : 'status-bar success';
+      status.textContent = finalResult.halted
+        ? `Pipeline halted at ${finalResult.halted}. Check Telegram.`
+        : 'Pipeline complete. Check Telegram for digest.';
+    }
+  } catch (err) {
+    status.className = 'status-bar error';
+    status.textContent = 'Pipeline error: ' + err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '🚀 Run Everything';
+    if (roBtn) roBtn.disabled = false;
+    loadTodayStatus();
+  }
+}
 
 function startRunOrders(dryRun) {
-  const btnDry = document.getElementById('btnDryRun');
-  const btnStage = document.getElementById('btnStage');
-  btnDry.disabled = true;
-  btnStage.disabled = true;
+  const btn = document.getElementById('btnRunOrders');
+  btn.disabled = true;
+  labelResults = {};
+  poResults = {};
+  lastRunResult = null;
+  saveRunState();
 
   const status = document.getElementById('roStatus');
   const progress = document.getElementById('roProgress');
   const summary = document.getElementById('roSummary');
   const results = document.getElementById('roResults');
   const manual = document.getElementById('roManual');
+  const pipelineBar = document.getElementById('pipelineBar');
 
   status.className = 'status-bar info';
-  status.textContent = dryRun ? 'Starting dry run...' : 'Starting staging run...';
+  status.textContent = 'Staging orders...';
   progress.className = 'progress-log active';
   progress.innerHTML = '';
   summary.innerHTML = '';
   results.innerHTML = '';
   manual.innerHTML = '';
+  pipelineBar.style.display = 'none';
+  document.getElementById('emailProgress').className = 'progress-log';
 
   if (runOrdersSource) runOrdersSource.close();
   runOrdersSource = new EventSource('/api/run-orders/stream?dryRun=' + dryRun);
 
   runOrdersSource.addEventListener('progress', (e) => {
     const ev = JSON.parse(e.data);
-    const cls = {
-      status: 'ev-status', inventory: 'ev-inventory', rates: 'ev-rates',
-      'order-planned': 'ev-planned', 'order-staged': 'ev-staged', 'order-error': 'ev-error',
-    }[ev.type] || 'ev-status';
-    const msg = ev.message || `${ev.type}: ${ev.orderNumber || ''} ${ev.reason || ''}`;
-    progress.innerHTML += `<div class="${cls}">${esc(msg)}</div>`;
+    const cls = { status: 'ev-status', inventory: 'ev-inventory', rates: 'ev-rates', 'order-planned': 'ev-planned', 'order-staged': 'ev-staged', 'order-error': 'ev-error' }[ev.type] || 'ev-status';
+    progress.innerHTML += `<div class="${cls}">${esc(ev.message || ev.type + ': ' + (ev.orderNumber || ''))}</div>`;
     progress.scrollTop = progress.scrollHeight;
-    status.textContent = msg;
+    status.textContent = ev.message || '';
   });
 
   runOrdersSource.addEventListener('complete', (e) => {
     const result = JSON.parse(e.data);
     runOrdersSource.close();
     runOrdersSource = null;
-    btnDry.disabled = false;
-    btnStage.disabled = false;
+    btn.disabled = false;
+    lastRunResult = result;
+    saveRunState();
 
     status.className = result.errors.length ? 'status-bar error' : 'status-bar success';
-    status.textContent = result.errors.length
-      ? `Completed with ${result.errors.length} error(s)`
-      : `${dryRun ? 'Dry run' : 'Staging'} complete. ${result.assignments.length} orders ${dryRun ? 'planned' : 'staged'}.`;
-
-    renderRunOrdersResult(result, dryRun);
+    status.textContent = `Staging complete. ${result.assignments.length} orders staged.`;
+    renderRunOrdersResult(result);
+    if (result.assignments.length) renderPipeline('labels');
   });
 
   runOrdersSource.addEventListener('error', (e) => {
@@ -259,45 +498,210 @@ function startRunOrders(dryRun) {
     try { msg = JSON.parse(e.data).error; } catch {}
     runOrdersSource.close();
     runOrdersSource = null;
-    btnDry.disabled = false;
-    btnStage.disabled = false;
+    btn.disabled = false;
     status.className = 'status-bar error';
     status.textContent = msg;
   });
 }
 
-function renderRunOrdersResult(result, dryRun) {
+function renderRunOrdersResult(result) {
   const summary = document.getElementById('roSummary');
   const s = result.summary;
   summary.innerHTML = `<div class="summary-grid">
     <div class="summary-box"><div class="num">${s.totalAwaiting}</div><div class="label">Total Awaiting</div></div>
     <div class="summary-box"><div class="num">${s.amazonAwaiting}</div><div class="label">Amazon</div></div>
-    <div class="summary-box"><div class="num">${s.plannable}</div><div class="label">${dryRun ? 'Plannable' : 'Staged'}</div></div>
+    <div class="summary-box"><div class="num">${s.plannable}</div><div class="label">Staged</div></div>
     <div class="summary-box"><div class="num">${s.rejected}</div><div class="label">Manual Review</div></div>
     <div class="summary-box"><div class="num">${s.errors}</div><div class="label">Errors</div></div>
   </div>`;
+  renderResultsTable(result);
+  const manual = document.getElementById('roManual');
+  if (result.manualReview.length) {
+    manual.innerHTML = `<h3 style="margin:12px 0 8px;font-size:14px;color:#92400e;">Manual Review Required</h3>
+      <ul class="manual-review">${result.manualReview.map(r => `<li><strong>${esc(r.orderNumber)}</strong>: ${esc(r.reason)} <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="quickRetry('${esc(r.orderNumber)}')">Retry</button></li>`).join('')}</ul>`;
+  }
+}
 
-  const results = document.getElementById('roResults');
-  if (result.assignments.length) {
-    results.innerHTML = `<table>
-      <thead><tr><th>Order #</th><th>Item</th><th>To</th><th>From</th><th>Carrier</th><th>Cost</th><th>Status</th></tr></thead>
-      <tbody>${result.assignments.map(a => `<tr>
+function renderResultsTable(result) {
+  const el = document.getElementById('roResults');
+  if (!result.assignments.length) return;
+  const hasLabels = Object.keys(labelResults).length > 0;
+  const hasPOs = Object.keys(poResults).length > 0;
+  el.innerHTML = `<table>
+    <thead><tr><th>Order #</th><th>Item</th><th>To</th><th>From</th><th>Carrier</th><th>Est.</th><th>Tracking</th>${hasPOs ? '<th>PO #</th>' : ''}<th></th></tr></thead>
+    <tbody>${result.assignments.map((a, i) => {
+      const lr = labelResults[a.orderNumber];
+      const po = poResults[a.orderNumber];
+      let trackingCell;
+      if (lr?.success) {
+        trackingCell = `<span class="badge badge-ok">${esc(lr.trackingNumber)}</span><br><span style="font-size:11px;color:#64748b">$${lr.labelCost?.toFixed(2) || '?'}${lr.costWarning ? ' <span class="badge badge-warn">cost!</span>' : ''}</span>`;
+      } else if (lr && !lr.success) {
+        trackingCell = `<span class="badge badge-err">Failed</span><br><button class="btn btn-sm btn-primary" style="font-size:10px" onclick="buyLabel(${i})">Retry</button>`;
+      } else {
+        trackingCell = `<button class="btn btn-sm btn-success" id="buy-label-${i}" onclick="buyLabel(${i})" style="font-size:11px">Buy Label</button>`;
+      }
+      return `<tr>
         <td><strong>${esc(a.orderNumber)}</strong></td>
         <td>${esc(a.item)}</td>
         <td>${esc(a.to)}</td>
         <td>${esc(a.from)}</td>
         <td>${esc(a.carrier)}</td>
         <td>${esc(a.cost)}</td>
-        <td><span class="badge ${a.status === 'dry-run' ? 'badge-info' : a.status === 'already-correct' ? 'badge-ok' : a.status === 'updated' ? 'badge-ok' : 'badge-warn'}">${esc(a.notes)}</span></td>
-      </tr>`).join('')}</tbody>
-    </table>`;
-  }
+        <td id="track-cell-${i}">${trackingCell}</td>
+        ${hasPOs ? `<td>${(() => {
+          if (!po) return '—';
+          if (po.status === 'created') return '<span class="badge badge-ok">' + esc(po.poNumber) + '</span>';
+          if (po.status === 'partial') return '<span class="badge badge-warn" title="' + esc((po.errors || []).join(' | ')) + '">' + esc(po.poNumber || 'PARTIAL') + '</span>';
+          if (po.status === 'skipped') return '<span class="badge badge-warn" title="' + esc(po.reason || '') + '">Skipped</span>';
+          if (po.status === 'error') return '<span class="badge badge-err" title="' + esc((po.errors || []).join(' | ')) + '">Error</span>';
+          return '—';
+        })()}</td>` : ''}
+        <td><button class="btn btn-sm btn-primary" onclick="quickRetry('${esc(a.orderNumber)}')" style="font-size:10px">Re-stage</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
 
-  const manual = document.getElementById('roManual');
-  if (result.manualReview.length) {
-    manual.innerHTML = `<h3 style="margin:12px 0 8px;font-size:14px;color:#92400e;">Manual Review Required</h3>
-      <ul class="manual-review">${result.manualReview.map(r => `<li><strong>${esc(r.orderNumber)}</strong>: ${esc(r.reason)}</li>`).join('')}</ul>`;
+async function buyLabel(idx) {
+  const a = lastRunResult.assignments[idx];
+  const cell = document.getElementById('track-cell-' + idx);
+  cell.innerHTML = '<span style="color:#64748b;font-size:12px">Buying...</span>';
+  try {
+    const res = await fetch('/api/labels/buy', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: a.orderId, carrierCode: a.carrierCode, serviceCode: a.serviceCode, packageCode: a.packageCode || 'package', weight: a.weight, warehouseId: a.warehouseId, estimatedCost: a.shipmentCost }),
+    });
+    const data = await res.json();
+    labelResults[a.orderNumber] = data;
+    if (data.success) {
+      cell.innerHTML = `<span class="badge badge-ok">${esc(data.trackingNumber)}</span><br><span style="font-size:11px;color:#64748b">$${data.labelCost?.toFixed(2) || '?'}${data.costWarning ? ' <span class="badge badge-warn">cost!</span>' : ''}</span>`;
+    } else {
+      cell.innerHTML = `<span class="badge badge-err">Failed</span> ${esc(data.error || '')}<br><button class="btn btn-sm btn-primary" style="font-size:10px" onclick="buyLabel(${idx})">Retry</button>`;
+    }
+  } catch (err) {
+    labelResults[a.orderNumber] = { success: false, error: err.message };
+    cell.innerHTML = `<span class="badge badge-err">Error</span><br><button class="btn btn-sm btn-primary" style="font-size:10px" onclick="buyLabel(${idx})">Retry</button>`;
   }
+  saveRunState();
+  checkPipelineProgress();
+}
+
+async function buyAllLabels() {
+  const btn = document.getElementById('pipeline-labels');
+  if (btn) { btn.disabled = true; btn.textContent = 'Buying...'; }
+  const status = document.getElementById('roStatus');
+  const assignments = lastRunResult?.assignments || [];
+  for (let i = 0; i < assignments.length; i++) {
+    if (labelResults[assignments[i].orderNumber]?.success) continue;
+    status.className = 'status-bar info';
+    status.textContent = `Buying label ${i + 1} of ${assignments.length}: ${assignments[i].orderNumber}...`;
+    await buyLabel(i);
+    if (i < assignments.length - 1) await new Promise(r => setTimeout(r, 4000));
+  }
+  const failed = assignments.filter(a => !labelResults[a.orderNumber]?.success).length;
+  if (failed) {
+    status.className = 'status-bar error';
+    status.textContent = `${assignments.length - failed} labels bought, ${failed} failed.`;
+    if (btn) { btn.disabled = false; btn.textContent = `Retry Failed (${failed})`; }
+  } else {
+    status.className = 'status-bar success';
+    status.textContent = `All ${assignments.length} labels purchased.`;
+    renderPipeline('pos');
+  }
+}
+
+async function createPipelinePOs() {
+  const btn = document.getElementById('pipeline-pos');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating POs...'; }
+  const status = document.getElementById('roStatus');
+  status.className = 'status-bar info';
+  status.textContent = 'Creating Amazon POs...';
+  try {
+    const res = await fetch('/api/amazon/create-pos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ days: 2 }) });
+    const data = await res.json();
+    for (const o of (data.orders || [])) {
+      poResults[o.orderNumber] = {
+        poNumber: o.poNumber || null,
+        poId: o.poId || null,
+        status: o.status,
+        reason: o.reason || null,
+        errors: o.errors || [],
+      };
+    }
+    saveRunState();
+    const created = (data.orders || []).filter(o => o.status === 'created').length;
+    const skipped = (data.orders || []).filter(o => o.status === 'skipped').length;
+    status.className = 'status-bar success';
+    status.textContent = `${created} POs created, ${skipped} skipped.`;
+    renderResultsTable(lastRunResult);
+    renderPipeline('email');
+  } catch (err) {
+    status.className = 'status-bar error';
+    status.textContent = `PO creation failed: ${err.message}`;
+    if (btn) { btn.disabled = false; btn.textContent = 'Create POs'; }
+  }
+}
+
+async function emailKaitlyn() {
+  const btn = document.getElementById('pipeline-email');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  const status = document.getElementById('roStatus');
+  const emailProg = document.getElementById('emailProgress');
+  emailProg.className = 'progress-log active';
+  emailProg.innerHTML = '';
+  const orders = (lastRunResult?.assignments || []).filter(a => labelResults[a.orderNumber]?.success).map(a => {
+    const lr = labelResults[a.orderNumber]; const po = poResults[a.orderNumber];
+    return { orderNumber: a.orderNumber, poNumber: po?.poNumber || null, trackingNumber: lr.trackingNumber, carrier: a.carrier, shipTo: a.shipTo, items: a.items, warehouseId: a.warehouseId, warehouseName: a.from, shipmentId: lr.shipmentId, labelUrl: lr.labelUrl };
+  });
+  if (!orders.length) { status.className = 'status-bar error'; status.textContent = 'No orders with labels to email.'; if (btn) { btn.disabled = false; btn.textContent = 'Email Kaitlyn'; } return; }
+  status.className = 'status-bar info'; status.textContent = 'Sending emails to Kaitlyn...';
+  try {
+    const res = await fetch('/api/email/send-to-prosol', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orders }) });
+    const reader = res.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read(); if (done) break;
+      buffer += decoder.decode(value, { stream: true }); const lines = buffer.split('\n'); buffer = lines.pop();
+      for (const line of lines) {
+        if (line.startsWith('data: ')) { const d = JSON.parse(line.slice(6)); const cls = d.status === 'failed' ? 'ev-error' : d.status === 'sent' ? 'ev-planned' : 'ev-status'; emailProg.innerHTML += `<div class="${cls}">${esc(d.message || '')}</div>`; emailProg.scrollTop = emailProg.scrollHeight; if (d.message) status.textContent = d.message; }
+        if (line.startsWith('event: complete')) { status.className = 'status-bar success'; status.textContent = 'All emails sent to Kaitlyn.'; renderPipeline('done'); }
+      }
+    }
+  } catch (err) { status.className = 'status-bar error'; status.textContent = `Email failed: ${err.message}`; if (btn) { btn.disabled = false; btn.textContent = 'Email Kaitlyn'; } }
+}
+
+function checkPipelineProgress() {
+  if (!lastRunResult) return;
+  const allLabeled = lastRunResult.assignments.every(a => labelResults[a.orderNumber]?.success);
+  if (allLabeled && document.getElementById('pipeline-labels')) renderPipeline('pos');
+}
+
+function quickRetry(orderNumber) { document.getElementById('retryOrderInput').value = orderNumber; retrySingleOrder(false); }
+
+function retrySingleOrder() {
+  const orderNum = document.getElementById('retryOrderInput').value.trim();
+  if (!orderNum) return;
+  const status = document.getElementById('roStatus');
+  const progress = document.getElementById('roProgress');
+  status.className = 'status-bar info'; status.textContent = `Processing ${orderNum}...`;
+  progress.className = 'progress-log active'; progress.innerHTML = '';
+  if (runOrdersSource) runOrdersSource.close();
+  runOrdersSource = new EventSource(`/api/run-orders/single?orderNumber=${encodeURIComponent(orderNum)}&dryRun=false`);
+  runOrdersSource.addEventListener('progress', (e) => {
+    const ev = JSON.parse(e.data); const cls = { status: 'ev-status', inventory: 'ev-inventory', rates: 'ev-rates', 'order-planned': 'ev-planned', 'order-staged': 'ev-staged', 'order-error': 'ev-error' }[ev.type] || 'ev-status';
+    progress.innerHTML += `<div class="${cls}">${esc(ev.message || ev.type + ': ' + (ev.orderNumber || ''))}</div>`; progress.scrollTop = progress.scrollHeight; status.textContent = ev.message || '';
+  });
+  runOrdersSource.addEventListener('complete', (e) => {
+    const result = JSON.parse(e.data); runOrdersSource.close(); runOrdersSource = null;
+    if (result.assignments.length) {
+      if (lastRunResult) { const idx = lastRunResult.assignments.findIndex(a => a.orderNumber === orderNum); if (idx >= 0) lastRunResult.assignments[idx] = result.assignments[0]; else lastRunResult.assignments.push(result.assignments[0]); renderResultsTable(lastRunResult); }
+      else { lastRunResult = result; renderRunOrdersResult(result); }
+      status.className = 'status-bar success'; status.textContent = `${orderNum} staged successfully`;
+      if (lastRunResult.assignments.length) renderPipeline('labels');
+    } else { status.className = 'status-bar error'; status.textContent = `${orderNum} could not be processed`;
+      if (result.manualReview.length) document.getElementById('roManual').innerHTML = `<ul class="manual-review">${result.manualReview.map(r => `<li><strong>${esc(r.orderNumber)}</strong>: ${esc(r.reason)} <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="quickRetry('${esc(r.orderNumber)}')">Retry</button></li>`).join('')}</ul>`;
+    }
+  });
+  runOrdersSource.addEventListener('error', (e) => { let msg = 'Connection error'; try { msg = JSON.parse(e.data).error; } catch {} runOrdersSource.close(); runOrdersSource = null; status.className = 'status-bar error'; status.textContent = msg; });
 }
 
 // ── Amazon POs ───────────────────────────────────────────────────────────
@@ -430,7 +834,7 @@ async function scanLabels() {
         <td>${esc(b.carrierDisplay)}</td>
         <td>${b.shipments.length}</td>
         <td>${b.shipments.map(s => esc(s.orderNumber)).join(', ')}</td>
-        <td><button class="btn btn-success btn-sm" onclick="bookBucket(${i})">Book Pickup</button></td>
+        <td><button class="btn btn-success btn-sm" id="pickup-book-${i}" onclick="bookBucket(${i})">Book Pickup</button></td>
       </tr>`).join('')}</tbody>
     </table>`;
   } catch (err) {
@@ -442,11 +846,11 @@ async function scanLabels() {
 
 async function bookBucket(idx) {
   const bucket = pickupData[idx];
-  const status = document.getElementById('pickupStatus');
-  const resultsEl = document.getElementById('pickupResults');
+  const btn = document.getElementById('pickup-book-' + idx);
+  const cellEl = btn.parentElement;
 
-  status.className = 'status-bar info';
-  status.textContent = `Booking ${bucket.carrierDisplay} pickup at ${bucket.warehouseName}...`;
+  btn.disabled = true;
+  btn.textContent = 'Booking...';
 
   try {
     const res = await fetch('/api/pickups/book', {
@@ -460,21 +864,14 @@ async function bookBucket(idx) {
     });
     const data = await res.json();
 
-    const html = `<div style="margin-top:8px;padding:12px;border-radius:6px;background:${data.success ? '#f0fdf4' : '#fef2f2'};border:1px solid ${data.success ? '#bbf7d0' : '#fecaca'}">
-      <strong>${esc(bucket.warehouseName)} / ${esc(bucket.carrierDisplay)}</strong><br>
-      ${data.success
-        ? `<span class="badge badge-ok">Booked</span> Pickup ID: ${esc(data.pickupId || data.confirmation || 'N/A')}${data.cost ? ' / Cost: ' + esc(data.cost) : ''}`
-        : `<span class="badge badge-err">Failed</span> ${esc(data.error || 'Unknown error')}`}
-    </div>`;
-    resultsEl.innerHTML += html;
-
-    status.className = data.success ? 'status-bar success' : 'status-bar error';
-    status.textContent = data.success
-      ? `Pickup booked: ${data.pickupId || data.confirmation || 'OK'}`
-      : `Booking failed: ${data.error}`;
+    if (data.success) {
+      cellEl.innerHTML = `<span class="badge badge-ok">Booked</span> ${esc(data.pickupId || data.confirmation || '')}${data.cost ? ' — ' + esc(data.cost) : ''}`;
+      loadPickupSidebar();
+    } else {
+      cellEl.innerHTML = `<span class="badge badge-err">Failed</span> ${esc(data.error || 'Unknown')}<br><button class="btn btn-success btn-sm" id="pickup-book-${idx}" onclick="bookBucket(${idx})">Retry</button>`;
+    }
   } catch (err) {
-    status.className = 'status-bar error';
-    status.textContent = err.message;
+    cellEl.innerHTML = `<span class="badge badge-err">Error</span> ${esc(err.message)}<br><button class="btn btn-success btn-sm" id="pickup-book-${idx}" onclick="bookBucket(${idx})">Retry</button>`;
   }
 }
 
@@ -572,6 +969,219 @@ async function createSoPo() {
   }
 }
 
+// ── Tracking ─────────────────────────────────────────────────────────
+// "Hanging" = label printed but carrier hasn't physically scanned yet.
+// Source of truth: V2 /v2/labels/{id}/track events with status_code in {NY,AC,UN}.
+
+let lastTrackingResult = null;
+let trackingFilters = { hanging: true, 'in-transit': false, delivered: false };
+
+const ACTION_META = {
+  book:    { color: '#dc2626', label: 'BOOK',    btnLabel: 'Book pickup',   btnClass: 'btn-success' },
+  rebook:  { color: '#ea580c', label: 'REBOOK',  btnLabel: 'Rebook pickup', btnClass: 'btn-danger' },
+  monitor: { color: '#ca8a04', label: 'MONITOR', btnLabel: null,            btnClass: null },
+  wait:    { color: '#64748b', label: 'WAIT',    btnLabel: null,            btnClass: null },
+};
+
+function carrierCodeForBooking(s) {
+  // Strip _walleted to match the carrier param expected by /api/pickups/book
+  return (s.carrierCode || s.carrier.replace(/ /g, '_') || '').replace(/_walleted$/, '');
+}
+
+async function bookFromTracking({ warehouseId, carrier, shipmentIds, btnId, label }) {
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.disabled = true; btn.textContent = 'Booking...'; }
+  try {
+    const res = await fetch('/api/pickups/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ warehouseId, carrier, shipmentIds }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (btn) btn.outerHTML = `<span class="badge badge-ok">Booked ${esc(data.pickupId || data.confirmation || '')}</span>`;
+      loadPickupSidebar();
+      setTimeout(() => scanStale(), 1500);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = label; btn.title = data.error || 'Unknown error'; btn.classList.add('btn-danger'); }
+    }
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = label; btn.title = err.message; }
+  }
+}
+
+function bookOneShipment(shipmentId) {
+  const s = lastTrackingResult?.shipments.find(x => x.shipmentId === shipmentId);
+  if (!s) return;
+  const action = s.suggestedAction === 'rebook' ? 'Rebook' : 'Book';
+  bookFromTracking({
+    warehouseId: s.warehouseId,
+    carrier: carrierCodeForBooking(s),
+    shipmentIds: [s.shipmentId],
+    btnId: `track-action-${s.shipmentId}`,
+    label: `${action} pickup`,
+  });
+}
+
+function bookBulkGroup(key) {
+  const all = lastTrackingResult?.shipments || [];
+  const group = all.filter(s => `${s.warehouseId}::${s.carrier}` === key && (s.suggestedAction === 'book' || s.suggestedAction === 'rebook'));
+  if (!group.length) return;
+  const first = group[0];
+  bookFromTracking({
+    warehouseId: first.warehouseId,
+    carrier: carrierCodeForBooking(first),
+    shipmentIds: group.map(s => s.shipmentId),
+    btnId: `track-bulk-${cssEsc(key)}`,
+    label: `Book ${group.length}`,
+  });
+}
+
+function cssEsc(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, '_'); }
+
+function toggleTrackingFilter(movement) {
+  trackingFilters[movement] = !trackingFilters[movement];
+  if (lastTrackingResult) renderTracking(lastTrackingResult);
+}
+
+function pickupStateBadge(s) {
+  if (s.pickupState === 'none') return '<span class="badge badge-err">None</span>';
+  if (s.pickupState === 'booked-future') return `<span class="badge badge-warn">Booked ${esc(s.pickupDate || '')}</span>`;
+  return `<span class="badge badge-err">Booked ${esc(s.pickupDate || '')} (passed)</span>`;
+}
+
+function eventCell(s) {
+  if (!s.latestEvent) return '<span style="color:#94a3b8;font-size:11px">no carrier event</span>';
+  const code = s.latestEventCode ? `<span style="color:#64748b;font-size:10px;font-family:monospace">${esc(s.latestEventCode)}</span> ` : '';
+  return `${code}<span style="font-size:11px">${esc(s.latestEvent)}</span>`;
+}
+
+function renderTracking(data) {
+  const summary = document.getElementById('trackingSummary');
+  const results = document.getElementById('trackingResults');
+  const status = document.getElementById('trackingStatus');
+  const s = data.summary;
+
+  const chip = (key, label, count, color) => {
+    const on = trackingFilters[key];
+    const bg = on ? color : '#f1f5f9';
+    const fg = on ? '#fff' : '#475569';
+    return `<button onclick="toggleTrackingFilter('${key}')" style="border:0;padding:6px 14px;margin:0 4px 0 0;border-radius:999px;background:${bg};color:${fg};font-size:13px;font-weight:600;cursor:pointer">${esc(label)} (${count})</button>`;
+  };
+
+  summary.innerHTML = `
+    <div style="margin:8px 0 12px">
+      ${chip('hanging', 'Hanging', s.hanging, '#dc2626')}
+      ${chip('in-transit', 'In Transit', s.inTransit, '#0ea5e9')}
+      ${chip('delivered', 'Delivered', s.delivered, '#16a34a')}
+      <span style="margin-left:16px;color:#64748b;font-size:12px">${s.needBook} need booking · ${s.needRebook} need rebooking · ${s.monitor} scheduled · ${s.wait} just shipped</span>
+    </div>`;
+
+  status.className = s.hanging > 0 ? 'status-bar info' : 'status-bar success';
+  status.textContent = s.hanging > 0
+    ? `${s.hanging} hanging shipment${s.hanging === 1 ? '' : 's'} (${s.needBook + s.needRebook} need action, ${s.monitor} scheduled, ${s.wait} just shipped)`
+    : 'No hanging shipments — everything has carrier movement.';
+
+  let html = '';
+  const hanging = data.shipments.filter(x => x.movement === 'hanging');
+
+  if (trackingFilters.hanging && hanging.length) {
+    // Bulk action chips (warehouse+carrier groups where any row needs book/rebook)
+    const groupMap = {};
+    for (const x of hanging) {
+      if (x.suggestedAction !== 'book' && x.suggestedAction !== 'rebook') continue;
+      const key = `${x.warehouseId}::${x.carrier}`;
+      if (!groupMap[key]) groupMap[key] = { key, warehouseName: x.warehouseName, carrier: x.carrier, action: x.suggestedAction, items: [] };
+      groupMap[key].items.push(x);
+      // Group action: if any rebook, show Rebook; else Book
+      if (x.suggestedAction === 'rebook') groupMap[key].action = 'rebook';
+    }
+    const groups = Object.values(groupMap);
+    if (groups.length) {
+      html += `<div style="margin:8px 0;padding:10px;background:#fef2f2;border-left:3px solid #dc2626;border-radius:4px">
+        <div style="font-size:12px;color:#7f1d1d;margin-bottom:6px;font-weight:600">Bulk actions</div>`;
+      for (const g of groups) {
+        const verb = g.action === 'rebook' ? 'Rebook' : 'Book';
+        const cls = g.action === 'rebook' ? 'btn-danger' : 'btn-success';
+        html += `<button id="track-bulk-${cssEsc(g.key)}" class="btn ${cls} btn-sm" style="margin:2px 6px 2px 0" onclick="bookBulkGroup('${g.key}')">${verb} all ${esc(g.warehouseName)} ${esc(g.carrier)} (${g.items.length})</button>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `<h3 style="font-size:14px;margin:12px 0 6px;color:#991b1b">Hanging (${hanging.length})</h3>`;
+    html += `<table><thead><tr><th>Action</th><th>Tracking</th><th>Order</th><th>Warehouse</th><th>Carrier</th><th>Age</th><th>Pickup</th><th>Last Event</th><th></th></tr></thead><tbody>`;
+    for (const x of hanging) {
+      const meta = ACTION_META[x.suggestedAction] || ACTION_META.wait;
+      const actionBadge = `<span class="badge" style="background:${meta.color};color:#fff">${meta.label}</span>`;
+      const btn = meta.btnLabel
+        ? `<button id="track-action-${x.shipmentId}" class="btn ${meta.btnClass} btn-sm" onclick="bookOneShipment(${x.shipmentId})">${meta.btnLabel}</button>`
+        : '';
+      html += `<tr>
+        <td>${actionBadge}</td>
+        <td style="font-family:monospace;font-size:11px">${esc(x.trackingNumber || '—')}</td>
+        <td><strong>${esc(x.orderNumber || '—')}</strong></td>
+        <td>${esc(x.warehouseName)}</td>
+        <td>${esc(x.carrier)}</td>
+        <td>${x.age}d</td>
+        <td>${pickupStateBadge(x)}</td>
+        <td>${eventCell(x)}</td>
+        <td>${btn}</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+  } else if (trackingFilters.hanging && !hanging.length) {
+    html += `<div style="margin:12px 0;padding:16px;background:#f0fdf4;color:#166534;border-radius:6px;text-align:center">No hanging shipments — every label has carrier movement.</div>`;
+  }
+
+  // In Transit / Delivered (only when toggled)
+  for (const movement of ['in-transit', 'delivered']) {
+    if (!trackingFilters[movement]) continue;
+    const rows = data.shipments.filter(x => x.movement === movement);
+    if (!rows.length) continue;
+    const heading = movement === 'in-transit' ? 'In Transit' : 'Delivered';
+    const colorBg = movement === 'in-transit' ? '#0c4a6e' : '#14532d';
+    html += `<h3 style="font-size:14px;margin:16px 0 6px;color:${colorBg}">${heading} (${rows.length})</h3>`;
+    html += `<table><thead><tr><th>Tracking</th><th>Order</th><th>Warehouse</th><th>Carrier</th><th>Age</th><th>Last Event</th></tr></thead><tbody>`;
+    for (const x of rows) {
+      html += `<tr>
+        <td style="font-family:monospace;font-size:11px">${esc(x.trackingNumber || '—')}</td>
+        <td><strong>${esc(x.orderNumber || '—')}</strong></td>
+        <td>${esc(x.warehouseName)}</td>
+        <td>${esc(x.carrier)}</td>
+        <td>${x.age}d</td>
+        <td>${eventCell(x)}</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+
+  results.innerHTML = html;
+}
+
+async function scanStale() {
+  const btn = document.getElementById('btnScanStale');
+  const status = document.getElementById('trackingStatus');
+  const summary = document.getElementById('trackingSummary');
+  const results = document.getElementById('trackingResults');
+  btn.disabled = true;
+  status.className = 'status-bar info';
+  status.textContent = 'Scanning shipments and fetching carrier events...';
+  summary.innerHTML = '';
+  results.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/shipments/stale');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    lastTrackingResult = data;
+    renderTracking(data);
+  } catch (err) {
+    status.className = 'status-bar error';
+    status.textContent = err.message;
+  }
+  btn.disabled = false;
+}
+
 // ── Logs ─────────────────────────────────────────────────────────────────────
 
 async function loadLogs() {
@@ -609,6 +1219,40 @@ function detailStr(log) {
   if (log.action === 'shopify-so-po') return `${log.shopifyOrder || ''} → ${log.soNumber || '—'} / ${log.poNumber || '—'}`;
   return log.error || '';
 }
+
+// ── Pickup Sidebar ───────────────────────────────────────────────────
+
+async function loadPickupSidebar() {
+  const el = document.getElementById('pickupSidebar');
+  try {
+    const res = await fetch('/api/pickups/active');
+    const data = await res.json();
+    if (!data.success || !data.pickups.length) {
+      el.innerHTML = '<span style="color:#94a3b8;font-size:12px">No upcoming pickups</span>';
+      return;
+    }
+
+    let html = '';
+    let lastDate = '';
+    for (const p of data.pickups) {
+      if (p.pickupDate !== lastDate) {
+        const dateLabel = p.isToday ? 'Today' : p.isPast ? p.pickupDate + ' (past)' : p.pickupDate;
+        html += `<div class="pickup-date">${esc(dateLabel)}</div>`;
+        lastDate = p.pickupDate;
+      }
+      const cls = p.isPast ? 'pickup-item pickup-past' : p.isToday ? 'pickup-item pickup-today' : 'pickup-item';
+      html += `<div class="${cls}">
+        <span class="pickup-carrier">${esc(p.carrier)}</span> <span class="pickup-wh">${esc(p.warehouse)}</span><br>
+        <span class="pickup-meta">${p.labels} label${p.labels !== 1 ? 's' : ''} &middot; ${esc(p.timeWindow)} &middot; #${esc(p.confirmation || '')}</span>
+      </div>`;
+    }
+    el.innerHTML = html;
+  } catch {
+    el.innerHTML = '<span style="color:#f87171;font-size:12px">Failed to load</span>';
+  }
+}
+loadPickupSidebar();
+setInterval(loadPickupSidebar, 2 * 60 * 1000);
 
 // ── Util ─────────────────────────────────────────────────────────────────────
 

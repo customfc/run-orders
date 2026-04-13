@@ -628,21 +628,21 @@
     },
     "_section_schluter_kerdi_board_niche": "=== SCHLUTER - KERDI-BOARD-SN SHOWER NICHE ===",
     "B0DJG4N9M7": {
-      "api_sku": "KB12SN305305A",
-      "prosol_sku": "KB12SN305305A",
-      "product": "Schluter KERDI-BOARD-SN Shower Niche 12\"x12\"",
-      "note": "Most common niche size. Verify against order details if different size.",
+      "api_sku": "KB12SN305711AF",
+      "prosol_sku": "KB12SN305711AF",
+      "product": "Schluter KERDI-BOARD-SN Shower Niche 12\"x28\"",
+      "note": "Was incorrectly mapped to KB12SN305305A (12x12). Amazon title says 12x28 = KB12SN305711AF.",
       "verified": true
     },
     "B0DJH5ZZ1K": {
-      "api_sku": "KB12SN305508A1",
-      "prosol_sku": "KB12SN305508A1",
+      "api_sku": "KB12SN305508AF",
+      "prosol_sku": "KB12SN305508AF",
       "product": "Schluter KERDI-BOARD-SN Shower Niche with Shelf 12\"x20\"",
       "note": "Larger niche with shelf. Verify size against order.",
       "verified": true
     },
     "B00GUR3B26": {
-      "api_sku": "KB12SN305152A",
+      "api_sku": "KB12SN305152AF",
       "prosol_sku": "KB12SN305152AF",
       "product": "Schluter KERDI-BOARD-SN Shower Niche 12\"x6\"",
       "note": "Fixed 2026-04-01 — was incorrectly mapped to 305305A (12x12). Amazon title says 12\" Width 6\" Height = KB12SN305152A. SF item 02509.",
@@ -2260,6 +2260,12 @@
       "api_sku": "CLQWAF1-2",
       "prosol_sku": "CLQWAF1-2",
       "product": "Custom Building Products - RedGard Waterproofing Membrane 1 gal",
+      "verified": true
+    },
+    "B00JU7JV6S": {
+      "api_sku": "DHEHK240204",
+      "prosol_sku": "DHEHK240204",
+      "product": "Schluter DITRA-HEAT Cable 240V 203.8 sqft",
       "verified": true
     }
   },

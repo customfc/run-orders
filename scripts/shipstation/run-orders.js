@@ -28,11 +28,11 @@ const MAIN_HUBS = {
   SK: [10054, 10049, 10010],
   MB: [10049, 10054, 10010],
   ON: [10001, 10013, 10024, 10027, 10032, 10043],
-  QC: [10004, 10001],
-  NB: [10004, 10001],
-  NS: [10004, 10001],
-  PE: [10004, 10001],
-  NL: [10004, 10001],
+  QC: [10004, 10001, 10032, 10027, 10013, 10024, 10043],
+  NB: [10004, 10001, 10032, 10027],
+  NS: [10004, 10001, 10032, 10027],
+  PE: [10004, 10001, 10032, 10027],
+  NL: [10004, 10001, 10032, 10027],
   YT: [10010, 10054],
   NT: [10054, 10010, 10049],
   NU: [10049, 10054, 10001],
@@ -42,7 +42,7 @@ const PO_BOX_RE = /\b(?:p\.?\s*o\.?\s*box|post\s+office\s+box)\b/i;
 
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
-function httpsRequest(options, body = null) {
+function httpsRequest(options, body = null, timeoutMs = 30000) {
   return new Promise((resolve, reject) => {
     const req = https.request(options, (res) => {
       let data = '';
@@ -50,6 +50,10 @@ function httpsRequest(options, body = null) {
       res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: data }));
     });
     req.on('error', reject);
+    req.setTimeout(timeoutMs, () => {
+      req.destroy();
+      reject(new Error(`Request timed out after ${timeoutMs}ms: ${options.method || 'GET'} ${options.path}`));
+    });
     if (body) req.write(typeof body === 'string' ? body : JSON.stringify(body));
     req.end();
   });
@@ -235,15 +239,36 @@ function resolveOrderItems(order) {
   return { resolved, fixedWarehouseItems, failures };
 }
 
+// Province centroids for distance-based fallback sorting
+const PROVINCE_LAT_LNG = {
+  BC: [49.28, -123.12], AB: [51.05, -114.07], SK: [50.45, -104.62], MB: [49.90, -97.14],
+  ON: [43.65, -79.38], QC: [46.81, -71.21], NB: [46.09, -66.66], NS: [44.65, -63.57],
+  PE: [46.24, -63.13], NL: [47.56, -52.71], YT: [60.72, -135.05], NT: [62.45, -114.37], NU: [63.75, -68.52],
+};
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 function determineWarehouse(province, inventoryBySku) {
   const preferred = MAIN_HUBS[province] || [];
+  const [provLat, provLng] = PROVINCE_LAT_LNG[province] || [45, -75];
   const candidates = Object.entries(LOCATION_MAP)
     .map(([id, loc]) => ({ id: Number(id), ...loc }))
     .filter((loc) => loc.shipstation_warehouse_id);
 
+  // Sort non-preferred candidates by distance to destination province
+  const fallback = candidates
+    .filter((c) => !preferred.includes(c.id))
+    .sort((a, b) => haversineKm(provLat, provLng, a.lat || 0, a.lng || 0) - haversineKm(provLat, provLng, b.lat || 0, b.lng || 0));
+
   const ranked = [
     ...preferred,
-    ...candidates.map((c) => c.id).filter((id) => !preferred.includes(id)),
+    ...fallback.map((c) => c.id),
   ];
 
   for (const locId of ranked) {
@@ -276,15 +301,18 @@ async function getRates(order, fromPostalCode) {
     if (res.status !== 200) return null;
     const rates = JSON.parse(res.body);
     if (!Array.isArray(rates) || !rates.length) return null;
+    // ShipStation actually charges shipmentCost + otherCost (fuel surcharge, accessorials).
+    // Sort and report by the all-in total so the displayed estimate matches what hits the wallet.
     const best = rates
       .filter((r) => Number.isFinite(Number(r.shipmentCost)) && r.serviceCode)
-      .sort((a, b) => Number(a.shipmentCost) - Number(b.shipmentCost))[0];
+      .map((r) => ({ ...r, totalCost: Number(r.shipmentCost) + Number(r.otherCost || 0) }))
+      .sort((a, b) => a.totalCost - b.totalCost)[0];
     if (!best) return null;
     return {
       carrierCode,
       serviceCode: best.serviceCode,
       serviceName: best.serviceName || best.serviceCode,
-      shipmentCost: Number(best.shipmentCost),
+      shipmentCost: best.totalCost,
     };
   }
 
@@ -388,10 +416,16 @@ function renderTable(rows) {
 
 // ── Core exported function ───────────────────────────────────────────────────
 
-async function runOrders({ dryRun = false, onProgress = () => {} } = {}) {
-  onProgress({ type: 'status', message: 'Fetching awaiting_shipment orders from ShipStation...' });
+async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress = () => {} } = {}) {
+  onProgress({ type: 'status', message: filterOrderNumber ? `Fetching order ${filterOrderNumber}...` : 'Fetching awaiting_shipment orders from ShipStation...' });
   const allOrders = await fetchAwaitingOrders();
-  const amazonOrders = allOrders.filter(isAmazonOrder);
+  let amazonOrders = allOrders.filter(isAmazonOrder);
+  if (filterOrderNumber) {
+    amazonOrders = amazonOrders.filter(o => o.orderNumber === filterOrderNumber);
+    if (!amazonOrders.length) {
+      return { dryRun, summary: { totalAwaiting: allOrders.length, amazonAwaiting: 0, plannable: 0, rejected: 0, errors: 1 }, assignments: [], manualReview: [{ orderNumber: filterOrderNumber, reason: 'Order not found in awaiting_shipment queue' }], errors: [] };
+    }
+  }
   const scopeOrders = [];
   const rejected = [];
 
@@ -523,6 +557,7 @@ async function runOrders({ dryRun = false, onProgress = () => {} } = {}) {
         const actualWarehouse = SHIPSTATION_WAREHOUSE_META[String(staged.order.advancedOptions?.warehouseId || '')];
 
         const row = {
+          // Display fields
           orderNumber: assignment.orderNumber,
           item: assignment.itemSummary,
           to: assignment.destination,
@@ -537,6 +572,16 @@ async function runOrders({ dryRun = false, onProgress = () => {} } = {}) {
           ].filter(Boolean).join('; '),
           status: dryRun ? 'dry-run' : staged.status,
           compared: assignment.compared,
+          // Machine-readable fields for pipeline (label buying, POs, email)
+          orderId: assignment.orderId,
+          warehouseId: assignment.warehouseId,
+          carrierCode: assignment.carrierCode,
+          serviceCode: assignment.serviceCode,
+          packageCode: assignment.packageCode,
+          shipmentCost: assignment.shipmentCost,
+          weight: { value: Math.max(0.1, Number(toLb(staged.order.weight).toFixed(2))), units: 'pounds' },
+          shipTo: staged.order.shipTo,
+          items: staged.order.items,
         };
         assignments.push(row);
 

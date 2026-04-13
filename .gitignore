@@ -3,4 +3,11 @@
 .env.*.local
 node_modules/
 .DS_Store
+.claude/
 data/audit.jsonl
+data/cp-pickups.json
+data/order-cache.json
+data/ghost-voids.json
+data/telegram-state.json
+data/telegram-outbox.jsonl
+data/ops-state/
