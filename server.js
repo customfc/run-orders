@@ -14,7 +14,7 @@ const { scanStaleShipments } = require('./lib/stale-tracker');
 const { runPipeline, PHASES: PIPELINE_PHASES } = require('./lib/pipeline');
 const opsState = require('./lib/ops-state');
 const telegram = require('./lib/telegram');
-const { createGhostPickup, processPendingVoids, loadPending: loadPendingVoids } = require('./lib/ghost-pickup');
+const { createGhostPickup, processPendingVoids, loadPending: loadPendingVoids, ghostStatus, reconcileGhostLedger } = require('./lib/ghost-pickup');
 const fsRaw = require('fs');
 const httpsRaw = require('https');
 const cryptoRaw = require('crypto');
@@ -746,18 +746,28 @@ cron.schedule('30 14 * * 1-5', () => runCronPipeline('14:30-pickups', ['pickups'
 cron.schedule('0 15 * * 1-5', async () => {
   const state = opsState.load();
   const s = opsState.summarize(state);
+  const g = ghostStatus();
   const attn = s.errorCount > 0 ? ` · ⚠ ${s.errorCount} error(s)` : '';
+  let ghostLine = `Ghost: ${g.count} outstanding`;
+  if (g.count > 0) {
+    const oldestDate = g.oldest?.createdAt ? String(g.oldest.createdAt).slice(0, 10) : '?';
+    const overdueFlag = g.maxOverdue > 0 ? ` · ⚠ ${g.maxOverdue}d overdue` : '';
+    ghostLine += ` (oldest ${oldestDate}, $${g.exposure.toFixed(2)} exposure${overdueFlag})`;
+  }
   const body = [
     `Staged: ${s.staged}`,
     `Labels: ${s.labelsBought}${s.totalLabelCost ? ` ($${s.totalLabelCost})` : ''}${s.costWarnings ? ` · ⚠${s.costWarnings} cost` : ''}`,
     `POs: ${s.posCreated}`,
     `Emails: ${s.emailsSent}`,
     `Pickups: ${s.pickupsBooked} (${s.totalPickedLabels} labels)`,
+    ghostLine,
     s.errorCount ? `\nLast error: [${s.lastError?.phase}] ${s.lastError?.reason}` : null,
     '',
     'http://localhost:3456',
   ].filter(Boolean).join('\n');
-  const sev = s.errorCount > 0 ? 'attn' : 'ok';
+  // Bubble to attn if digest reveals ghost trouble (overdue > 0) — the 16:00 void cron has already alerted halt-level
+  // for same-day failures, but the digest is still the place to surface slow-burning accumulation.
+  const sev = s.errorCount > 0 || g.maxOverdue > 0 ? 'attn' : 'ok';
   await telegram.notify(sev, `Daily digest — ${s.date}${attn}`, body);
 }, TZ);
 
@@ -874,9 +884,15 @@ async function handleTelegramCommand(command, args) {
     }
 
     case 'ghosts': {
-      const pending = loadPendingVoids().filter(e => e.status === 'pending');
-      if (!pending.length) return 'No pending ghost labels.';
-      return pending.map(e => `• ${e.trackingNumber} (${e.warehouseCode} ${e.carrier}) — pickup ${e.pickupDate}, void ${new Date(e.voidAfter).toISOString().slice(0, 10)}`).join('\n');
+      const g = ghostStatus();
+      if (g.count === 0) return '👻 0 outstanding ghost labels.';
+      const header = `👻 ${g.count} outstanding · $${g.exposure.toFixed(2)} exposure${g.maxOverdue > 0 ? ` · ⚠ ${g.maxOverdue}d max overdue` : ''}`;
+      const rows = g.entries.map((e) => {
+        const voidDate = e.voidAfter ? String(e.voidAfter).slice(0, 10) : '?';
+        const overdue = e.daysOverdue > 0 ? ` (⚠ ${e.daysOverdue}d overdue)` : '';
+        return `• ${e.warehouseCode || '?'} ${e.carrier || '?'} — ${e.trackingNumber} · $${e.labelCost.toFixed(2)} · void ${voidDate}${overdue}`;
+      });
+      return `${header}\n${rows.join('\n')}`;
     }
 
     default:
@@ -896,4 +912,11 @@ app.listen(PORT, () => {
     allowedChatId: process.env.TELEGRAM_CHAT_ID,
     onCommand: handleTelegramCommand,
   });
+  // Ghost-ledger reconcile at startup: catches wiped state files or
+  // crashed-mid-save inconsistencies. Alerts loudly via Telegram on mismatch.
+  reconcileGhostLedger()
+    .then((r) => {
+      console.log(`[startup] ghost ledger — ${r.outstanding} outstanding, ${r.orphans.length} orphan, ${r.stale.length} stale`);
+    })
+    .catch((err) => console.error('[startup] ghost reconcile failed:', err.message));
 });
