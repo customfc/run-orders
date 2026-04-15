@@ -459,7 +459,11 @@ app.post('/api/pickups/book', async (req, res) => {
       success: result.success,
       pickupId: result.pickupId || null,
       confirmation: result.confirmation || null,
-      error: result.error || null,
+      error: result.errorMessage || result.error || null,
+      errorCode: result.errorCode || null,
+      errorLabelId: result.errorLabelId || null,
+      httpStatus: result.success ? null : (result.error || null),
+      body: result.success ? null : (result.body || '').toString().slice(0, 500),
       labelCount: shipmentIds?.length || 0,
     });
 
