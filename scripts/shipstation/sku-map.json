@@ -493,6 +493,13 @@
       "product": "Schluter DITRA-HEAT-E-HK Cable 120V 51.4 sqft",
       "verified": true
     },
+    "B010GQ3H48": {
+      "api_sku": "DHEHK12011",
+      "prosol_sku": "DHEHK12011",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 120V 10.7 sqft (35.3 linear ft)",
+      "note": "Confirmed from order 701-4376345-5045841 title: DHEHK12011",
+      "verified": true
+    },
     "B01N3845HQ": {
       "api_sku": "DHEHK24043",
       "prosol_sku": "DHEHK24043",
