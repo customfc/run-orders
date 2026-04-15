@@ -14,7 +14,7 @@ const { scanStaleShipments } = require('./lib/stale-tracker');
 const { runPipeline, PHASES: PIPELINE_PHASES } = require('./lib/pipeline');
 const opsState = require('./lib/ops-state');
 const telegram = require('./lib/telegram');
-const { createGhostPickup, processPendingVoids, loadPending: loadPendingVoids, ghostStatus, reconcileGhostLedger } = require('./lib/ghost-pickup');
+const { createGhostPickup, trackOrphanGhost, processPendingVoids, loadPending: loadPendingVoids, ghostStatus, reconcileGhostLedger } = require('./lib/ghost-pickup');
 const fsRaw = require('fs');
 const httpsRaw = require('https');
 const cryptoRaw = require('crypto');
@@ -251,6 +251,65 @@ app.get('/api/pipeline/today', (req, res) => {
   const date = req.query.date || opsState.today();
   const state = opsState.load(date);
   res.json({ success: true, date, state, summary: opsState.summarize(state) });
+});
+
+// Per-label breakdown for a given date. Returns one row per label with
+// order#, warehouse, carrier/service, labelCost, estimatedCost, Δ%, plus
+// per-carrier and overall totals. Answers "why is today's avg label cost
+// higher than usual."
+app.get('/api/reports/labels', (req, res) => {
+  const date = req.query.date || opsState.today();
+  const state = opsState.load(date);
+  const LOCATION_MAP = require(path.join(__dirname, 'scripts', 'shipstation', 'prosol-location-map.json'));
+  const WHBY = {};
+  for (const loc of Object.values(LOCATION_MAP)) {
+    if (loc.shipstation_warehouse_id) WHBY[String(loc.shipstation_warehouse_id)] = loc;
+  }
+  const labels = Object.entries(state.phases.buy.labels || {}).map(([orderId, l]) => {
+    const loc = l.warehouseId ? WHBY[String(l.warehouseId)] : null;
+    const warehouseName = loc ? `${loc.city} (${loc.code})` : (l.warehouseId ? `Warehouse ${l.warehouseId}` : null);
+    const deltaPct = (Number.isFinite(l.estimatedCost) && l.estimatedCost > 0 && Number.isFinite(l.labelCost))
+      ? Number(((l.labelCost - l.estimatedCost) / l.estimatedCost * 100).toFixed(1))
+      : null;
+    return {
+      orderId: Number(orderId),
+      orderNumber: l.orderNumber,
+      trackingNumber: l.trackingNumber,
+      shipmentId: l.shipmentId,
+      warehouseId: l.warehouseId,
+      warehouseName,
+      carrierCode: l.carrierCode,
+      serviceCode: l.serviceCode,
+      labelCost: Number.isFinite(l.labelCost) ? Number(l.labelCost) : null,
+      estimatedCost: l.estimatedCost,
+      deltaPct,
+      costWarning: !!l.costWarning,
+      at: l.at,
+    };
+  });
+  const byCarrier = {};
+  for (const l of labels) {
+    const key = l.carrierCode || 'unknown';
+    if (!byCarrier[key]) byCarrier[key] = { carrierCode: key, count: 0, totalCost: 0, totalEstimated: 0, costWarnings: 0 };
+    byCarrier[key].count += 1;
+    if (Number.isFinite(l.labelCost)) byCarrier[key].totalCost += l.labelCost;
+    if (Number.isFinite(l.estimatedCost)) byCarrier[key].totalEstimated += l.estimatedCost;
+    if (l.costWarning) byCarrier[key].costWarnings += 1;
+  }
+  const carriers = Object.values(byCarrier).map((c) => ({
+    ...c,
+    totalCost: Number(c.totalCost.toFixed(2)),
+    totalEstimated: Number(c.totalEstimated.toFixed(2)),
+    avgCost: c.count ? Number((c.totalCost / c.count).toFixed(2)) : null,
+  })).sort((a, b) => b.totalCost - a.totalCost);
+  const totalCost = labels.reduce((s, l) => s + (Number.isFinite(l.labelCost) ? l.labelCost : 0), 0);
+  const totals = {
+    labelCount: labels.length,
+    totalCost: Number(totalCost.toFixed(2)),
+    avgCost: labels.length ? Number((totalCost / labels.length).toFixed(2)) : null,
+    costWarnings: labels.filter((l) => l.costWarning).length,
+  };
+  res.json({ success: true, date, totals, carriers, labels });
 });
 
 app.post('/api/pipeline/test-telegram', async (req, res) => {
@@ -831,7 +890,8 @@ const COMMAND_HELP = `Commands:
 /status — today's ops summary
 /pickups — run just the pickup sweep (for tomorrow)
 /stage — run just the stage+buy+POs phases (no email, no pickups)
-/ghost-pickup <WH_CODE> <ups|purolator> — trigger a carrier visit at a fringe warehouse (ghost label, auto-refunded)
+/ghost-pickup <WH_CODE> <ups|purolator> [--force] — trigger a carrier visit at a fringe warehouse (ghost label, auto-refunded). --force skips the "real shipments exist" guard.
+/ghost-track <trackingNumber> [WH_CODE] — rescue an orphan ghost (add to void ledger). Use when /ghosts doesn't show a Mac-Roy label that exists in SS.
 /ghosts — list pending ghost labels awaiting void
 /pause — halt all pipeline runs until /resume
 /resume — clear pause
@@ -879,12 +939,38 @@ async function handleTelegramCommand(command, args) {
 
     case 'ghost-pickup':
     case 'ghost_pickup': {
-      const [whCode, carrier] = args;
-      if (!whCode || !carrier) return 'Usage: /ghost-pickup <WH_CODE> <ups|purolator>\nExample: /ghost-pickup LOND ups';
-      const r = await createGhostPickup({ warehouseCode: whCode.toUpperCase(), carrier: carrier.toLowerCase() });
-      if (!r.success) return `❌ Ghost pickup failed at ${r.step || 'start'}: ${r.error}${r.refunded ? '\n(label auto-refunded)' : ''}`;
+      const force = args.includes('--force');
+      const positional = args.filter((a) => a !== '--force');
+      const [whCode, carrier] = positional;
+      if (!whCode || !carrier) return 'Usage: /ghost-pickup <WH_CODE> <ups|purolator> [--force]\nExample: /ghost-pickup LOND ups';
+      const r = await createGhostPickup({ warehouseCode: whCode.toUpperCase(), carrier: carrier.toLowerCase(), force });
+      if (!r.success) {
+        if (r.step === 'guard' && r.existingShipments) {
+          const sample = r.existingShipments.slice(0, 5).map((s) => `  • ${s.orderNumber || '(no order)'} — ${s.trackingNumber} (${s.shipTo || '?'})`).join('\n');
+          const more = r.existingShipments.length > 5 ? `\n  … and ${r.existingShipments.length - 5} more` : '';
+          return `🛑 ${r.error}\n\nExisting shipments at ${whCode.toUpperCase()}/${carrier}:\n${sample}${more}`;
+        }
+        return `❌ Ghost pickup failed at ${r.step || 'start'}: ${r.error}${r.refunded ? '\n(label auto-refunded)' : ''}`;
+      }
       const voidDate = new Date(r.voidAfter).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-      return `👻 Ghost pickup booked\nWarehouse: ${whCode.toUpperCase()} (${carrier})\nPickup: ${r.pickupDate} (conf ${r.confirmation || r.pickupId})\nGhost tracking: ${r.trackingNumber} ($${Number(r.labelCost || 0).toFixed(2)})\nAuto-void scheduled: ${voidDate} ET`;
+      return `👻 Ghost pickup booked${force ? ' (forced)' : ''}\nWarehouse: ${whCode.toUpperCase()} (${carrier})\nPickup: ${r.pickupDate} (conf ${r.confirmation || r.pickupId})\nGhost tracking: ${r.trackingNumber} ($${Number(r.labelCost || 0).toFixed(2)})\nAuto-void scheduled: ${voidDate} ET`;
+    }
+
+    case 'ghost-track':
+    case 'ghost_track': {
+      const [trackingNumber, whCode] = args;
+      if (!trackingNumber) return 'Usage: /ghost-track <trackingNumber> [WH_CODE]\nExample: /ghost-track 520490621205 NANA';
+      const r = await trackOrphanGhost({ trackingNumber, warehouseCode: whCode ? whCode.toUpperCase() : null });
+      if (!r.success) {
+        if (r.action === 'not-a-ghost') {
+          return `🛑 ${r.error}\nShipment ${r.shipmentId} — this looks like a real customer label, not a ghost. No action taken.`;
+        }
+        return `❌ Track orphan failed: ${r.error}`;
+      }
+      if (r.action === 'already-pending') return `ℹ️ Tracking ${trackingNumber} is already in the ghost-voids ledger. No action taken.`;
+      const e = r.entry;
+      const voidDate = new Date(e.voidAfter).toLocaleString('en-CA', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `🧾 Orphan ghost tracked\nShipment: ${e.shipmentId}\nTracking: ${e.trackingNumber}\nWarehouse: ${e.warehouseCode || '(unknown)'} (${e.carrier})\nLabel cost: $${e.labelCost.toFixed(2)}\nAuto-void scheduled: ${voidDate} ET`;
     }
 
     case 'ghosts': {
