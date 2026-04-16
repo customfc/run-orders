@@ -915,6 +915,7 @@ const COMMAND_HELP = `Commands:
 /status — today's ops summary
 /pickups — run just the pickup sweep (for tomorrow)
 /stage — run just the stage+buy+POs phases (no email, no pickups)
+/deploy — git pull main + restart server
 /claude <message> — ask Claude anything (full repo + tool access)
 /ghost-pickup <WH_CODE> <ups|purolator> [--force] — trigger a carrier visit at a fringe warehouse (ghost label, auto-refunded). --force skips the "real shipments exist" guard.
 /ghost-track <trackingNumber> [WH_CODE] — rescue an orphan ghost (add to void ledger). Use when /ghosts doesn't show a Mac-Roy label that exists in SS.
@@ -1011,6 +1012,27 @@ async function handleTelegramCommand(command, args) {
     case 'resume':
       opsState.setPaused(false);
       return '▶️ Resumed. Pipeline runs will execute again.';
+
+    case 'deploy': {
+      if (pipelineActive) return '⚠️ Pipeline is running — wait for it to finish before deploying.';
+      const { execFile } = require('child_process');
+      const envPath = ['/opt/homebrew/bin', '/usr/local/bin', process.env.PATH].filter(Boolean).join(':');
+      return new Promise((resolve) => {
+        execFile('git', ['pull', 'origin', 'main'], { cwd: __dirname, timeout: 30000, env: { ...process.env, PATH: envPath } }, (err, stdout, stderr) => {
+          if (err) {
+            resolve(`❌ git pull failed: ${(stderr || err.message).slice(0, 500)}`);
+            return;
+          }
+          const pullMsg = stdout.trim();
+          if (/Already up to date/.test(pullMsg)) {
+            resolve(`✅ Already up to date — no restart needed.`);
+            return;
+          }
+          resolve(`✅ Pulled:\n${pullMsg}\n\nRestarting in 2s...`);
+          setTimeout(() => process.exit(0), 2000);
+        });
+      });
+    }
 
     case 'launch':
     case 'pickups':
