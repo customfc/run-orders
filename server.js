@@ -915,12 +915,72 @@ const COMMAND_HELP = `Commands:
 /status — today's ops summary
 /pickups — run just the pickup sweep (for tomorrow)
 /stage — run just the stage+buy+POs phases (no email, no pickups)
+/claude <message> — ask Claude anything (full repo + tool access)
 /ghost-pickup <WH_CODE> <ups|purolator> [--force] — trigger a carrier visit at a fringe warehouse (ghost label, auto-refunded). --force skips the "real shipments exist" guard.
 /ghost-track <trackingNumber> [WH_CODE] — rescue an orphan ghost (add to void ledger). Use when /ghosts doesn't show a Mac-Roy label that exists in SS.
 /ghosts — list pending ghost labels awaiting void
 /pause — halt all pipeline runs until /resume
 /resume — clear pause
-/help — this help`;
+/help — this help
+
+Or just type a message — anything that isn't a command goes straight to Claude.`;
+
+// ── Claude CLI integration ──────────────────────────────────────────────────
+let claudeActive = false;
+
+function runClaude(prompt) {
+  const { execFile } = require('child_process');
+  const candidates = [
+    '/opt/homebrew/bin/claude',
+    '/usr/local/bin/claude',
+    path.join(process.env.HOME || '/Users/fred', '.claude', 'bin', 'claude'),
+  ];
+  const claudeBin = candidates.find((p) => fsRaw.existsSync(p)) || 'claude';
+
+  // Ensure node + homebrew tools are in PATH (SSH sessions strip it)
+  const envPath = ['/opt/homebrew/bin', '/usr/local/bin', process.env.PATH].filter(Boolean).join(':');
+
+  return new Promise((resolve) => {
+    execFile(claudeBin, ['-p', '--output-format', 'text', prompt], {
+      cwd: __dirname,
+      timeout: 180000, // 3 min max
+      maxBuffer: 1024 * 1024,
+      env: { ...process.env, PATH: envPath, CLAUDE_CODE_ENTRYPOINT: 'telegram' },
+    }, (err, stdout) => {
+      if (err) {
+        if (err.killed) resolve('(timed out after 3 minutes)');
+        else resolve(`Error: ${err.message.slice(0, 500)}`);
+        return;
+      }
+      resolve(stdout.trim() || '(no response)');
+    });
+  });
+}
+
+async function handleClaudeMessage(text) {
+  if (claudeActive) {
+    await telegram.reply('⏳ Already working on something — hold on.');
+    return;
+  }
+  claudeActive = true;
+  await telegram.reply('🤖 Thinking...');
+  try {
+    const response = await runClaude(text);
+    // Telegram message limit is 4096 chars — split if needed
+    if (response.length <= 4000) {
+      await telegram.reply(response);
+    } else {
+      const chunks = response.match(/[\s\S]{1,4000}/g) || [response];
+      for (const chunk of chunks) {
+        await telegram.reply(chunk);
+      }
+    }
+  } catch (err) {
+    await telegram.reply(`❌ Claude error: ${err.message.slice(0, 500)}`);
+  } finally {
+    claudeActive = false;
+  }
+}
 
 async function handleTelegramCommand(command, args) {
   switch (command) {
@@ -1010,8 +1070,19 @@ async function handleTelegramCommand(command, args) {
       return `${header}\n${rows.join('\n')}`;
     }
 
-    default:
-      return `Unknown command "/${command}". Try /help.`;
+    case 'claude': {
+      const prompt = args.join(' ');
+      if (!prompt) return 'Usage: /claude <message>\nOr just type a message without a command.';
+      handleClaudeMessage(prompt); // fire and forget
+      return null; // suppress default reply — handleClaudeMessage sends its own
+    }
+
+    default: {
+      // Anything unrecognized goes to Claude
+      const fullText = [command, ...args].join(' ');
+      handleClaudeMessage(fullText); // fire and forget
+      return null;
+    }
   }
 }
 
