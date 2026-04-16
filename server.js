@@ -817,11 +817,36 @@ cron.schedule('0 15 * * 1-5', async () => {
     const overdueFlag = g.maxOverdue > 0 ? ` · ⚠ ${g.maxOverdue}d overdue` : '';
     ghostLine += ` (oldest ${oldestDate}, $${g.exposure.toFixed(2)} exposure${overdueFlag})`;
   }
+  // Per-order detail for daily digest
+  const LOC_MAP = require(path.join(__dirname, 'scripts', 'shipstation', 'prosol-location-map.json'));
+  const whById = {};
+  for (const loc of Object.values(LOC_MAP)) {
+    if (loc.shipstation_warehouse_id) whById[String(loc.shipstation_warehouse_id)] = loc;
+  }
+  const labels = Object.values(state.phases.buy.labels || {});
+  const orderLines = labels.map((l) => {
+    const carrier = String(l.carrierCode || '').replace(/_walleted$/, '').replace(/_/g, ' ');
+    const wh = whById[String(l.warehouseId)];
+    const whName = wh ? wh.code : `wh-${l.warehouseId}`;
+    const items = (l.packages || []).flatMap((p) => (p.items || []));
+    const itemStr = items.length
+      ? items.map((i) => `${i.name || i.sku}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join(', ')
+      : l.orderNumber || '?';
+    const itemShort = itemStr.length > 80 ? itemStr.slice(0, 77) + '...' : itemStr;
+    return `  ${l.orderNumber || '?'} → ${whName} ${carrier} $${(l.labelCost || 0).toFixed(2)}\n    ${itemShort}`;
+  });
+  const posByTracking = state.phases.pos.byTracking || {};
+  const poNumbers = [...new Set(Object.values(posByTracking).map((p) => p.poNumber))];
+  const emailsByWh = state.phases.email.byWarehouse || {};
+  const emailLines = Object.entries(emailsByWh).map(([wh, info]) => `  ${wh}: ${info.orderCount} order(s)`);
+
   const body = [
     `Staged: ${s.staged}`,
     `Labels: ${s.labelsBought}${s.totalLabelCost ? ` ($${s.totalLabelCost})` : ''}${s.costWarnings ? ` · ⚠${s.costWarnings} cost` : ''}`,
-    `POs: ${s.posCreated}`,
+    ...(orderLines.length ? ['', 'Orders:', ...orderLines, ''] : []),
+    `POs: ${s.posCreated}${poNumbers.length ? ` (${poNumbers.join(', ')})` : ''}`,
     `Emails: ${s.emailsSent}`,
+    ...(emailLines.length ? emailLines : []),
     `Pickups: ${s.pickupsBooked} (${s.totalPickedLabels} labels)`,
     ghostLine,
     s.errorCount ? `\nLast error: [${s.lastError?.phase}] ${s.lastError?.reason}` : null,
