@@ -146,8 +146,21 @@ function resolveMappedEntry(rawSku) {
   return SKU_MAPPINGS[rawSku];
 }
 
+// Pull a Schluter cable SKU straight out of the item name — Amazon titles
+// reliably end with the model number (e.g. "…120V, 35.3 Feet - DHEHK12011").
+// This is more reliable than sqft parsing since Amazon frequently prints
+// "N Feet" (linear cable length) instead of "N sqft" (coverage area).
+function extractDhehkSkuFromName(name) {
+  const m = String(name || '').match(/\bDHEHK(120|240)(\d{2,3})\b/i);
+  if (!m) return null;
+  return `DHEHK${m[1]}${m[2]}`;
+}
+
 function extractCableSku(name) {
   const text = String(name || '');
+  // Prefer the explicit model number if the title carries it.
+  const direct = extractDhehkSkuFromName(text);
+  if (direct) return direct;
   const voltageMatch = text.match(/\b(120|240)\s*v\b/i);
   const sqftMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:sq\.?\s*ft|square\s*feet|sqft)/i);
   if (!voltageMatch || !sqftMatch) return null;
@@ -168,6 +181,14 @@ function resolveOrderItems(order) {
     const displayName = item.name || mapped?.product || sku;
 
     if (!mapped) {
+      // Unknown ASIN — try to recover a Schluter cable SKU from the title
+      // before giving up. Catches new cable-kit ASINs that haven't been
+      // added to the map yet.
+      const dhehkSku = extractDhehkSkuFromName(item.name);
+      if (dhehkSku) {
+        resolved.push({ ...base, kind: 'prosol', apiSku: dhehkSku, label: `${item.name || sku} → ${dhehkSku}` });
+        continue;
+      }
       failures.push(`No sku-map entry for ${sku} (${item.name || 'unnamed item'})`);
       continue;
     }
