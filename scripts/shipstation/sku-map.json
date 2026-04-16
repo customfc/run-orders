@@ -576,12 +576,12 @@
     },
     "_section_schluter_ditra_heat_duo": "=== SCHLUTER - DITRA-HEAT-DUO ===",
     "B079ZC1FWT": {
-      "api_sku": "UNMAPPED",
-      "prosol_sku": "UNMAPPED",
+      "api_sku": "DHD810M",
+      "prosol_sku": "DHD810M",
       "product": "Schluter DITRA-HEAT-DUO Roll 108 sqft 3'3\" x 33'",
       "package_shape": "solo",
-      "note": "Was incorrectly mapped to DHD8MA (8.4 sqft sheet). This ASIN is the 108 sqft ROLL. Correct Prosol SKU TBD — marked UNMAPPED until verified. Ships from Sechelt.",
-      "verified": false
+      "note": "Was incorrectly mapped to DHD8MA (8.4 sqft sheet). Fixed 2026-04-16.",
+      "verified": true
     },
     "00843": {
       "api_sku": "DHD8MA",
