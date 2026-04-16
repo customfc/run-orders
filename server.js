@@ -927,6 +927,8 @@ Or just type a message — anything that isn't a command goes straight to Claude
 
 // ── Claude CLI integration ──────────────────────────────────────────────────
 let claudeActive = false;
+let lastClaudeAt = 0;
+const CLAUDE_SESSION_TTL = 10 * 60 * 1000; // 10 min — after this, start a fresh conversation
 
 function runClaude(prompt) {
   const { execFile } = require('child_process');
@@ -940,8 +942,14 @@ function runClaude(prompt) {
   // Ensure node + homebrew tools are in PATH (SSH sessions strip it)
   const envPath = ['/opt/homebrew/bin', '/usr/local/bin', process.env.PATH].filter(Boolean).join(':');
 
+  const now = Date.now();
+  const shouldContinue = (now - lastClaudeAt) < CLAUDE_SESSION_TTL;
+  lastClaudeAt = now;
+
   return new Promise((resolve) => {
-    const args = ['-p', '--output-format', 'text', '--model', 'sonnet', prompt];
+    const args = shouldContinue
+      ? ['--continue', '-p', '--output-format', 'text', '--model', 'sonnet', prompt]
+      : ['-p', '--output-format', 'text', '--model', 'sonnet', prompt];
     execFile(claudeBin, args, {
       cwd: __dirname,
       timeout: 180000, // 3 min max
