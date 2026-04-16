@@ -941,7 +941,8 @@ function runClaude(prompt) {
   const envPath = ['/opt/homebrew/bin', '/usr/local/bin', process.env.PATH].filter(Boolean).join(':');
 
   return new Promise((resolve) => {
-    execFile(claudeBin, ['-p', '--output-format', 'text', prompt], {
+    const args = ['-p', '--output-format', 'text', '--model', 'sonnet', prompt];
+    execFile(claudeBin, args, {
       cwd: __dirname,
       timeout: 180000, // 3 min max
       maxBuffer: 1024 * 1024,
