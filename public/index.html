@@ -127,6 +127,7 @@
     <button onclick="showTab('pickups')">Pickups</button>
     <button onclick="showTab('shopify')">Shopify SO/PO</button>
     <button onclick="showTab('tracking')">Tracking</button>
+    <button onclick="showTab('fba')">FBA Command</button>
     <button onclick="showTab('logs')">Logs</button>
   </div>
   <div class="env-status" id="envStatus"></div>
@@ -222,6 +223,23 @@
     </div>
   </div>
 
+  <!-- ═══ FBA COMMAND ═══ -->
+  <div id="tab-fba" class="tab-content">
+    <div class="card">
+      <h2>FBA Command · Today</h2>
+      <div class="actions">
+        <button class="btn btn-primary" id="btnFbaPull" onclick="fbaPullSignals()">Pull Inventory Planning</button>
+        <button class="btn btn-primary" id="btnFbaPullBb" onclick="fbaPullBuyBox()">Pull Buy Box</button>
+        <button class="btn" onclick="fbaLoadToday()">Refresh View</button>
+        <button class="btn" style="background:#7c3aed;color:white" onclick="fbaShowViolatorReport()">🎯 Schluter Violator Report</button>
+        <span id="fbaSnapshotInfo" style="font-size:12px;color:#64748b;margin-left:12px"></span>
+      </div>
+      <div id="fbaProgress" class="progress-log" style="display:none"></div>
+      <div id="fbaSummary" style="margin:12px 0"></div>
+      <div id="fbaTiers"></div>
+    </div>
+  </div>
+
   <!-- ═══ LOGS ═══ -->
   <div id="tab-logs" class="tab-content">
     <div class="card">
@@ -246,6 +264,7 @@ function showTab(name) {
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
   if (name === 'logs') loadLogs();
+  if (name === 'fba') fbaLoadToday();
 }
 
 // ── Health check ─────────────────────────────────────────────────────────────
@@ -1217,7 +1236,281 @@ function detailStr(log) {
   if (log.action === 'run-orders') return `${log.dryRun ? 'Dry run' : 'Staged'}: ${log.assignmentCount || 0} orders, ${log.manualReviewCount || 0} manual review`;
   if (log.action === 'book-pickup') return `${log.warehouseName || ''} / ${log.carrier || ''} — ID: ${log.pickupId || log.confirmation || 'N/A'}`;
   if (log.action === 'shopify-so-po') return `${log.shopifyOrder || ''} → ${log.soNumber || '—'} / ${log.poNumber || '—'}`;
+  if (log.action === 'fba-signal-pull') return `${log.rowCount || 0} rows · ${JSON.stringify(log.tierCounts || {})}`;
   return log.error || '';
+}
+
+// ── FBA Command ──────────────────────────────────────────────────────────────
+
+const FBA_TIERS = [
+  { key: 'bleeding',              title: 'BLEEDING — zero stock on moving SKUs',                 icon: '🚨', color: '#dc2626' },
+  { key: 'our-map-violation',     title: 'OUR MAP VIOLATIONS — we are priced below MAP',         icon: '⚠️ ', color: '#b91c1c' },
+  { key: 'urgent',                title: 'URGENT — Amazon says ship within 3 days',              icon: '⚡', color: '#ea580c' },
+  { key: 'lipc-active',           title: 'LIPC FEE ACTIVE — paying low-inventory penalty',       icon: '💸', color: '#b45309' },
+  { key: 'map-violator-detected', title: 'MAP VIOLATORS — competitor below MAP, report to brand', icon: '🎯', color: '#7c3aed' },
+  { key: 'bb-losing',             title: 'LOSING BUY BOX — stocked but a competitor owns BB',    icon: '🥊', color: '#c026d3' },
+  { key: 'low-cover',             title: 'LOW COVER — under 28d supply, LIPC risk',              icon: '⚠️',  color: '#d97706' },
+  { key: 'upcoming',              title: 'UPCOMING — ship within 14 days per Amazon',            icon: '📅', color: '#2563eb' },
+  { key: 'dormant',               title: 'DORMANT — sitting on stock, no 30d sales',             icon: '💤', color: '#64748b' },
+  { key: 'healthy',               title: 'HEALTHY — adequate cover, no action needed',           icon: '✅', color: '#059669' },
+];
+
+async function fbaLoadToday() {
+  const summaryEl = document.getElementById('fbaSummary');
+  const tiersEl = document.getElementById('fbaTiers');
+  const infoEl = document.getElementById('fbaSnapshotInfo');
+  summaryEl.innerHTML = '<div style="color:#94a3b8;font-size:13px">Loading...</div>';
+  tiersEl.innerHTML = '';
+  try {
+    const res = await fetch('/api/fba/today');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Unknown error');
+    if (!data.snapshot) {
+      summaryEl.innerHTML = '<div style="color:#94a3b8">No snapshot yet. Click <b>Pull from Amazon</b>.</div>';
+      return;
+    }
+    const snap = data.snapshot;
+    const age = Math.round((Date.now() - new Date(snap.pulledAt).getTime()) / 60000);
+    infoEl.textContent = `snapshot pulled ${age}m ago · ${snap.rowCount} rows`;
+
+    const s = data.summary;
+    summaryEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:8px">
+        <div style="padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px">
+          <div style="font-size:11px;color:#991b1b;text-transform:uppercase">Daily Revenue Bleeding</div>
+          <div style="font-size:22px;font-weight:700;color:#991b1b">$${s.bleedingDailyRevenue.toFixed(2)}</div>
+        </div>
+        <div style="padding:12px;background:#fdf4ff;border:1px solid #f0abfc;border-radius:8px">
+          <div style="font-size:11px;color:#86198f;text-transform:uppercase">Losing Buy Box</div>
+          <div style="font-size:22px;font-weight:700;color:#86198f">${s.bbLosingCount ?? '—'}${typeof s.bbGapSum === 'number' ? `<span style="font-size:12px;font-weight:400;color:#86198f"> · +$${s.bbGapSum.toFixed(2)} above</span>` : ''}</div>
+        </div>
+        <div style="padding:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px">
+          <div style="font-size:11px;color:#9a3412;text-transform:uppercase">Total Units To Ship</div>
+          <div style="font-size:22px;font-weight:700;color:#9a3412">${s.totalRecommendedUnits}</div>
+        </div>
+        <div style="padding:12px;background:#fefce8;border:1px solid #fde68a;border-radius:8px">
+          <div style="font-size:11px;color:#854d0e;text-transform:uppercase">LIPC Fee Active</div>
+          <div style="font-size:22px;font-weight:700;color:#854d0e">${s.lipcActiveCount}</div>
+        </div>
+        <div style="padding:12px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px">
+          <div style="font-size:11px;color:#475569;text-transform:uppercase">Total SKUs Tracked</div>
+          <div style="font-size:22px;font-weight:700;color:#475569">${s.totalSkus}</div>
+        </div>
+      </div>
+    `;
+
+    const byTier = {};
+    for (const r of data.rows) (byTier[r.tier] ||= []).push(r);
+
+    tiersEl.innerHTML = FBA_TIERS.map(tier => {
+      const rows = byTier[tier.key] || [];
+      if (!rows.length) return '';
+      return fbaRenderTier(tier, rows);
+    }).join('');
+  } catch (err) {
+    summaryEl.innerHTML = `<div style="color:#991b1b">${esc(err.message)}</div>`;
+  }
+}
+
+function fbaRenderTier(tier, rows) {
+  const isCollapsed = tier.key === 'dormant' || tier.key === 'healthy';
+  return `
+    <details ${isCollapsed ? '' : 'open'} style="margin-top:16px">
+      <summary style="cursor:pointer;padding:8px;background:${tier.color}15;border-left:4px solid ${tier.color};border-radius:4px;font-weight:600;color:${tier.color}">
+        ${tier.icon} ${tier.title}  <span style="color:#475569;font-weight:400">(${rows.length})</span>
+      </summary>
+      <table style="margin-top:8px;font-size:12px">
+        <thead>
+          <tr>
+            <th style="text-align:left">Product</th>
+            <th style="text-align:right">Avail</th>
+            <th style="text-align:right">DoS</th>
+            <th style="text-align:right">v30</th>
+            <th style="text-align:right">Ship Qty</th>
+            <th style="text-align:right">Ship In</th>
+            <th style="text-align:right">MAP</th>
+            <th style="text-align:right">BuyBox</th>
+            <th style="text-align:right">Your Price</th>
+            <th style="text-align:left">Action</th>
+            <th style="text-align:left">ASIN</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => {
+            const name = r.productName || r.sku;
+            // Real BB data (if pulled) — shows who owns it & gap
+            let bbCell = '';
+            let ourCell = '';
+            if (r.bb) {
+              const bb = r.bb;
+              if (bb.buyBoxIsUs) {
+                bbCell = `$${(bb.buyBoxPrice||0).toFixed(2)} <span style="color:#059669;font-weight:700" title="You own Buy Box">✓</span>`;
+              } else if (bb.buyBoxSellerId) {
+                bbCell = `$${(bb.buyBoxPrice||0).toFixed(2)} <span style="color:#dc2626;font-weight:700" title="Competitor owns BB">✗</span>`;
+              } else {
+                bbCell = bb.buyBoxPrice ? `$${bb.buyBoxPrice.toFixed(2)}` : '—';
+              }
+              if (bb.ourPrice != null) {
+                const gap = bb.gap;
+                const gapColor = gap > 0 ? '#dc2626' : gap < 0 ? '#059669' : '#64748b';
+                const gapStr = gap === 0 ? '' : ` <span style="color:${gapColor};font-size:10px">(${gap>0?'+':''}${gap.toFixed(2)})</span>`;
+                ourCell = `$${bb.ourPrice.toFixed(2)}${gapStr}`;
+              } else {
+                ourCell = '<span style="color:#94a3b8" title="No active offer from us">— not live</span>';
+              }
+            } else {
+              // fallback to snapshot prices when BB not yet pulled
+              const bbMatch = r.yourPrice > 0 && r.featuredOfferPrice > 0 && Math.abs(r.yourPrice - r.featuredOfferPrice) < 0.01;
+              bbCell = r.featuredOfferPrice ? `$${r.featuredOfferPrice.toFixed(2)}${bbMatch ? ' <span style="color:#059669">~</span>' : ''}` : '';
+              ourCell = r.yourPrice ? `$${r.yourPrice.toFixed(2)}` : '';
+            }
+            const mapCell = r.mapCad ? `$${r.mapCad.toFixed(2)}${r.mapOverrideAllowed ? ' <span title="Override allowed — user policy" style="color:#b45309">⚡</span>' : ''}` : '';
+            const d = r.mapDecision;
+            let actionCell = '';
+            if (d) {
+              const actionColors = {
+                'match': '#059669',
+                'hold-at-map': '#b45309',
+                'hold-at-floor': '#9a3412',
+                'competitor-below-map': '#7c3aed',
+                'violation-by-us': '#b91c1c',
+                'override-allowed': '#64748b',
+                'sole-offer': '#94a3b8',
+                'missing-map': '#94a3b8',
+                'no-map-rule': '#94a3b8',
+                'no-competition': '#94a3b8',
+              };
+              const color = actionColors[d.action] || '#475569';
+              let label = d.action;
+              if (d.action === 'match' && d.recommendedPrice != null) label = `match → $${d.recommendedPrice.toFixed(2)}`;
+              if (d.action === 'hold-at-map' || d.action === 'hold-at-floor') label = `${d.action} → $${d.recommendedPrice.toFixed(2)}`;
+              if (d.action === 'competitor-below-map') label = `REPORT: ${d.buyBoxSellerId}`;
+              if (d.action === 'violation-by-us') label = `FIX → $${d.recommendedPrice.toFixed(2)}`;
+              actionCell = `<span style="color:${color};font-weight:500" title="${esc(d.reason || '')}">${esc(label)}</span>`;
+            }
+            return `<tr>
+              <td style="max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(name)}">${esc(name)}</td>
+              <td style="text-align:right">${r.available}</td>
+              <td style="text-align:right">${r.totalDaysOfSupply}</td>
+              <td style="text-align:right">${r.units30}</td>
+              <td style="text-align:right;font-weight:600">${r.recShipQty || ''}</td>
+              <td style="text-align:right">${r.daysUntilShip === null ? '' : r.daysUntilShip + 'd'}</td>
+              <td style="text-align:right">${mapCell}</td>
+              <td style="text-align:right">${bbCell}</td>
+              <td style="text-align:right">${ourCell}</td>
+              <td>${actionCell}</td>
+              <td><a href="https://www.amazon.ca/dp/${esc(r.asin)}" target="_blank" style="font-family:monospace;font-size:11px">${esc(r.asin)}</a></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </details>
+  `;
+}
+
+let fbaPullSource = null;
+async function fbaSsePull(endpoint, buttonId, idleLabel, busyLabel) {
+  if (fbaPullSource) return;
+  const btn = document.getElementById(buttonId);
+  const progressEl = document.getElementById('fbaProgress');
+  btn.disabled = true;
+  btn.textContent = busyLabel;
+  progressEl.style.display = 'block';
+  progressEl.innerHTML = '';
+
+  const append = (line) => {
+    progressEl.innerHTML += `<div>${esc(line)}</div>`;
+    progressEl.scrollTop = progressEl.scrollHeight;
+  };
+
+  try {
+    const res = await fetch(endpoint, { method: 'POST' });
+    if (res.status === 409) { append('Pull already in progress'); return; }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const events = buf.split('\n\n');
+      buf = events.pop();
+      for (const block of events) {
+        const ev = {};
+        for (const line of block.split('\n')) {
+          if (line.startsWith('event: ')) ev.event = line.slice(7);
+          else if (line.startsWith('data: ')) ev.data = line.slice(6);
+        }
+        if (!ev.event) continue;
+        if (ev.event === 'status' || ev.event === 'progress') {
+          const d = JSON.parse(ev.data);
+          append(d.line || d.message || JSON.stringify(d));
+        } else if (ev.event === 'complete') {
+          append('✓ Complete');
+          await fbaLoadToday();
+        } else if (ev.event === 'error') {
+          const d = JSON.parse(ev.data);
+          append('ERROR: ' + d.error);
+        }
+      }
+    }
+  } catch (err) {
+    append('ERROR: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = idleLabel;
+    fbaPullSource = null;
+  }
+}
+
+async function fbaPullSignals() {
+  return fbaSsePull('/api/fba/signals/pull', 'btnFbaPull', 'Pull Inventory Planning', 'Pulling...');
+}
+
+async function fbaPullBuyBox() {
+  return fbaSsePull('/api/fba/buybox/pull', 'btnFbaPullBb', 'Pull Buy Box', 'Pulling BB (1–2 min)...');
+}
+
+async function fbaShowViolatorReport() {
+  try {
+    const r = await fetch('/api/fba/map-violators');
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error);
+    if (!data.violators.length) {
+      alert('No competitor MAP violations detected in latest Buy Box snapshot. Pull fresh BB data if you expect new violations.');
+      return;
+    }
+    const existing = document.getElementById('mapViolatorModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'mapViolatorModal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:40px';
+    modal.innerHTML = `
+      <div style="background:white;max-width:900px;width:100%;max-height:90vh;overflow:auto;border-radius:12px;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.3)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 style="margin:0">🎯 Schluter MAP Violator Report</h2>
+          <button onclick="document.getElementById('mapViolatorModal').remove()" style="border:none;background:#f1f5f9;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:20px">×</button>
+        </div>
+        <p style="margin:0 0 12px;color:#475569;font-size:13px">
+          ${data.violators.length} competitor violation${data.violators.length === 1 ? '' : 's'} observed in latest Buy Box snapshot.
+          Send to <a href="mailto:${data.reportingEmail}">${data.reportingEmail}</a> (confirm this is Schluter's current iMAP contact).
+        </p>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px">
+          <strong>Observed violations:</strong>
+          <ul style="margin:8px 0 0;padding-left:20px">
+            ${data.violators.map(v => `<li>${esc(v.product || v.asin)} — <b>$${v.observedPrice?.toFixed(2)}</b> (MAP $${v.mapPrice?.toFixed(2)}) by seller <code>${esc(v.sellerId)}</code></li>`).join('')}
+          </ul>
+        </div>
+        <textarea id="mapViolatorBody" style="width:100%;min-height:300px;font-family:monospace;font-size:12px;padding:12px;border:1px solid #cbd5e1;border-radius:6px">${esc(data.emailBody)}</textarea>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('mapViolatorBody').value).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy to clipboard',2000)})">Copy to clipboard</button>
+          <a class="btn" href="mailto:${data.reportingEmail}?subject=${encodeURIComponent('MAP violation report — Amazon.ca — ' + new Date().toISOString().slice(0,10))}&body=${encodeURIComponent(data.emailBody)}">Open in mail app</a>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
 }
 
 // ── Pickup Sidebar ───────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU → Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-04-15T00:00:00.000Z",
+  "_updated": "2026-04-17T11:03:34.885Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -42,7 +42,13 @@
       "prosol_sku": "KD4GRKE",
       "product": "Schluter KERDI-DRAIN 4\" Stainless Steel Square Grate",
       "note": "Shopify SKU. KD4GRKE = Classic SS Grate 4\"",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KD4GRKE",
+      "map_cad": 65.34,
+      "retail_cad": 72.6,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "4522": {
       "api_sku": "KBSC1151501220",
@@ -50,7 +56,13 @@
       "product": "Schluter KERDI-BOARD-SC Shower Curb 4-1/2\" x 6\" x 48\"",
       "package_shape": "solo",
       "note": "Shopify SKU",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KBSC1151501220",
+      "map_cad": 85.97,
+      "retail_cad": 95.52,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "8776": {
       "api_sku": "CPMBP1",
@@ -63,7 +75,13 @@
       "prosol_sku": "KST9651525",
       "product": "Schluter KERDI-SHOWER-T Sloped Shower Tray 38\"x60\"",
       "note": "Shopify SKU",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KST965/1525",
+      "map_cad": 173.74,
+      "retail_cad": 193.04,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "8997": {
       "api_sku": "NON_PROSOL",
@@ -102,7 +120,13 @@
       "prosol_sku": "KMSMV235114",
       "product": "Schluter KERDI-SEAL-MV Mixing Valve Seal 4-1/2\"",
       "note": "Shopify SKU - Kerdi Pipe Seal Mixing Valve",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KMSMV235/114",
+      "map_cad": 10.67,
+      "retail_cad": 11.86,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "10173": {
       "api_sku": "NON_PROSOL",
@@ -124,7 +148,15 @@
       "prosol_sku": "DHERT102BW",
       "product": "Schluter Ditra Heat Thermostat Programmable",
       "note": "Shopify SKU - maps to touch programmable thermostat",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHERT102/BW",
+      "map_cad": 290.68,
+      "retail_cad": 322.98,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "map_override_allowed": true,
+      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
     },
     "11461": {
       "api_sku": "UNMAPPED_CABLE",
@@ -426,44 +458,86 @@
       "api_sku": "DHEHK24053",
       "prosol_sku": "DHEHK24053",
       "product": "Schluter DITRA-HEAT-E Cable 240V 53 sq ft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK24053",
+      "map_cad": 475.78,
+      "retail_cad": 528.64,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01MRA8WQS": {
       "api_sku": "DHEHK24016",
       "prosol_sku": "DHEHK24016",
       "product": "Schluter DITRA-HEAT-E-HK Cable 240V 52.9ft (16 sqft)",
       "note": "DHEHK24016 confirmed from ShipStation title",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK24016",
+      "map_cad": 267.69,
+      "retail_cad": 297.43,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01N9VNLR4": {
       "api_sku": "DHEHK24038",
       "prosol_sku": "DHEHK24038",
       "product": "Schluter DITRA-HEAT-E-HK Cable 240V 37.5 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK24038",
+      "map_cad": 400.18,
+      "retail_cad": 444.64,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01N4S7VJ2": {
       "api_sku": "DHEHK240129",
       "prosol_sku": "DHEHK240129",
       "product": "Schluter DITRA-HEAT-E-HK Cable 240V 128.8 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK240129",
+      "map_cad": 796.01,
+      "retail_cad": 884.45,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01MSBNBH3": {
       "api_sku": "DHEHK240145",
       "prosol_sku": "DHEHK240145",
       "product": "Schluter DITRA-HEAT-E-HK Cable 240V 145.3 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK240145",
+      "map_cad": 865.13,
+      "retail_cad": 961.26,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B071RTWHQB": {
       "api_sku": "DHEHK24085",
       "prosol_sku": "DHEHK24085",
       "product": "Schluter DITRA-HEAT-E-HK Cable 240V 85.3 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK24085",
+      "map_cad": 633.35,
+      "retail_cad": 703.72,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01N26KH0N": {
       "api_sku": "DHEHK24021",
       "prosol_sku": "DHEHK24021",
       "product": "Schluter DITRA-HEAT-E-HK Cable 240V 21.4 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK24021",
+      "map_cad": 321.52,
+      "retail_cad": 357.24,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B071DWN788": {
       "api_sku": "UNMAPPED_CABLE",
@@ -483,38 +557,74 @@
       "api_sku": "DHEHK240167",
       "prosol_sku": "DHEHK240167",
       "product": "Schluter DITRA-HEAT-E-HK Cable 240V 166.7 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK240167",
+      "map_cad": 933.28,
+      "retail_cad": 1036.98,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B071YVTQ5X": {
       "api_sku": "DHEHK240167",
       "prosol_sku": "DHEHK240167",
       "product": "Schluter DITRA-HEAT-E-HK Cable 240V 166.7 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK240167",
+      "map_cad": 933.28,
+      "retail_cad": 1036.98,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B072BJG9P2": {
       "api_sku": "DHEHK12051",
       "prosol_sku": "DHEHK12051",
       "product": "Schluter DITRA-HEAT-E-HK Cable 120V 51.4 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK12051",
+      "map_cad": 475.69,
+      "retail_cad": 528.54,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B010GQ3H48": {
       "api_sku": "DHEHK12011",
       "prosol_sku": "DHEHK12011",
       "product": "Schluter DITRA-HEAT-E-HK Cable 120V 10.7 sqft (35.3 linear ft)",
       "note": "Confirmed from order 701-4376345-5045841 title: DHEHK12011",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK12011",
+      "map_cad": 240.24,
+      "retail_cad": 266.93,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01N3845HQ": {
       "api_sku": "DHEHK24043",
       "prosol_sku": "DHEHK24043",
       "product": "Schluter DITRA-HEAT-E-HK Cable 240V 43.1 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK24043",
+      "map_cad": 423.56,
+      "retail_cad": 470.62,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0713Z14KJ": {
       "api_sku": "DHEHK12043",
       "prosol_sku": "DHEHK12043",
       "product": "Schluter DITRA-HEAT-E-HK Cable 120V 42.7 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK12043",
+      "map_cad": 423.72,
+      "retail_cad": 470.8,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_cable_kits": "=== SCHLUTER - CABLE KITS WITH THERMOSTAT ===",
     "B010MQ7L9O": {
@@ -581,7 +691,13 @@
       "product": "Schluter DITRA-HEAT-DUO Roll 108 sqft 3'3\" x 33'",
       "package_shape": "solo",
       "note": "Was incorrectly mapped to DHD8MA (8.4 sqft sheet). Fixed 2026-04-16.",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHD810M",
+      "map_cad": 482.07,
+      "retail_cad": 535.63,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "00843": {
       "api_sku": "DHD8MA",
@@ -590,7 +706,13 @@
       "package_shape": "heat_sheet",
       "max_pkg_weight_lb": 50,
       "note": "Shopify SKU - same as B079ZC1FWT",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHD8MA",
+      "map_cad": 39.98,
+      "retail_cad": 44.42,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_ditra_heat_ps": "=== SCHLUTER - DITRA-HEAT-PS (PEEL & STICK) ===",
     "B0BN6Y63P6": {
@@ -599,7 +721,13 @@
       "product": "Schluter DITRA-HEAT-PS Peel & Stick Membrane Sheet 8.4 sqft",
       "package_shape": "heat_sheet",
       "max_pkg_weight_lb": 50,
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHPS5MA",
+      "map_cad": 33.37,
+      "retail_cad": 37.08,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_ditra_heat_membrane": "=== SCHLUTER - DITRA-HEAT MEMBRANE ===",
     "B018A2XNC6": {
@@ -608,40 +736,82 @@
       "product": "Schluter DITRA-HEAT Uncoupling Membrane 134.5 sqft Roll",
       "package_shape": "solo",
       "verified": true,
-      "note": "Fixed 2026-04-01 — was incorrectly mapped to DH5MA (8.4 sqft sheet). DH512M is the 134.5 sqft roll."
+      "note": "Fixed 2026-04-01 — was incorrectly mapped to DH5MA (8.4 sqft sheet). DH512M is the 134.5 sqft roll.",
+      "brand": "schluter",
+      "schluter_item": "DH512M",
+      "map_cad": 412.44,
+      "retail_cad": 458.27,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_thermostats": "=== SCHLUTER - THERMOSTATS ===",
     "B01E7WHC34": {
       "api_sku": "DHERT103/BW",
       "prosol_sku": "DHERT103BW",
       "product": "Schluter DITRA-HEAT-E-R Non-Programmable Thermostat Bright White",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHERT103/BW",
+      "map_cad": 199.85,
+      "retail_cad": 222.06,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "map_override_allowed": true,
+      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
     },
     "B01EB8K754": {
       "api_sku": "DHERT102/BW",
       "prosol_sku": "DHERT102BW",
       "product": "Schluter DITRA-HEAT-E-RT Touch Programmable Thermostat Bright White",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHERT102/BW",
+      "map_cad": 290.68,
+      "retail_cad": 322.98,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "map_override_allowed": true,
+      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
     },
     "DHERT104bw": {
       "api_sku": "DHERT104/BW",
       "prosol_sku": "DHERT104BW",
       "product": "Schluter DITRA-HEAT-E-WIFI Thermostat Wireless Programmable Bright White",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHERT104/BW",
+      "map_cad": 363.37,
+      "retail_cad": 403.74,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "map_override_allowed": true,
+      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
     },
     "_section_schluter_kerdi_trowel": "=== SCHLUTER - KERDI TROWEL ===",
     "B087HM7R5F": {
       "api_sku": "TRL-KER",
       "prosol_sku": "TRL-KER",
       "product": "Schluter KERDI-TROWEL Square Notch Trowel 1/8\" x 1/8\"",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "TRL-KER",
+      "map_cad": 35.41,
+      "retail_cad": 39.34,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_ditra_trowel": "=== SCHLUTER - DITRA TROWEL ===",
     "B003IS31TS": {
       "api_sku": "TRL-DIT",
       "prosol_sku": "TRL-DIT",
       "product": "Schluter DITRA-TROWEL Square-Notch Trowel 11/64\" x 11/64\"",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "TRL-DIT",
+      "map_cad": 35.41,
+      "retail_cad": 39.34,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_kerdi_board_niche": "=== SCHLUTER - KERDI-BOARD-SN SHOWER NICHE ===",
     "B0DJG4N9M7": {
@@ -649,21 +819,39 @@
       "prosol_sku": "KB12SN305711AF",
       "product": "Schluter KERDI-BOARD-SN Shower Niche 12\"x28\"",
       "note": "Was incorrectly mapped to KB12SN305305A (12x12). Amazon title says 12x28 = KB12SN305711AF.",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KB12SN305711AF",
+      "map_cad": 136.68,
+      "retail_cad": 151.87,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0DJH5ZZ1K": {
       "api_sku": "KB12SN305508AF",
       "prosol_sku": "KB12SN305508AF",
       "product": "Schluter KERDI-BOARD-SN Shower Niche with Shelf 12\"x20\"",
       "note": "Larger niche with shelf. Verify size against order.",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KB12SN305508AF",
+      "map_cad": 114.34,
+      "retail_cad": 127.04,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00GUR3B26": {
       "api_sku": "KB12SN305152AF",
       "prosol_sku": "KB12SN305152AF",
       "product": "Schluter KERDI-BOARD-SN Shower Niche 12\"x6\"",
       "note": "Fixed 2026-04-01 — was incorrectly mapped to 305305A (12x12). Amazon title says 12\" Width 6\" Height = KB12SN305152A. SF item 02509.",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KB12SN305152AF",
+      "map_cad": 70.64,
+      "retail_cad": 78.49,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_kerdi_band": "=== SCHLUTER - KERDI-BAND ===",
     "B003C69J1K": {
@@ -673,7 +861,13 @@
       "note": "KERDI-BAND 10\" x 32ft10in roll = 33 LF in Salesforce. UOM is Linear Feet — always use qty 33, NOT 1. Confirmed 2026-03-27.",
       "verified": true,
       "uom": "LF",
-      "qty_per_unit": 33
+      "qty_per_unit": 33,
+      "brand": "schluter",
+      "schluter_item": "KEBA100/125/10M",
+      "map_cad": 52.07,
+      "retail_cad": 57.85,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_ditra_membrane": "=== SCHLUTER - DITRA MEMBRANE ===",
     "B01FT67M4Q": {
@@ -681,7 +875,13 @@
       "prosol_sku": "DITRA5M",
       "product": "Schluter DITRA Uncoupling Membrane 3'3\" x 16'5\" (54 sqft)",
       "package_shape": "solo",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DITRA5M",
+      "map_cad": 135.43,
+      "retail_cad": 150.48,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_kerdi_tubkit": "=== SCHLUTER - KERDI-TUBKIT ===",
     "B074Y66KJ2": {
@@ -689,7 +889,13 @@
       "prosol_sku": "KKB7",
       "product": "Schluter KERDI-TUBKIT Complete Bathtub Surround Kit 75 sqft",
       "package_shape": "solo",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KKB7",
+      "map_cad": 281.95,
+      "retail_cad": 313.28,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_kerdi_shower_kit": "=== SCHLUTER - KERDI SHOWER KIT ===",
     "B0B5VV1GGQ": {
@@ -698,7 +904,13 @@
       "product": "Schluter KERDI-SHOWER-KIT with ABS Flange & SS Grate 48\"x48\"",
       "package_shape": "solo",
       "note": "Verify exact model from order if different size. Other sizes: KSK9651525ABSE (38x60)",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KSK1220ABSE",
+      "map_cad": 695.04,
+      "retail_cad": 772.27,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_kerdi_line_drain": "=== SCHLUTER - KERDI-LINE DRAIN ===",
     "B07PLNDKQN": {
@@ -707,7 +919,13 @@
       "product": "Schluter KERDI-LINE Linear Floor Drain 24\" (23-5/8\")",
       "package_shape": "solo",
       "note": "Amazon says 24\". Closest Prosol = KL1DRE60 (23-5/8\"). Verify from order.",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KL1DRE60",
+      "map_cad": 166.25,
+      "retail_cad": 184.72,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLLDCP6": {
       "api_sku": "UNMAPPED",
@@ -722,7 +940,13 @@
       "api_sku": "KMSMV235/114",
       "prosol_sku": "KMSMV235114",
       "product": "Schluter KERDI-SEAL-MV Mixing Valve Seal 4-1/2\"",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KMSMV235/114",
+      "map_cad": 10.67,
+      "retail_cad": 11.86,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B09CW9ZTRX": {
       "bundle": true,
@@ -758,14 +982,26 @@
       "api_sku": "KMS172/12",
       "prosol_sku": "KMS17212",
       "product": "Schluter KERDI-SEAL-PS Pipe Seal 1/2\"",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KMS172/12",
+      "map_cad": 9.23,
+      "retail_cad": 10.26,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07289LVSQ": {
       "api_sku": "KMS1017212",
       "prosol_sku": "KMS1017212",
       "product": "Schluter KERDI-SEAL-PS Pipe Seal 1/2\" (Pack of 10)",
       "note": "Amazon says 10-pack",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KMS10172/12",
+      "map_cad": 83.19,
+      "retail_cad": 92.43,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_schluter_kerdi_drain": "=== SCHLUTER - KERDI-DRAIN ===",
     "_section_schluter_kerdi_board_curb": "=== SCHLUTER - KERDI-BOARD-SC SHOWER CURB ===",
@@ -775,7 +1011,13 @@
       "api_sku": "PRMPSQT1",
       "prosol_sku": "PRMPSQT1",
       "product": "Schluter PRIMER-PS Peel & Stick Membrane Primer 946ml",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "PRMPSQT1",
+      "map_cad": 27.65,
+      "retail_cad": 30.72,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "_section_plm": "=== PERFECT LEVEL MASTER ===",
     "B00X6V9EQQ": {
@@ -1077,7 +1319,13 @@
       "prosol_sku": "KB12SN305305AF",
       "product": "Schluter KERDI-Board-SN Shower Niche 12x12 Frameless",
       "note": "Suffix A discontinued, replaced with AF (all niche sizes). Updated 2026-04-17.",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KB12SN305305AF",
+      "map_cad": 84.59,
+      "retail_cad": 93.99,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01BMZOE6W": {
       "api_sku": "DHERT102BW",
@@ -1086,7 +1334,15 @@
       "category": "DITRA",
       "barcode": "4011832149849",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHERT102/BW",
+      "map_cad": 290.68,
+      "retail_cad": 322.98,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "map_override_allowed": true,
+      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
     },
     "B07PV4JQ13": {
       "api_sku": "KD2FLKPVC",
@@ -1095,7 +1351,13 @@
       "category": "KERDI",
       "barcode": "4011832168833",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD2FLKPVC",
+      "map_cad": 91.83,
+      "retail_cad": 102.03,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PNJX29J": {
       "api_sku": "KD4GRKAMGB",
@@ -1104,7 +1366,13 @@
       "category": "KERDI",
       "barcode": "4011832168758",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD4GRKAMGB",
+      "map_cad": 88.37,
+      "retail_cad": 98.19,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07K7VVB75": {
       "api_sku": "KST9651525",
@@ -1114,7 +1382,13 @@
       "category": "KERDI",
       "barcode": "4011832163951",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KST965/1525",
+      "map_cad": 173.74,
+      "retail_cad": 193.04,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003CMDH8A": {
       "api_sku": "TRL-KER",
@@ -1123,7 +1397,13 @@
       "category": "TOOLS",
       "barcode": "4011832096471",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "TRL-KER",
+      "map_cad": 35.41,
+      "retail_cad": 39.34,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0BN6TKGZ1": {
       "api_sku": "DHERT105BW",
@@ -1132,7 +1412,15 @@
       "category": "DITRA",
       "barcode": "4011832202599",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHERT105/BW",
+      "map_cad": 370.04,
+      "retail_cad": 411.15,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "map_override_allowed": true,
+      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
     },
     "B003K1NVY8": {
       "api_sku": "KERDIFIXBW",
@@ -1141,7 +1429,13 @@
       "category": "KERDI",
       "barcode": "4011832078385",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERDIFIX/BW",
+      "map_cad": 34.16,
+      "retail_cad": 37.96,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B007NWYP40": {
       "api_sku": "KEBA100125",
@@ -1153,7 +1447,13 @@
       "source": "schluter-reference",
       "uom": "LF",
       "qty_per_unit": 98.417,
-      "note": "KERDI-BAND 5\" x 98ft5in roll = 99 LF in Salesforce. Confirm exact qty on first real order."
+      "note": "KERDI-BAND 5\" x 98ft5in roll = 99 LF in Salesforce. Confirm exact qty on first real order.",
+      "brand": "schluter",
+      "schluter_item": "KEBA100/125",
+      "map_cad": 128.18,
+      "retail_cad": 142.42,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07F1DS2JV": {
       "api_sku": "KBZS35GT32Z100",
@@ -1162,7 +1462,13 @@
       "category": "KERDI",
       "barcode": "4011832165986",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KBZS35GT32Z100",
+      "map_cad": 29.11,
+      "retail_cad": 32.34,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B083X83Q44": {
       "api_sku": "KDIF4GRKMGSD5",
@@ -1171,7 +1477,13 @@
       "category": "KERDI",
       "barcode": "4011832178863",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKMGSD5",
+      "map_cad": 178.78,
+      "retail_cad": 198.64,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0047UXJ84": {
       "api_sku": "KD2PVCE",
@@ -1180,7 +1492,13 @@
       "category": "KERDI",
       "barcode": "4011832039638",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD2/PVC/E",
+      "map_cad": 157.17,
+      "retail_cad": 174.63,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00GUR3C9S": {
       "api_sku": "KB12SN305305AF",
@@ -1190,7 +1508,13 @@
       "barcode": "4011832142512",
       "note": "Suffix A discontinued, replaced with AF (all niche sizes). Updated 2026-04-17.",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KB12SN305305AF",
+      "map_cad": 84.59,
+      "retail_cad": 93.99,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PMLHBJ3": {
       "api_sku": "KD4GRKE",
@@ -1199,7 +1523,13 @@
       "category": "KERDI",
       "barcode": "4011832168697",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD4GRKE",
+      "map_cad": 65.34,
+      "retail_cad": 72.6,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003VKYKWA": {
       "api_sku": "DITRA5M",
@@ -1209,7 +1539,13 @@
       "category": "DITRA",
       "barcode": "4011832035982",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DITRA5M",
+      "map_cad": 135.43,
+      "retail_cad": 150.48,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00GUR3FGI": {
       "api_sku": "KB12SN305711A1F",
@@ -1229,7 +1565,13 @@
       "category": "KERDI",
       "barcode": "4011832169991",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KBSC1151501524",
+      "map_cad": 123.58,
+      "retail_cad": 137.31,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003C6EQPE": {
       "api_sku": "KERDI20010M",
@@ -1240,7 +1582,13 @@
       "category": "KERDI",
       "barcode": "4011832057588",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERDI200/10M",
+      "map_cad": 274.04,
+      "retail_cad": 304.49,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00FJ9LJ16": {
       "api_sku": "KERECKFI2",
@@ -1249,7 +1597,13 @@
       "category": "KERDI",
       "barcode": "4011832078361",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERECK/FI2",
+      "map_cad": 20.84,
+      "retail_cad": 23.15,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PQTCZ4M": {
       "api_sku": "KD4GRKEP",
@@ -1258,7 +1612,13 @@
       "category": "KERDI",
       "barcode": "4011832168727",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD4GRKEP",
+      "map_cad": 65.34,
+      "retail_cad": 72.6,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0057GJ99A": {
       "api_sku": "KERDIFIXG",
@@ -1267,7 +1627,13 @@
       "category": "KERDI",
       "barcode": "4011832056222",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERDIFIX/G",
+      "map_cad": 34.16,
+      "retail_cad": 37.96,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PVZ93TW": {
       "api_sku": "KD2FLKABS",
@@ -1276,7 +1642,13 @@
       "category": "KERDI",
       "barcode": "4011832168864",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD2FLKABS",
+      "map_cad": 91.83,
+      "retail_cad": 102.03,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QSBKDK": {
       "api_sku": "SNS1D5MGS",
@@ -1285,7 +1657,13 @@
       "category": "SHELF",
       "barcode": "4011832176739",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SNS1D5MGS",
+      "map_cad": 118.56,
+      "retail_cad": 131.73,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PMLG8QV": {
       "api_sku": "KD4GRKEOB",
@@ -1294,7 +1672,13 @@
       "category": "KERDI",
       "barcode": "4011832168734",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD4GRKEOB",
+      "map_cad": 88.37,
+      "retail_cad": 98.19,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01MU8354O": {
       "api_sku": "KBSC115150970",
@@ -1304,7 +1688,13 @@
       "category": "KERDI",
       "barcode": "4011832149412",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KBSC115150970",
+      "map_cad": 78.23,
+      "retail_cad": 86.92,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003K1LWGM": {
       "api_sku": "KMSMV235114",
@@ -1313,7 +1703,13 @@
       "category": "KERDI",
       "barcode": "4011832115431",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KMSMV235/114",
+      "map_cad": 10.67,
+      "retail_cad": 11.86,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0BRTJS9Y3": {
       "api_sku": "KD4GRKECG",
@@ -1322,7 +1718,13 @@
       "category": "KERDI",
       "barcode": "4011832177415",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD4GRKECG",
+      "map_cad": 113.99,
+      "retail_cad": 126.65,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003FJ6G1U": {
       "api_sku": "KERECKFA2",
@@ -1331,7 +1733,13 @@
       "category": "KERDI",
       "barcode": "4011832078347",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERECK/FA2",
+      "map_cad": 20.84,
+      "retail_cad": 23.15,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07BKST1ZY": {
       "api_sku": "DHERT104BW",
@@ -1340,7 +1748,15 @@
       "category": "DITRA",
       "barcode": "4011832163906",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHERT104/BW",
+      "map_cad": 363.37,
+      "retail_cad": 403.74,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "map_override_allowed": true,
+      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
     },
     "B07Q2J4BJJ": {
       "api_sku": "KST12201525",
@@ -1350,7 +1766,13 @@
       "category": "KERDI",
       "barcode": "4011832164033",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KST1220/1525",
+      "map_cad": 260.98,
+      "retail_cad": 289.98,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003C6AMCA": {
       "api_sku": "KERDI2005M",
@@ -1361,7 +1783,13 @@
       "category": "KERDI",
       "barcode": "4011832038341",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERDI200/5M",
+      "map_cad": 139.51,
+      "retail_cad": 155.01,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PZFBH4T": {
       "api_sku": "KST9151220BF",
@@ -1371,7 +1799,13 @@
       "category": "KERDI",
       "barcode": "4011832166174",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KST915/1220BF",
+      "map_cad": 201.34,
+      "retail_cad": 223.71,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07KB44XWC": {
       "api_sku": "KST1220BF",
@@ -1381,7 +1815,13 @@
       "category": "KERDI",
       "barcode": "4011832163623",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KST1220BF",
+      "map_cad": 164.93,
+      "retail_cad": 183.26,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PPPMHYH": {
       "api_sku": "KSK9651525SPVC",
@@ -1391,7 +1831,13 @@
       "category": "KERDI",
       "barcode": "4011832168529",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KSK9651525SPVC",
+      "map_cad": 687.35,
+      "retail_cad": 763.72,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PPPP4L2": {
       "api_sku": "KD4GRKECS",
@@ -1400,7 +1846,13 @@
       "category": "KERDI",
       "barcode": "4011832168826",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD4GRKECS",
+      "map_cad": 65.34,
+      "retail_cad": 72.6,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003K1LB8Q": {
       "api_sku": "KERECKFI10",
@@ -1409,7 +1861,13 @@
       "category": "KERDI",
       "barcode": "4011832078354",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERECK/FI10",
+      "map_cad": 104.09,
+      "retail_cad": 115.65,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00JU79YTW": {
       "api_sku": "DH5MA",
@@ -1420,7 +1878,13 @@
       "category": "DITRA",
       "barcode": "4011832142185",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DH5MA",
+      "map_cad": 26.69,
+      "retail_cad": 29.66,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07QBD54D5": {
       "api_sku": "SNS1D5EB",
@@ -1429,7 +1893,13 @@
       "category": "SHELF",
       "barcode": "4011832170690",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SNS1D5EB",
+      "map_cad": 152.18,
+      "retail_cad": 169.09,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01N7PMVF5": {
       "api_sku": "KBSC1151501220",
@@ -1439,7 +1909,13 @@
       "category": "KERDI",
       "barcode": "4011832149405",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KBSC1151501220",
+      "map_cad": 85.97,
+      "retail_cad": 95.52,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01M3SOVIC": {
       "api_sku": "KERSB135K",
@@ -1448,7 +1924,13 @@
       "category": "KERDI",
       "barcode": "4011832145247",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERSB135K",
+      "map_cad": 66.03,
+      "retail_cad": 73.37,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PQT5DG6": {
       "api_sku": "KSK12201830PVC",
@@ -1458,7 +1940,13 @@
       "category": "KERDI",
       "barcode": "4011832168550",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KSK12201830PVC",
+      "map_cad": 938.9,
+      "retail_cad": 1043.22,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07STDL6PJ": {
       "api_sku": "KDIF4GRKEBD5",
@@ -1467,7 +1955,13 @@
       "category": "KERDI",
       "barcode": "4011832171048",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKEBD5",
+      "map_cad": 102.77,
+      "retail_cad": 114.19,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003YUW3WQ": {
       "api_sku": "KERDI200",
@@ -1478,7 +1972,13 @@
       "category": "KERDI",
       "barcode": "4011832018428",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERDI200",
+      "map_cad": 725.17,
+      "retail_cad": 805.74,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QY7RCD": {
       "api_sku": "SNS1D6MGS",
@@ -1487,7 +1987,13 @@
       "category": "SHELF",
       "barcode": "4011832176791",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SNS1D6MGS",
+      "map_cad": 111.84,
+      "retail_cad": 124.27,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0B7Q9P2BX": {
       "api_sku": "PRMU1",
@@ -1496,7 +2002,13 @@
       "category": "PRIMER",
       "barcode": "4011832175886",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "PRMU1",
+      "map_cad": 93.65,
+      "retail_cad": 104.05,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07KB651KP": {
       "api_sku": "KSLT9651930S",
@@ -1506,7 +2018,13 @@
       "category": "KERDI",
       "barcode": "4011832163968",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KSLT965/1930S",
+      "map_cad": 389.57,
+      "retail_cad": 432.86,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PPPR6P1": {
       "api_sku": "KD4GRKATGB",
@@ -1515,7 +2033,13 @@
       "category": "KERDI",
       "barcode": "4011832168765",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD4GRKATGB",
+      "map_cad": 88.37,
+      "retail_cad": 98.19,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PQT2THF": {
       "api_sku": "KSK9651525PVC",
@@ -1525,7 +2049,13 @@
       "category": "KERDI",
       "barcode": "4011832168512",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KSK9651525PVC",
+      "map_cad": 687.35,
+      "retail_cad": 763.72,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0057GJ0IA": {
       "api_sku": "KERECKFA10",
@@ -1534,7 +2064,13 @@
       "category": "KERDI",
       "barcode": "4011832078378",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERECK/FA10",
+      "map_cad": 104.09,
+      "retail_cad": 115.65,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07K7T4NFW": {
       "api_sku": "KST915BF",
@@ -1544,7 +2080,13 @@
       "category": "KERDI",
       "barcode": "4011832163944",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KST915BF",
+      "map_cad": 127.54,
+      "retail_cad": 141.71,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B007NMQ2VE": {
       "api_sku": "KEBA1001255M",
@@ -1556,7 +2098,13 @@
       "source": "schluter-reference",
       "uom": "LF",
       "qty_per_unit": 16.417,
-      "note": "KERDI-BAND 5\" x 16ft5in roll = ~16 LF in Salesforce. Confirm exact qty on first real order."
+      "note": "KERDI-BAND 5\" x 16ft5in roll = ~16 LF in Salesforce. Confirm exact qty on first real order.",
+      "brand": "schluter",
+      "schluter_item": "KEBA100/125/5M",
+      "map_cad": 27.41,
+      "retail_cad": 30.46,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07Q2GR6GV": {
       "api_sku": "KST1525",
@@ -1566,7 +2114,13 @@
       "category": "KERDI",
       "barcode": "4011832163999",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KST1525",
+      "map_cad": 342.98,
+      "retail_cad": 381.09,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00TJ4CQ1E": {
       "api_sku": "KEBA1002505M",
@@ -1578,7 +2132,13 @@
       "source": "schluter-reference",
       "uom": "LF",
       "qty_per_unit": 16.417,
-      "note": "KERDI-BAND 10\" x 16ft5in roll = ~16 LF in Salesforce. Confirm exact qty on first real order."
+      "note": "KERDI-BAND 10\" x 16ft5in roll = ~16 LF in Salesforce. Confirm exact qty on first real order.",
+      "brand": "schluter",
+      "schluter_item": "KEBA100/250/5M",
+      "map_cad": 43.92,
+      "retail_cad": 48.8,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLVDGSN": {
       "api_sku": "KL1V60E90",
@@ -1588,7 +2148,13 @@
       "category": "KERDI",
       "barcode": "4011832172588",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1V60E90",
+      "map_cad": 435.26,
+      "retail_cad": 483.62,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07H4YSH3Y": {
       "api_sku": "KBKIT",
@@ -1598,7 +2164,13 @@
       "category": "KERDI",
       "barcode": "4011832165979",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KBKIT",
+      "map_cad": 740.28,
+      "retail_cad": 822.53,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003G7L9S6": {
       "api_sku": "DITRA150",
@@ -1608,7 +2180,13 @@
       "category": "DITRA",
       "barcode": "4011832054280",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DITRA150",
+      "map_cad": 354.48,
+      "retail_cad": 393.87,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07K7TH321": {
       "api_sku": "KST9651525S",
@@ -1618,7 +2196,13 @@
       "category": "KERDI",
       "barcode": "4011832163920",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KST965/1525S",
+      "map_cad": 173.74,
+      "retail_cad": 193.04,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01LBD7SEK": {
       "api_sku": "KBSB610TA",
@@ -1627,7 +2211,13 @@
       "category": "KERDI",
       "barcode": "4011832149351",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KBSB610TA",
+      "map_cad": 283.88,
+      "retail_cad": 315.42,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PKRWMMM": {
       "api_sku": "KL1V60E80",
@@ -1637,7 +2227,13 @@
       "category": "KERDI",
       "barcode": "4011832172564",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1V60E80",
+      "map_cad": 416.76,
+      "retail_cad": 463.07,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PZFB3ZW": {
       "api_sku": "SNS1D6EB",
@@ -1646,7 +2242,13 @@
       "category": "SHELF",
       "barcode": "4011832170683",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SNS1D6EB",
+      "map_cad": 146.33,
+      "retail_cad": 162.59,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B084ZVBB2X": {
       "api_sku": "KDH2FLKPVC",
@@ -1655,7 +2257,13 @@
       "category": "KERDI",
       "barcode": "4011832172946",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KDH2FLKPVC",
+      "map_cad": 91.83,
+      "retail_cad": 102.03,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B077GGYHJ4": {
       "api_sku": "KERDI2007M",
@@ -1666,7 +2274,13 @@
       "category": "KERDI",
       "barcode": "4011832157813",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERDI200/7M",
+      "map_cad": 192.21,
+      "retail_cad": 213.57,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PQT5XBP": {
       "api_sku": "KSK1220PVC",
@@ -1676,7 +2290,13 @@
       "category": "KERDI",
       "barcode": "4011832168543",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KSK1220PVC",
+      "map_cad": 632.27,
+      "retail_cad": 702.52,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B006XXK92W": {
       "api_sku": "KD2PVCFL",
@@ -1685,7 +2305,13 @@
       "category": "KERDI",
       "barcode": "4011832135750",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD2/PVC/FL",
+      "map_cad": 31.98,
+      "retail_cad": 35.53,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01N4BUTBF": {
       "api_sku": "TRL-DHXL",
@@ -1694,7 +2320,13 @@
       "category": "TOOLS",
       "barcode": "4011832157677",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "TRL-DHXL",
+      "map_cad": 35.41,
+      "retail_cad": 39.34,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0057GIXB0": {
       "api_sku": "KEBA1001855M",
@@ -1706,7 +2338,13 @@
       "source": "schluter-reference",
       "uom": "LF",
       "qty_per_unit": 16.417,
-      "note": "KERDI-BAND 7-1/4\" x 16ft5in roll = ~16 LF in Salesforce. Confirm exact qty on first real order."
+      "note": "KERDI-BAND 7-1/4\" x 16ft5in roll = ~16 LF in Salesforce. Confirm exact qty on first real order.",
+      "brand": "schluter",
+      "schluter_item": "KEBA100/185/5M",
+      "map_cad": 35.87,
+      "retail_cad": 39.86,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLV3TY7": {
       "api_sku": "KL1V60E70",
@@ -1716,7 +2354,13 @@
       "category": "KERDI",
       "barcode": "4011832172557",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1V60E70",
+      "map_cad": 412.79,
+      "retail_cad": 458.65,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00BUAXH6S": {
       "api_sku": "KD2ABSE",
@@ -1725,7 +2369,13 @@
       "category": "KERDI",
       "barcode": "4011832054716",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD2/ABS/E",
+      "map_cad": 157.17,
+      "retail_cad": 174.63,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07Q78BD3M": {
       "api_sku": "SES2D5EB",
@@ -1734,7 +2384,13 @@
       "category": "SHELF",
       "barcode": "4011832170607",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SES2D5EB",
+      "map_cad": 134.63,
+      "retail_cad": 149.59,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QMB8JZ": {
       "api_sku": "SES2D5MGS",
@@ -1743,7 +2399,13 @@
       "category": "SHELF",
       "barcode": "4011832177064",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SES2D5MGS",
+      "map_cad": 119.67,
+      "retail_cad": 132.97,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01H4CXNNM": {
       "api_sku": "KBSB290970RA",
@@ -1752,7 +2414,13 @@
       "category": "KERDI",
       "barcode": "4011832149344",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KBSB290970RA",
+      "map_cad": 352.01,
+      "retail_cad": 391.12,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B083M8FS9S": {
       "api_sku": "KDIF4GRKMBWD8",
@@ -1761,7 +2429,13 @@
       "category": "KERDI",
       "barcode": "4011832178931",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKMBWD8",
+      "map_cad": 178.78,
+      "retail_cad": 198.64,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00JU79ZVE": {
       "api_sku": "DHEHK12027",
@@ -1770,7 +2444,13 @@
       "category": "DITRA",
       "barcode": "4011832146213",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK12027",
+      "map_cad": 345.26,
+      "retail_cad": 383.62,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003VNBT76": {
       "api_sku": "DITRA30M",
@@ -1780,7 +2460,13 @@
       "category": "DITRA",
       "barcode": "4011832007262",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DITRA30M",
+      "map_cad": 704.03,
+      "retail_cad": 782.25,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00JU7A0BI": {
       "api_sku": "DHEHK12032",
@@ -1789,7 +2475,13 @@
       "category": "DITRA",
       "barcode": "4011832146220",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK12032",
+      "map_cad": 373.55,
+      "retail_cad": 415.05,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B018A2WO1W": {
       "api_sku": "DITRA-XL175",
@@ -1799,7 +2491,13 @@
       "category": "DITRA",
       "barcode": "4011832107092",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DITRA-XL/175",
+      "map_cad": 439.19,
+      "retail_cad": 487.99,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07KB2HJNP": {
       "api_sku": "KST1830",
@@ -1809,7 +2507,13 @@
       "category": "KERDI",
       "barcode": "4011832163715",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KST1830",
+      "map_cad": 368.85,
+      "retail_cad": 409.83,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLMHLML": {
       "api_sku": "KL1V60E120",
@@ -1819,7 +2523,13 @@
       "category": "KERDI",
       "barcode": "4011832172625",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1V60E120",
+      "map_cad": 478.01,
+      "retail_cad": 531.12,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PGBSNLV": {
       "api_sku": "KL1DRE60",
@@ -1828,7 +2538,13 @@
       "category": "KERDI",
       "barcode": "4011832172069",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1DRE60",
+      "map_cad": 166.25,
+      "retail_cad": 184.72,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B083W34W14": {
       "api_sku": "KDIF4GRKMGSD6",
@@ -1837,7 +2553,13 @@
       "category": "KERDI",
       "barcode": "4011832178887",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKMGSD6",
+      "map_cad": 178.78,
+      "retail_cad": 198.64,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07Q1K9B2Z": {
       "api_sku": "KSLT9151395S",
@@ -1847,7 +2569,13 @@
       "category": "KERDI",
       "barcode": "4011832164064",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KSLT915/1395S",
+      "map_cad": 312.03,
+      "retail_cad": 346.7,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PQT7PPB": {
       "api_sku": "KSK9651525ABS",
@@ -1857,7 +2585,13 @@
       "category": "KERDI",
       "barcode": "4011832168574",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KSK9651525ABS",
+      "map_cad": 687.35,
+      "retail_cad": 763.72,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QW1PGK": {
       "api_sku": "SNS1D5MBW",
@@ -1866,7 +2600,13 @@
       "category": "SHELF",
       "barcode": "4011832176722",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SNS1D5MBW",
+      "map_cad": 118.56,
+      "retail_cad": 131.73,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0CN9QSC32": {
       "api_sku": "KLVR2FLK",
@@ -1875,7 +2615,13 @@
       "category": "KERDI",
       "barcode": "4011832189661",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KLVR2FLK",
+      "map_cad": 149.54,
+      "retail_cad": 166.16,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07Q8DGC69": {
       "api_sku": "SES1D5EB",
@@ -1884,7 +2630,13 @@
       "category": "SHELF",
       "barcode": "4011832170423",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SES1D5EB",
+      "map_cad": 134.63,
+      "retail_cad": 149.59,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B010GSFQ8Q": {
       "api_sku": "DHEHK12021",
@@ -1893,7 +2645,13 @@
       "category": "DITRA",
       "barcode": "4011832146190",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK12021",
+      "map_cad": 321.32,
+      "retail_cad": 357.02,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07QFFRZ43": {
       "api_sku": "SES1D6EB",
@@ -1902,7 +2660,13 @@
       "category": "SHELF",
       "barcode": "4011832170416",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SES1D6EB",
+      "map_cad": 128.78,
+      "retail_cad": 143.09,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00EUEVHS6": {
       "api_sku": "KERDI20020M",
@@ -1913,7 +2677,13 @@
       "category": "KERDI",
       "barcode": "4011832128318",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KERDI200/20M",
+      "map_cad": 513.46,
+      "retail_cad": 570.51,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PQT4GXH": {
       "api_sku": "KSK9651525SABS",
@@ -1923,7 +2693,13 @@
       "category": "KERDI",
       "barcode": "4011832168581",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KSK9651525SABS",
+      "map_cad": 687.35,
+      "retail_cad": 763.72,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B010GSVVJE": {
       "api_sku": "DHEHK120134",
@@ -1932,7 +2708,13 @@
       "category": "DITRA",
       "barcode": "4011832146305",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK120134",
+      "map_cad": 933.5,
+      "retail_cad": 1037.22,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QQQKNN": {
       "api_sku": "SWS1D5MGS",
@@ -1941,7 +2723,13 @@
       "category": "SHELF",
       "barcode": "4011832176852",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SWS1D5MGS",
+      "map_cad": 137.56,
+      "retail_cad": 152.84,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PV2CP5Z": {
       "api_sku": "KDA5FLKABS",
@@ -1959,7 +2747,13 @@
       "category": "SHELF",
       "barcode": "4011832177118",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SES2D6MGS",
+      "map_cad": 110.73,
+      "retail_cad": 123.03,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QZL1NC": {
       "api_sku": "SNS1D5TSOB",
@@ -1968,7 +2762,13 @@
       "category": "SHELF",
       "barcode": "4011832176708",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SNS1D5TSOB",
+      "map_cad": 118.56,
+      "retail_cad": 131.73,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B083XGV4PT": {
       "api_sku": "KDIF4GRKTSOBD5",
@@ -1977,7 +2777,13 @@
       "category": "KERDI",
       "barcode": "4011832179037",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKTSOBD5",
+      "map_cad": 178.78,
+      "retail_cad": 198.64,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07KB1STVW": {
       "api_sku": "KSLT9151830S",
@@ -1987,7 +2793,13 @@
       "category": "KERDI",
       "barcode": "4011832163883",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KSLT915/1830S",
+      "map_cad": 353.64,
+      "retail_cad": 392.93,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B083XHMC5Q": {
       "api_sku": "KDIF4GRKMBWD5",
@@ -1996,7 +2808,13 @@
       "category": "KERDI",
       "barcode": "4011832178917",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKMBWD5",
+      "map_cad": 178.78,
+      "retail_cad": 198.64,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PX447C7": {
       "api_sku": "KDIF4GRKEBD6",
@@ -2005,7 +2823,13 @@
       "category": "KERDI",
       "barcode": "4011832168789",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKEBD6",
+      "map_cad": 102.77,
+      "retail_cad": 114.19,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLL7XXQ": {
       "api_sku": "KL1VO60E90",
@@ -2015,7 +2839,13 @@
       "category": "KERDI",
       "barcode": "4011832172717",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1VO60E90",
+      "map_cad": 441.23,
+      "retail_cad": 490.25,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QTBTT7": {
       "api_sku": "SES1D5MGS",
@@ -2024,7 +2854,13 @@
       "category": "SHELF",
       "barcode": "4011832176968",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SES1D5MGS",
+      "map_cad": 105.13,
+      "retail_cad": 116.81,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B007VQFGBO": {
       "api_sku": "REMA",
@@ -2033,7 +2869,13 @@
       "category": "REMA",
       "barcode": "4011832001765",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "REMA",
+      "map_cad": 13.74,
+      "retail_cad": 15.27,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLNG2VZ": {
       "api_sku": "KL1V60E100",
@@ -2043,7 +2885,13 @@
       "category": "KERDI",
       "barcode": "4011832172595",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1V60E100",
+      "map_cad": 447.4,
+      "retail_cad": 497.11,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B006XXK8NM": {
       "api_sku": "KD2ABSFL",
@@ -2052,7 +2900,13 @@
       "category": "KERDI",
       "barcode": "4011832135774",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD2/ABS/FL",
+      "map_cad": 31.98,
+      "retail_cad": 35.53,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QZ7YK7": {
       "api_sku": "SES1D5TSOB",
@@ -2061,7 +2915,13 @@
       "category": "SHELF",
       "barcode": "4011832176920",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SES1D5TSOB",
+      "map_cad": 105.13,
+      "retail_cad": 116.81,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PGB2PFP": {
       "api_sku": "KL1VO60E70",
@@ -2071,7 +2931,13 @@
       "category": "KERDI",
       "barcode": "4011832172694",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1VO60E70",
+      "map_cad": 417.83,
+      "retail_cad": 464.26,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLNJ5B7": {
       "api_sku": "KL1V60E110",
@@ -2081,7 +2947,13 @@
       "category": "KERDI",
       "barcode": "4011832172618",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1V60E110",
+      "map_cad": 456.74,
+      "retail_cad": 507.49,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07Q1K92VZ": {
       "api_sku": "KDIF4GRKEBD8",
@@ -2090,7 +2962,13 @@
       "category": "KERDI",
       "barcode": "4011832168772",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKEBD8",
+      "map_cad": 102.77,
+      "retail_cad": 114.19,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B071NL3XJF": {
       "api_sku": "DHERR1BW",
@@ -2099,7 +2977,13 @@
       "category": "DITRA",
       "barcode": "4011832149856",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHERR1/BW",
+      "map_cad": 189.57,
+      "retail_cad": 210.63,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PKRWJNL": {
       "api_sku": "KL1V60E150",
@@ -2109,7 +2993,13 @@
       "category": "KERDI",
       "barcode": "4011832172656",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1V60E150",
+      "map_cad": 608.2,
+      "retail_cad": 675.78,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QR3Q3S": {
       "api_sku": "SES1D6MGS",
@@ -2118,7 +3008,13 @@
       "category": "SHELF",
       "barcode": "4011832177019",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SES1D6MGS",
+      "map_cad": 98.42,
+      "retail_cad": 109.36,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B084ZTRLYT": {
       "api_sku": "KDH2FLKABS",
@@ -2127,7 +3023,13 @@
       "category": "KERDI",
       "barcode": "4011832172922",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KDH2FLKABS",
+      "map_cad": 91.83,
+      "retail_cad": 102.03,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B006XXO0VI": {
       "api_sku": "KBZT32ZL",
@@ -2136,7 +3038,13 @@
       "category": "KERDI",
       "barcode": "4011832137532",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KBZT32Z/L",
+      "map_cad": 112.45,
+      "retail_cad": 124.94,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PYVMPJN": {
       "api_sku": "SWS1D5EB",
@@ -2145,7 +3053,13 @@
       "category": "SHELF",
       "barcode": "4011832170775",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SWS1D5EB",
+      "map_cad": 158.05,
+      "retail_cad": 175.61,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07R8R4LJ6": {
       "api_sku": "KSK1220PVCE",
@@ -2155,7 +3069,13 @@
       "category": "KERDI",
       "barcode": "4011832168642",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KSK1220PVCE",
+      "map_cad": 695.04,
+      "retail_cad": 772.27,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01MRNYPAN": {
       "api_sku": "DHEHK12051",
@@ -2164,7 +3084,13 @@
       "category": "DITRA",
       "barcode": "4011832146244",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK12051",
+      "map_cad": 475.69,
+      "retail_cad": 528.54,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLK8T35": {
       "api_sku": "KL1DROE70",
@@ -2173,7 +3099,13 @@
       "category": "KERDI",
       "barcode": "4011832172212",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1DROE70",
+      "map_cad": 173.95,
+      "retail_cad": 193.28,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07QGKT1XM": {
       "api_sku": "SES2D6EB",
@@ -2182,7 +3114,13 @@
       "category": "SHELF",
       "barcode": "4011832170591",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SES2D6EB",
+      "map_cad": 128.78,
+      "retail_cad": 143.09,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0CNBGZ3V2": {
       "api_sku": "KLVRID13EB122",
@@ -2191,7 +3129,13 @@
       "category": "KERDI",
       "barcode": "4011832189388",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KLVRID13EB122",
+      "map_cad": 303.5,
+      "retail_cad": 337.22,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B018A2Y4GA": {
       "api_sku": "DHEHK120102",
@@ -2200,7 +3144,13 @@
       "category": "DITRA",
       "barcode": "4011832146282",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK120102",
+      "map_cad": 781.28,
+      "retail_cad": 868.09,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00JU7A0QI": {
       "api_sku": "DHEHK12038",
@@ -2209,7 +3159,13 @@
       "category": "DITRA",
       "barcode": "4011832145810",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK12038",
+      "map_cad": 400.33,
+      "retail_cad": 444.81,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B010GSNT1M": {
       "api_sku": "DHEHK12073",
@@ -2218,7 +3174,13 @@
       "category": "DITRA",
       "barcode": "4011832146251",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK12073",
+      "map_cad": 579.86,
+      "retail_cad": 644.29,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PHHKRTF": {
       "api_sku": "KL1DRE120",
@@ -2227,7 +3189,13 @@
       "category": "KERDI",
       "barcode": "4011832172144",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1DRE120",
+      "map_cad": 231.93,
+      "retail_cad": 257.7,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLMQNZN": {
       "api_sku": "KL1VO60E80",
@@ -2237,7 +3205,13 @@
       "category": "KERDI",
       "barcode": "4011832172700",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1VO60E80",
+      "map_cad": 421.88,
+      "retail_cad": 468.76,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QQHQ76": {
       "api_sku": "SES3D5MGS",
@@ -2246,7 +3220,13 @@
       "category": "SHELF",
       "barcode": "4011832177170",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SES3D5MGS",
+      "map_cad": 138.69,
+      "retail_cad": 154.1,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B010MPT80U": {
       "api_sku": "DHEHK24043",
@@ -2255,7 +3235,13 @@
       "category": "DITRA",
       "barcode": "4011832146374",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK24043",
+      "map_cad": 423.56,
+      "retail_cad": 470.62,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PNJXKY7": {
       "api_sku": "KD4GRKAKGB",
@@ -2264,7 +3250,13 @@
       "category": "KERDI",
       "barcode": "4011832168741",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD4GRKAKGB",
+      "map_cad": 88.37,
+      "retail_cad": 98.19,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QZLBSL": {
       "api_sku": "SNS1D5TSBG",
@@ -2273,7 +3265,13 @@
       "category": "SHELF",
       "barcode": "4011832176715",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "SNS1D5TSBG",
+      "map_cad": 118.56,
+      "retail_cad": 131.73,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B010MPKMG4": {
       "api_sku": "DHEHK24027",
@@ -2282,7 +3280,13 @@
       "category": "DITRA",
       "barcode": "4011832146350",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK24027",
+      "map_cad": 345.07,
+      "retail_cad": 383.41,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00K1I8E8G": {
       "api_sku": "DHEHK12043",
@@ -2291,7 +3295,13 @@
       "category": "DITRA",
       "barcode": "4011832146237",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "DHEHK12043",
+      "map_cad": 423.72,
+      "retail_cad": 470.8,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00NYCUC2C": {
       "api_sku": "KBZS35GT32Z",
@@ -2300,7 +3310,13 @@
       "category": "KERDI",
       "barcode": "4011832132919",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KBZS35GT32Z",
+      "map_cad": 15.42,
+      "retail_cad": 17.13,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLJS54D": {
       "api_sku": "KL1V60E140",
@@ -2310,7 +3326,13 @@
       "category": "KERDI",
       "barcode": "4011832172649",
       "verified": true,
-      "source": "schluter-reference"
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KL1V60E140",
+      "map_cad": 593.97,
+      "retail_cad": 659.97,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B079G7NFRQ": {
       "api_sku": "KD2ABSFL",
@@ -2319,7 +3341,13 @@
       "category": "DRAIN",
       "sf_item": "02538",
       "verified": true,
-      "source": "mac-confirmed-2026-03-27"
+      "source": "mac-confirmed-2026-03-27",
+      "brand": "schluter",
+      "schluter_item": "KD2/ABS/FL",
+      "map_cad": 31.98,
+      "retail_cad": 35.53,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B082QR14F2": {
       "api_sku": "SES2D6MBW",
@@ -2327,7 +3355,13 @@
       "product": "Schluter SHELF PENTAGON CORNER CURVE BRIGHT WHITE",
       "category": "SHELF",
       "verified": true,
-      "source": "mac-confirmed-2026-03-27"
+      "source": "mac-confirmed-2026-03-27",
+      "brand": "schluter",
+      "schluter_item": "SES2D6MBW",
+      "map_cad": 110.73,
+      "retail_cad": 123.03,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     },
     "B000NZ73SE": {
       "api_sku": "CLQWAF1-2",
@@ -2339,7 +3373,13 @@
       "api_sku": "DHEHK240204",
       "prosol_sku": "DHEHK240204",
       "product": "Schluter DITRA-HEAT Cable 240V 203.8 sqft",
-      "verified": true
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK240204",
+      "map_cad": 1097.74,
+      "retail_cad": 1219.71,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv"
     }
   },
   "cable_lookup": {
@@ -2569,5 +3609,16 @@
     "bundles": 5,
     "skip": 4,
     "note": "28 'needs_order_lookup' items are Schluter cables (need voltage+sqft), Polyblend grout (need color), and a few Schluter bundles. Use cable_lookup and grout_lookup tables to resolve at order time."
-  }
+  },
+  "_map_ingest_history": [
+    {
+      "at": "2026-04-17T11:03:34.886Z",
+      "source": "schluter-map-2025-10-01.csv",
+      "matched": 171,
+      "matchedViaUpc": 0,
+      "unmatched": 11,
+      "thermostatsFlagged": 7,
+      "updatedEntries": 171
+    }
+  ]
 }

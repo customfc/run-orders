@@ -11,3 +11,5 @@ data/ghost-voids.json
 data/telegram-state.json
 data/telegram-outbox.jsonl
 data/ops-state/
+data/fba/
+

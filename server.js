@@ -732,6 +732,164 @@ app.get('/api/shipments/stale', async (req, res) => {
 
 // ── Audit Logs ───────────────────────────────────────────────────────────────
 
+// ── FBA Command ─────────────────────────────────────────────────────────────
+
+const fbaSignals = require('./lib/fba-signals');
+let fbaPullActive = false;
+
+app.get('/api/fba/today', (req, res) => {
+  try {
+    const snap = fbaSignals.loadLatestSnapshot();
+    if (!snap) return res.json({ success: true, snapshot: null, rows: [] });
+    const rows = fbaSignals.rankForToday(snap.rows);
+    const byTier = {};
+    for (const r of rows) (byTier[r.tier] ||= []).push(r);
+    const bleedingRev = (byTier.bleeding || []).reduce((s, r) => s + r.dailyVelocity * (r.featuredOfferPrice || r.yourPrice || 0), 0);
+    const recUnitsTotal = rows.reduce((s, r) => s + (r.recShipQty || 0), 0);
+    const bbLosing = byTier['bb-losing'] || [];
+    const bbGapSum = bbLosing.reduce((s, r) => s + (r.bb?.gap || 0), 0);
+    res.json({
+      success: true,
+      snapshot: { path: snap.path, pulledAt: snap.pulledAt, rowCount: snap.rowCount },
+      buyboxPulledAt: snap.buyboxPulledAt || null,
+      summary: {
+        totalSkus: rows.length,
+        tierCounts: Object.fromEntries(Object.entries(byTier).map(([k, v]) => [k, v.length])),
+        bleedingDailyRevenue: Number(bleedingRev.toFixed(2)),
+        totalRecommendedUnits: recUnitsTotal,
+        lipcActiveCount: (byTier['lipc-active'] || []).length,
+        bbLosingCount: bbLosing.length,
+        bbGapSum: Number(bbGapSum.toFixed(2)),
+      },
+      rows,
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/fba/map-violators', (req, res) => {
+  try {
+    const snap = fbaSignals.loadLatestSnapshot();
+    if (!snap) return res.json({ success: true, violators: [], ourViolations: [] });
+    const rows = fbaSignals.rankForToday(snap.rows);
+    const violators = rows.filter((r) => r.mapDecision?.action === 'competitor-below-map').map((r) => ({
+      asin: r.asin,
+      product: r.productName,
+      brand: r.brand,
+      mapPrice: r.mapCad,
+      observedPrice: r.mapDecision.buyBoxPrice,
+      amountBelow: r.mapDecision.violationDetails?.amountBelow,
+      sellerId: r.mapDecision.buyBoxSellerId,
+      observedAt: r.mapDecision.violationDetails?.observedAt,
+    }));
+    const ourViolations = rows.filter((r) => r.mapDecision?.action === 'violation-by-us').map((r) => ({
+      asin: r.asin,
+      product: r.productName,
+      brand: r.brand,
+      mapPrice: r.mapCad,
+      ourPrice: r.mapDecision.ourPrice,
+      recommendedPrice: r.mapDecision.recommendedPrice,
+    }));
+    // Build a ready-to-send email body for Schluter iMAP enforcement
+    const today = new Date().toISOString().slice(0, 10);
+    const emailBody = violators.length ? [
+      `Hello Schluter iMAP Team,`,
+      ``,
+      `I would like to report the following observed MAP violations on Amazon.ca as of ${today}. I am a Schluter authorized reseller (via Prosol), Amazon seller CustomFlooring (merchant token ${process.env.AMAZON_SELLER_ID || ''}).`,
+      ``,
+      ...violators.map((v, i) =>
+        `${i + 1}. ${v.product}\n   ASIN: ${v.asin}\n   MAP: CAD $${v.mapPrice?.toFixed(2)}\n   Observed offer: CAD $${v.observedPrice?.toFixed(2)}  (CAD $${v.amountBelow?.toFixed(2)} below MAP)\n   Offering seller ID: ${v.sellerId}\n   Observed at: ${v.observedAt}`
+      ),
+      ``,
+      `Please let me know if you need additional screenshots or offer detail.`,
+      ``,
+      `Thank you,`,
+      `CustomFlooring`,
+    ].join('\n') : '';
+    res.json({
+      success: true,
+      generatedAt: new Date().toISOString(),
+      violators,
+      ourViolations,
+      emailBody,
+      reportingEmail: 'imap@schluter.ca',
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/fba/buybox/pull', async (req, res) => {
+  if (fbaPullActive) return res.status(409).json({ error: 'FBA pull already in progress' });
+  fbaPullActive = true;
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  const send = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  try {
+    send('status', { message: 'Pulling Buy Box data (batches of 20, 30s apart)...' });
+    const { main: pullBuyBox } = require('./scripts/fba/pull-buybox');
+    const origLog = console.log;
+    console.log = (...args) => { send('progress', { line: args.join(' ') }); origLog(...args); };
+    try { await pullBuyBox(); } finally { console.log = origLog; }
+    const snap = fbaSignals.loadLatestSnapshot();
+    const rows = snap ? fbaSignals.rankForToday(snap.rows) : [];
+    const byTier = {};
+    for (const r of rows) (byTier[r.tier] ||= []).push(r);
+    audit.log({ action: 'fba-buybox-pull', success: true, asinCount: rows.length, bbLosing: (byTier['bb-losing'] || []).length });
+    send('complete', { success: true, bbLosing: (byTier['bb-losing'] || []).length });
+    res.end();
+  } catch (e) {
+    audit.log({ action: 'fba-buybox-pull', success: false, error: e.message });
+    send('error', { error: e.message });
+    res.end();
+  } finally {
+    fbaPullActive = false;
+  }
+});
+
+app.post('/api/fba/signals/pull', async (req, res) => {
+  if (fbaPullActive) {
+    return res.status(409).json({ error: 'FBA signal pull already in progress' });
+  }
+  fbaPullActive = true;
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const send = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+
+  try {
+    send('status', { message: 'Requesting GET_FBA_INVENTORY_PLANNING_DATA from Amazon...' });
+    const { main: pullInventoryPlanning } = require('./scripts/fba/pull-inventory-planning');
+    // Capture stdout-style progress by monkey-patching console.log for this call
+    const origLog = console.log;
+    console.log = (...args) => { send('progress', { line: args.join(' ') }); origLog(...args); };
+    try {
+      await pullInventoryPlanning();
+    } finally {
+      console.log = origLog;
+    }
+    const snap = fbaSignals.loadLatestSnapshot();
+    const rows = snap ? fbaSignals.rankForToday(snap.rows) : [];
+    const byTier = {};
+    for (const r of rows) (byTier[r.tier] ||= []).push(r);
+    audit.log({ action: 'fba-signal-pull', success: true, rowCount: rows.length, tierCounts: Object.fromEntries(Object.entries(byTier).map(([k, v]) => [k, v.length])) });
+    send('complete', { success: true, rowCount: rows.length });
+    res.end();
+  } catch (e) {
+    audit.log({ action: 'fba-signal-pull', success: false, error: e.message });
+    send('error', { error: e.message });
+    res.end();
+  } finally {
+    fbaPullActive = false;
+  }
+});
+
 app.get('/api/logs', (req, res) => {
   const limit = parseInt(req.query.limit || '100', 10);
   const logs = audit.readRecent(limit);
