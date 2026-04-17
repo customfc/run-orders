@@ -1535,7 +1535,9 @@ function fbaRenderCart() {
           const st = VENDOR_STYLES[g.vendor] || VENDOR_STYLES.unknown;
           let routeStatus;
           if (g.self_fulfill) {
-            routeStatus = `🏭 self-fulfill from ${esc(g.fulfillment_warehouse_label || g.fulfillment_warehouse || 'our warehouse')} (SF stock check)`;
+            const whLabel = esc(g.fulfillment_warehouse_label || g.fulfillment_warehouse || 'our warehouse');
+            const emailBit = g.email ? `✉️ ${esc(g.email)}` : '<span style="color:#b91c1c">⚠ Sechelt contact email not set</span>';
+            routeStatus = `🏭 ${whLabel} · ${emailBit} · SF stock check + FBA labels + pack/prep instructions`;
           } else if (g.email) {
             const ccStr = g.cc && g.cc.length ? ` <span style="color:#94a3b8">· cc ${g.cc.map(esc).join(', ')}</span>` : '';
             routeStatus = `✉️ ${esc(g.email)}${ccStr}`;
