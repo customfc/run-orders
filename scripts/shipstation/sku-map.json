@@ -1073,9 +1073,10 @@
       "verified": true
     },
     "B082WFLX26": {
-      "api_sku": "KB12SN305305A",
-      "prosol_sku": "KB12SN305305A",
+      "api_sku": "KB12SN305305AF",
+      "prosol_sku": "KB12SN305305AF",
       "product": "Schluter KERDI-Board-SN Shower Niche 12x12 Frameless",
+      "note": "Suffix A discontinued, replaced with AF (all niche sizes). Updated 2026-04-17.",
       "verified": true
     },
     "B01BMZOE6W": {
@@ -1182,11 +1183,12 @@
       "source": "schluter-reference"
     },
     "B00GUR3C9S": {
-      "api_sku": "KB12SN305305A",
-      "prosol_sku": "KB12SN305305A",
+      "api_sku": "KB12SN305305AF",
+      "prosol_sku": "KB12SN305305AF",
       "product": "KERDI-BOARD-SN SHOWER NICHE 12\" X 12\"",
       "category": "KERDI",
       "barcode": "4011832142512",
+      "note": "Suffix A discontinued, replaced with AF (all niche sizes). Updated 2026-04-17.",
       "verified": true,
       "source": "schluter-reference"
     },
@@ -1210,11 +1212,12 @@
       "source": "schluter-reference"
     },
     "B00GUR3FGI": {
-      "api_sku": "KB12SN305711A1",
-      "prosol_sku": "KB12SN305711A1",
+      "api_sku": "KB12SN305711A1F",
+      "prosol_sku": "KB12SN305711A1F",
       "product": "KERDI-BOARD-SN SHOWER NICHE 12\" X 28\"",
       "category": "KERDI",
       "barcode": "4011832142536",
+      "note": "Suffix A1 discontinued, replaced with A1F (all niche sizes). Updated 2026-04-17.",
       "verified": true,
       "source": "schluter-reference"
     },
