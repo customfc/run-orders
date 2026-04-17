@@ -1083,100 +1083,171 @@ function renderTracking(data) {
   const status = document.getElementById('trackingStatus');
   const s = data.summary;
 
-  const chip = (key, label, count, color) => {
-    const on = trackingFilters[key];
-    const bg = on ? color : '#f1f5f9';
-    const fg = on ? '#fff' : '#475569';
-    return `<button onclick="toggleTrackingFilter('${key}')" style="border:0;padding:6px 14px;margin:0 4px 0 0;border-radius:999px;background:${bg};color:${fg};font-size:13px;font-weight:600;cursor:pointer">${esc(label)} (${count})</button>`;
-  };
+  summary.innerHTML = '';
+  status.className = '';
+  status.textContent = '';
 
-  summary.innerHTML = `
-    <div style="margin:8px 0 12px">
-      ${chip('hanging', 'Hanging', s.hanging, '#dc2626')}
-      ${chip('in-transit', 'In Transit', s.inTransit, '#0ea5e9')}
-      ${chip('delivered', 'Delivered', s.delivered, '#16a34a')}
-      <span style="margin-left:16px;color:#64748b;font-size:12px">${s.needBook} need booking · ${s.needRebook} need rebooking · ${s.monitor} scheduled · ${s.wait} just shipped</span>
-    </div>`;
+  const hanging = data.shipments.filter(x => x.movement === 'hanging');
+  const actionable = hanging.filter(x => x.suggestedAction === 'book' || x.suggestedAction === 'rebook');
+  const scheduled = hanging.filter(x => x.suggestedAction === 'monitor');
+  const justShipped = hanging.filter(x => x.suggestedAction === 'wait');
+  const inTransit = data.shipments.filter(x => x.movement === 'in-transit');
+  const delivered = data.shipments.filter(x => x.movement === 'delivered');
 
-  status.className = s.hanging > 0 ? 'status-bar info' : 'status-bar success';
-  status.textContent = s.hanging > 0
-    ? `${s.hanging} hanging shipment${s.hanging === 1 ? '' : 's'} (${s.needBook + s.needRebook} need action, ${s.monitor} scheduled, ${s.wait} just shipped)`
-    : 'No hanging shipments — everything has carrier movement.';
+  // Group actionable by warehouse × carrier
+  const groupMap = {};
+  for (const x of actionable) {
+    const key = `${x.warehouseId}::${x.carrier}`;
+    if (!groupMap[key]) {
+      groupMap[key] = {
+        key, warehouseName: x.warehouseName, carrier: x.carrier,
+        action: x.suggestedAction, items: [], maxAge: 0,
+      };
+    }
+    groupMap[key].items.push(x);
+    if (x.suggestedAction === 'rebook') groupMap[key].action = 'rebook';
+    if (x.age > groupMap[key].maxAge) groupMap[key].maxAge = x.age;
+  }
+  const groups = Object.values(groupMap).sort((a, b) => {
+    // rebook (overdue) before book (new); then by age desc; then by warehouse name
+    if (a.action !== b.action) return a.action === 'rebook' ? -1 : 1;
+    if (b.maxAge !== a.maxAge) return b.maxAge - a.maxAge;
+    return a.warehouseName.localeCompare(b.warehouseName);
+  });
 
   let html = '';
-  const hanging = data.shipments.filter(x => x.movement === 'hanging');
 
-  if (trackingFilters.hanging && hanging.length) {
-    // Bulk action chips (warehouse+carrier groups where any row needs book/rebook)
-    const groupMap = {};
-    for (const x of hanging) {
-      if (x.suggestedAction !== 'book' && x.suggestedAction !== 'rebook') continue;
-      const key = `${x.warehouseId}::${x.carrier}`;
-      if (!groupMap[key]) groupMap[key] = { key, warehouseName: x.warehouseName, carrier: x.carrier, action: x.suggestedAction, items: [] };
-      groupMap[key].items.push(x);
-      // Group action: if any rebook, show Rebook; else Book
-      if (x.suggestedAction === 'rebook') groupMap[key].action = 'rebook';
-    }
-    const groups = Object.values(groupMap);
-    if (groups.length) {
-      html += `<div style="margin:8px 0;padding:10px;background:#fef2f2;border-left:3px solid #dc2626;border-radius:4px">
-        <div style="font-size:12px;color:#7f1d1d;margin-bottom:6px;font-weight:600">Bulk actions</div>`;
-      for (const g of groups) {
-        const verb = g.action === 'rebook' ? 'Rebook' : 'Book';
-        const cls = g.action === 'rebook' ? 'btn-danger' : 'btn-success';
-        html += `<button id="track-bulk-${cssEsc(g.key)}" class="btn ${cls} btn-sm" style="margin:2px 6px 2px 0" onclick="bookBulkGroup('${g.key}')">${verb} all ${esc(g.warehouseName)} ${esc(g.carrier)} (${g.items.length})</button>`;
-      }
-      html += `</div>`;
-    }
+  if (actionable.length) {
+    // Single lead action
+    html += `
+      <div style="margin:12px 0;padding:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:18px;font-weight:700;color:#991b1b">📦 ${actionable.length} shipment${actionable.length === 1 ? '' : 's'} need pickup</div>
+            <div style="font-size:12px;color:#7f1d1d;margin-top:4px">${groups.length} warehouse-carrier group${groups.length === 1 ? '' : 's'} · ${actionable.filter(x=>x.suggestedAction==='book').length} new · ${actionable.filter(x=>x.suggestedAction==='rebook').length} overdue</div>
+          </div>
+          <button id="track-book-all" class="btn btn-danger" onclick="bookAllGroups()" style="padding:10px 20px;font-size:14px;font-weight:600">Book everything (${actionable.length})</button>
+        </div>
+      </div>`;
 
-    html += `<h3 style="font-size:14px;margin:12px 0 6px;color:#991b1b">Hanging (${hanging.length})</h3>`;
-    html += `<table><thead><tr><th>Action</th><th>Tracking</th><th>Order</th><th>Warehouse</th><th>Carrier</th><th>Age</th><th>Pickup</th><th>Last Event</th><th></th></tr></thead><tbody>`;
-    for (const x of hanging) {
-      const meta = ACTION_META[x.suggestedAction] || ACTION_META.wait;
-      const actionBadge = `<span class="badge" style="background:${meta.color};color:#fff">${meta.label}</span>`;
-      const btn = meta.btnLabel
-        ? `<button id="track-action-${x.shipmentId}" class="btn ${meta.btnClass} btn-sm" onclick="bookOneShipment(${x.shipmentId})">${meta.btnLabel}</button>`
-        : '';
-      html += `<tr>
-        <td>${actionBadge}</td>
-        <td style="font-family:monospace;font-size:11px">${esc(x.trackingNumber || '—')}</td>
-        <td><strong>${esc(x.orderNumber || '—')}</strong></td>
-        <td>${esc(x.warehouseName)}</td>
-        <td>${esc(x.carrier)}</td>
-        <td>${x.age}d</td>
-        <td>${pickupStateBadge(x)}</td>
-        <td>${eventCell(x)}</td>
-        <td>${btn}</td>
-      </tr>`;
+    // Per-group cards
+    html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px;margin:8px 0 16px">`;
+    for (const g of groups) {
+      const verb = g.action === 'rebook' ? 'Rebook' : 'Book';
+      const verbColor = g.action === 'rebook' ? '#dc2626' : '#059669';
+      const ageNote = g.action === 'rebook'
+        ? `<span style="color:#dc2626">oldest ${g.maxAge}d overdue</span>`
+        : `<span style="color:#64748b">${g.maxAge}d old</span>`;
+      html += `
+        <details style="border:1px solid #e2e8f0;border-radius:8px;background:white">
+          <summary style="cursor:pointer;padding:12px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px">
+            <div style="min-width:0;flex:1">
+              <div style="font-weight:600;font-size:13px;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.warehouseName)} · ${esc(g.carrier)}</div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px">${g.items.length} pickup${g.items.length === 1 ? '' : 's'} · ${ageNote}</div>
+            </div>
+            <button id="track-bulk-${cssEsc(g.key)}" class="btn btn-sm" style="padding:6px 12px;background:${verbColor};color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap" onclick="event.preventDefault();event.stopPropagation();bookBulkGroup('${g.key}')">${verb} (${g.items.length})</button>
+          </summary>
+          <div style="border-top:1px solid #f1f5f9;padding:8px 12px;font-size:11px">
+            ${g.items.map(x => `
+              <div style="display:grid;grid-template-columns:1fr auto;gap:6px;padding:6px 0;border-bottom:1px solid #f8fafc;align-items:center">
+                <div style="min-width:0">
+                  <div style="font-family:monospace;color:#475569">${esc(x.trackingNumber || '—')}</div>
+                  <div style="color:#94a3b8;font-size:10px">${esc(x.orderNumber || '—')} · ${x.age}d · ${pickupStatePlain(x)}</div>
+                </div>
+                <button class="btn btn-sm" id="track-action-${x.shipmentId}" style="padding:4px 8px;font-size:11px;background:${verbColor};color:white;border:none;border-radius:4px;cursor:pointer" onclick="bookOneShipment(${x.shipmentId})">${verb}</button>
+              </div>
+            `).join('')}
+          </div>
+        </details>`;
     }
-    html += `</tbody></table>`;
-  } else if (trackingFilters.hanging && !hanging.length) {
-    html += `<div style="margin:12px 0;padding:16px;background:#f0fdf4;color:#166534;border-radius:6px;text-align:center">No hanging shipments — every label has carrier movement.</div>`;
+    html += `</div>`;
+  } else {
+    html += `<div style="margin:12px 0;padding:20px;background:#f0fdf4;color:#166534;border-radius:8px;text-align:center;font-size:14px">✓ All shipments moving — nothing needs booking.</div>`;
   }
 
-  // In Transit / Delivered (only when toggled)
-  for (const movement of ['in-transit', 'delivered']) {
-    if (!trackingFilters[movement]) continue;
-    const rows = data.shipments.filter(x => x.movement === movement);
-    if (!rows.length) continue;
-    const heading = movement === 'in-transit' ? 'In Transit' : 'Delivered';
-    const colorBg = movement === 'in-transit' ? '#0c4a6e' : '#14532d';
-    html += `<h3 style="font-size:14px;margin:16px 0 6px;color:${colorBg}">${heading} (${rows.length})</h3>`;
-    html += `<table><thead><tr><th>Tracking</th><th>Order</th><th>Warehouse</th><th>Carrier</th><th>Age</th><th>Last Event</th></tr></thead><tbody>`;
-    for (const x of rows) {
-      html += `<tr>
-        <td style="font-family:monospace;font-size:11px">${esc(x.trackingNumber || '—')}</td>
-        <td><strong>${esc(x.orderNumber || '—')}</strong></td>
-        <td>${esc(x.warehouseName)}</td>
-        <td>${esc(x.carrier)}</td>
-        <td>${x.age}d</td>
-        <td>${eventCell(x)}</td>
-      </tr>`;
-    }
-    html += `</tbody></table>`;
+  // Passive info behind disclosures
+  const passiveDetails = [];
+  if (scheduled.length) {
+    passiveDetails.push(`
+      <details style="margin-top:8px;border:1px solid #e2e8f0;border-radius:6px">
+        <summary style="cursor:pointer;padding:10px 14px;font-size:13px;color:#475569">📅 ${scheduled.length} scheduled pickup${scheduled.length === 1 ? '' : 's'}</summary>
+        ${renderPassiveTable(scheduled)}
+      </details>`);
+  }
+  if (justShipped.length) {
+    passiveDetails.push(`
+      <details style="margin-top:8px;border:1px solid #e2e8f0;border-radius:6px">
+        <summary style="cursor:pointer;padding:10px 14px;font-size:13px;color:#475569">🕐 ${justShipped.length} just shipped, awaiting carrier scan</summary>
+        ${renderPassiveTable(justShipped)}
+      </details>`);
+  }
+  if (inTransit.length) {
+    passiveDetails.push(`
+      <details style="margin-top:8px;border:1px solid #e2e8f0;border-radius:6px">
+        <summary style="cursor:pointer;padding:10px 14px;font-size:13px;color:#0c4a6e">🚚 ${inTransit.length} in transit</summary>
+        ${renderPassiveTable(inTransit)}
+      </details>`);
+  }
+  if (delivered.length) {
+    passiveDetails.push(`
+      <details style="margin-top:8px;border:1px solid #e2e8f0;border-radius:6px">
+        <summary style="cursor:pointer;padding:10px 14px;font-size:13px;color:#14532d">✓ ${delivered.length} delivered (last 14d)</summary>
+        ${renderPassiveTable(delivered)}
+      </details>`);
+  }
+  if (passiveDetails.length) {
+    html += `<div style="margin-top:16px">${passiveDetails.join('')}</div>`;
   }
 
   results.innerHTML = html;
+}
+
+function pickupStatePlain(s) {
+  if (s.pickupState === 'none') return 'no pickup booked';
+  if (s.pickupState === 'booked-future') return `booked ${s.pickupDate || ''}`;
+  return `pickup ${s.pickupDate || ''} passed`;
+}
+
+function renderPassiveTable(rows) {
+  if (!rows.length) return '';
+  return `<table style="font-size:11px;margin:0">
+    <thead><tr><th style="text-align:left">Tracking</th><th style="text-align:left">Order</th><th style="text-align:left">Warehouse</th><th style="text-align:left">Carrier</th><th style="text-align:right">Age</th><th style="text-align:left">Last event</th></tr></thead>
+    <tbody>${rows.map(x => `<tr>
+      <td style="font-family:monospace">${esc(x.trackingNumber || '—')}</td>
+      <td>${esc(x.orderNumber || '—')}</td>
+      <td>${esc(x.warehouseName)}</td>
+      <td>${esc(x.carrier)}</td>
+      <td style="text-align:right">${x.age}d</td>
+      <td>${eventCell(x)}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+async function bookAllGroups() {
+  const all = lastTrackingResult?.shipments || [];
+  const actionable = all.filter(s => s.suggestedAction === 'book' || s.suggestedAction === 'rebook');
+  if (!actionable.length) return;
+  if (!confirm(`Book ${actionable.length} pickup(s) across ${new Set(actionable.map(s => `${s.warehouseId}::${s.carrier}`)).size} warehouse-carrier group(s)?`)) return;
+
+  const btn = document.getElementById('track-book-all');
+  if (btn) { btn.disabled = true; btn.textContent = 'Booking…'; }
+
+  const groupMap = {};
+  for (const x of actionable) {
+    const key = `${x.warehouseId}::${x.carrier}`;
+    if (!groupMap[key]) groupMap[key] = [];
+    groupMap[key].push(x);
+  }
+  for (const [key, items] of Object.entries(groupMap)) {
+    await bookFromTracking({
+      warehouseId: items[0].warehouseId,
+      carrier: carrierCodeForBooking(items[0]),
+      shipmentIds: items.map(s => s.shipmentId),
+      btnId: `track-bulk-${cssEsc(key)}`,
+      label: `Book ${items.length}`,
+    });
+    await new Promise(r => setTimeout(r, 400)); // gentle pacing
+  }
+  await scanStale();
 }
 
 async function scanStale() {
