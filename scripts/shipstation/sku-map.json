@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU → Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-04-17T11:03:34.885Z",
+  "_updated": "2026-04-17T18:27:22.376Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -1239,7 +1239,10 @@
       "note": "Not available through Prosol",
       "source": "SECHELT_OR_FBA",
       "route_to": "CFC_SECHELT",
-      "shipstation_warehouse_id": 147654
+      "shipstation_warehouse_id": 147654,
+      "treeco_sku": "WT130318002",
+      "brand": "bona",
+      "verified_source": "invoice 2602-766984 (BONA MEGA SEMI GLOSS 3.79L)"
     },
     "B00793YIEK": {
       "api_sku": "NON_PROSOL",
@@ -1248,7 +1251,10 @@
       "note": "Not available through Prosol",
       "source": "SECHELT_OR_FBA",
       "route_to": "CFC_SECHELT",
-      "shipstation_warehouse_id": 147654
+      "shipstation_warehouse_id": 147654,
+      "treeco_sku": "WT130618002",
+      "brand": "bona",
+      "verified_source": "invoice 2602-766984 (BONA MEGA SATIN 3.79L)"
     },
     "B00B3A86S4": {
       "api_sku": "NON_PROSOL",
@@ -1257,7 +1263,10 @@
       "note": "Not available through Prosol",
       "source": "SECHELT_OR_FBA",
       "route_to": "CFC_SECHELT",
-      "shipstation_warehouse_id": 147654
+      "shipstation_warehouse_id": 147654,
+      "treeco_sku": "WT155618003",
+      "brand": "bona",
+      "verified_source": "inferred from Mega sheen-slot pattern (…6… = Satin) — needs user confirm"
     },
     "_section_tibet_almond": "=== TIBET ALMOND STICK ===",
     "00488": {
@@ -3380,6 +3389,36 @@
       "retail_cad": 1219.71,
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
+    },
+    "B008JHAN80": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "BonaKemi USA WM701151001 Hardwood Floor Cleaner Bona Natural Oil Floor Cleaner Pro 32oz",
+      "verified": true,
+      "source": "treeco-invoice-ingest-2026-04-17",
+      "treeco_sku": "WM701151001",
+      "brand": "bona",
+      "verified_source": "SKU in Amazon title + invoice 2109-721140"
+    },
+    "B075RGTR84": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Mega Wood Floor Finish EXTRA MATTE 1 GALLON",
+      "verified": true,
+      "source": "treeco-invoice-ingest-2026-04-17",
+      "treeco_sku": "WT133918001",
+      "brand": "bona",
+      "verified_source": "invoice 2602-766984 (BONA MEGA XMATTE 3.79L)"
+    },
+    "B09254K17R": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Luxury Vinyl Floor Cleaner Spray 32oz",
+      "verified": true,
+      "source": "treeco-invoice-ingest-2026-04-17",
+      "treeco_sku": "WM700051215",
+      "brand": "bona",
+      "verified_source": "invoice 2109-721140 (BONA PRO LUX.VINYL CLNR 32OZ)"
     }
   },
   "cable_lookup": {
@@ -3619,6 +3658,12 @@
       "unmatched": 11,
       "thermostatsFlagged": 7,
       "updatedEntries": 171
+    },
+    {
+      "at": "2026-04-17T18:27:04.598Z",
+      "source": "manual-treeco-mapping",
+      "note": "Added treeco_sku + brand fields for 3 Bona ASINs from Treeco invoices (2604-794404, 2602-766984, 2109-721140) + PO 14251",
+      "matched": 3
     }
   ]
 }
