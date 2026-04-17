@@ -1354,8 +1354,11 @@ function fbaRenderTier(tier, rows) {
               }
               if (bb.ourPrice != null) {
                 const gap = bb.gap;
-                const gapColor = gap > 0 ? '#dc2626' : gap < 0 ? '#059669' : '#64748b';
-                const gapStr = gap === 0 ? '' : ` <span style="color:${gapColor};font-size:10px">(${gap>0?'+':''}${gap.toFixed(2)})</span>`;
+                let gapStr = '';
+                if (gap != null && gap !== 0) {
+                  const gapColor = gap > 0 ? '#dc2626' : '#059669';
+                  gapStr = ` <span style="color:${gapColor};font-size:10px">(${gap > 0 ? '+' : ''}${gap.toFixed(2)})</span>`;
+                }
                 ourCell = `$${bb.ourPrice.toFixed(2)}${gapStr}`;
               } else {
                 ourCell = '<span style="color:#94a3b8" title="No active offer from us">— not live</span>';
