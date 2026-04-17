@@ -137,6 +137,23 @@ function isAmazonOrder(order) {
   return order.advancedOptions?.source === 'amazon_ca';
 }
 
+function isShopifyOrder(order) {
+  // Shopify orders come in as source='web'. Store the specific storeId too
+  // so we can distinguish from any other web-sourced store if that ever matters.
+  return order.advancedOptions?.source === 'web';
+}
+
+function orderSource(order) {
+  if (isAmazonOrder(order)) return 'amazon_ca';
+  if (isShopifyOrder(order)) return 'shopify';
+  return order.advancedOptions?.source || 'unknown';
+}
+
+// Orders the pipeline will process. Amazon CA + Shopify/web.
+function isInScope(order) {
+  return isAmazonOrder(order) || isShopifyOrder(order);
+}
+
 function isClearlyOutOfScope(itemName = '') {
   const name = itemName.toLowerCase();
   return /(click\s+vinyl|luxury\s+vinyl|laminate\s+floor|hardwood\s+floor|engineered\s+hardwood|sheet\s+vinyl|floor\s+protection)/i.test(name);
@@ -440,19 +457,21 @@ function renderTable(rows) {
 async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress = () => {} } = {}) {
   onProgress({ type: 'status', message: filterOrderNumber ? `Fetching order ${filterOrderNumber}...` : 'Fetching awaiting_shipment orders from ShipStation...' });
   const allOrders = await fetchAwaitingOrders();
-  let amazonOrders = allOrders.filter(isAmazonOrder);
+  let inScope = allOrders.filter(isInScope);
   if (filterOrderNumber) {
-    amazonOrders = amazonOrders.filter(o => o.orderNumber === filterOrderNumber);
-    if (!amazonOrders.length) {
+    inScope = inScope.filter(o => o.orderNumber === filterOrderNumber);
+    if (!inScope.length) {
       return { dryRun, summary: { totalAwaiting: allOrders.length, amazonAwaiting: 0, plannable: 0, rejected: 0, errors: 1 }, assignments: [], manualReview: [{ orderNumber: filterOrderNumber, reason: 'Order not found in awaiting_shipment queue' }], errors: [] };
     }
   }
   const scopeOrders = [];
   const rejected = [];
 
-  onProgress({ type: 'status', message: `Found ${allOrders.length} total, ${amazonOrders.length} Amazon. Filtering...` });
+  const amazonCount = inScope.filter(isAmazonOrder).length;
+  const shopifyCount = inScope.filter(isShopifyOrder).length;
+  onProgress({ type: 'status', message: `Found ${allOrders.length} total · ${amazonCount} Amazon · ${shopifyCount} Shopify. Filtering...` });
 
-  for (const order of amazonOrders) {
+  for (const order of inScope) {
     const province = normalizeProvince(order.shipTo?.state);
     if (!province) {
       rejected.push({ orderNumber: order.orderNumber, reason: `Unsupported province/state: ${order.shipTo?.state || 'blank'}` });
@@ -483,6 +502,7 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
     }
     scopeOrders.push({
       ...order,
+      source: orderSource(order),
       normalizedProvince: province,
       resolvedItems: resolved,
       fixedWarehouseId: fixedWarehouseIds[0] || null,
@@ -543,6 +563,7 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
         const assignment = {
           orderId: order.orderId,
           orderNumber: order.orderNumber,
+          source: order.source || orderSource(order),
           itemSummary,
           destination: orderDestination(order),
           warehouseId,
