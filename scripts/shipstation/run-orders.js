@@ -642,7 +642,8 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
       dryRun,
       summary: {
         totalAwaiting: allOrders.length,
-        amazonAwaiting: amazonOrders.length,
+        amazonAwaiting: amazonCount,
+        shopifyAwaiting: shopifyCount,
         plannable: assignments.length,
         rejected: rejected.length,
         errors: planningErrors.length + stagingErrors.length,
