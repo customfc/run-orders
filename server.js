@@ -768,6 +768,67 @@ app.get('/api/fba/today', (req, res) => {
   }
 });
 
+// ── FBA PO Draft (Queue) ────────────────────────────────────────────────────
+
+const poDrafts = require('./lib/fba-po-drafts');
+
+app.get('/api/fba/po-draft', (req, res) => {
+  try {
+    const draft = poDrafts.loadCurrent();
+    res.json({ success: true, draft, summary: poDrafts.summarize(draft) });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/fba/po-draft/add', (req, res) => {
+  try {
+    const { asin, sku, product, qty, recQty, addedFromTier, vendor, mapCad, ourPrice, buyBoxPrice } = req.body || {};
+    if (!asin) return res.status(400).json({ success: false, error: 'asin required' });
+    if (qty == null || qty < 1) return res.status(400).json({ success: false, error: 'qty must be >= 1' });
+    const draft = poDrafts.loadCurrent();
+    const line = poDrafts.addLine(draft, { asin, sku, product, qty, recQty, addedFromTier, vendor, mapCad, ourPrice, buyBoxPrice });
+    poDrafts.saveCurrent(draft);
+    audit.log({ action: 'fba-po-queue', asin, qty, tier: addedFromTier, vendor: line.vendor });
+    res.json({ success: true, line, summary: poDrafts.summarize(draft) });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.patch('/api/fba/po-draft/line/:lineId', (req, res) => {
+  try {
+    const { qty } = req.body || {};
+    const draft = poDrafts.loadCurrent();
+    const line = poDrafts.updateLine(draft, req.params.lineId, { qty });
+    poDrafts.saveCurrent(draft);
+    res.json({ success: true, line, summary: poDrafts.summarize(draft) });
+  } catch (e) {
+    res.status(400).json({ success: false, error: e.message });
+  }
+});
+
+app.delete('/api/fba/po-draft/line/:lineId', (req, res) => {
+  try {
+    const draft = poDrafts.loadCurrent();
+    const removed = poDrafts.removeLine(draft, req.params.lineId);
+    if (!removed) return res.status(404).json({ success: false, error: 'line not found' });
+    poDrafts.saveCurrent(draft);
+    res.json({ success: true, removed, summary: poDrafts.summarize(draft) });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.delete('/api/fba/po-draft', (req, res) => {
+  try {
+    poDrafts.clearCurrent();
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.get('/api/fba/map-violators', (req, res) => {
   try {
     const snap = fbaSignals.loadLatestSnapshot();

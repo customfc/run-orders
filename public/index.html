@@ -236,6 +236,7 @@
       </div>
       <div id="fbaProgress" class="progress-log" style="display:none"></div>
       <div id="fbaSummary" style="margin:12px 0"></div>
+      <div id="fbaPoCart" style="margin:12px 0"></div>
       <div id="fbaTiers"></div>
     </div>
   </div>
@@ -1261,6 +1262,7 @@ async function fbaLoadToday() {
   const infoEl = document.getElementById('fbaSnapshotInfo');
   summaryEl.innerHTML = '<div style="color:#94a3b8;font-size:13px">Loading...</div>';
   tiersEl.innerHTML = '';
+  await fbaLoadCart(); // populate window._fbaQueued before row render
   try {
     const res = await fetch('/api/fba/today');
     const data = await res.json();
@@ -1388,12 +1390,22 @@ function fbaRenderTier(tier, rows) {
               if (d.action === 'violation-by-us') label = `FIX → $${d.recommendedPrice.toFixed(2)}`;
               actionCell = `<span style="color:${color};font-weight:500" title="${esc(d.reason || '')}">${esc(label)}</span>`;
             }
+            const queued = window._fbaQueued && window._fbaQueued.has(r.asin);
+            const canQueue = r.recShipQty > 0 && ['bleeding','urgent','low-cover'].includes(tier.key);
+            let shipQtyCell;
+            if (canQueue) {
+              shipQtyCell = queued
+                ? `<span style="color:#059669;font-weight:700">✓ ${r.recShipQty}</span>`
+                : `<button class="btn btn-sm" style="padding:2px 8px;font-size:11px;background:#0ea5e9;color:white;border:none;border-radius:4px;cursor:pointer" onclick="fbaQueueLine('${esc(r.asin)}', ${r.recShipQty}, '${esc(r.productName||'').replace(/'/g, "\\'")}', '${tier.key}')">+ ${r.recShipQty}</button>`;
+            } else {
+              shipQtyCell = `<span style="color:${r.recShipQty ? '#1f2937' : '#cbd5e1'};font-weight:${r.recShipQty ? 600 : 400}">${r.recShipQty || ''}</span>`;
+            }
             return `<tr>
               <td style="max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(name)}">${esc(name)}</td>
               <td style="text-align:right">${r.available}</td>
               <td style="text-align:right">${r.totalDaysOfSupply}</td>
               <td style="text-align:right">${r.units30}</td>
-              <td style="text-align:right;font-weight:600">${r.recShipQty || ''}</td>
+              <td style="text-align:right">${shipQtyCell}</td>
               <td style="text-align:right">${r.daysUntilShip === null ? '' : r.daysUntilShip + 'd'}</td>
               <td style="text-align:right">${mapCell}</td>
               <td style="text-align:right">${bbCell}</td>
@@ -1469,6 +1481,157 @@ async function fbaPullSignals() {
 
 async function fbaPullBuyBox() {
   return fbaSsePull('/api/fba/buybox/pull', 'btnFbaPullBb', 'Pull Buy Box', 'Pulling BB (1–2 min)...');
+}
+
+// ── PO Queue (cart) ──────────────────────────────────────────────────────────
+
+const VENDOR_STYLES = {
+  prosol:       { label: 'Prosol (Schluter)',   bg: '#eff6ff', border: '#bfdbfe', accent: '#1d4ed8' },
+  bona:         { label: 'Bona',                bg: '#ecfdf5', border: '#a7f3d0', accent: '#065f46' },
+  aquamix:      { label: 'Aqua Mix',            bg: '#fef3c7', border: '#fcd34d', accent: '#92400e' },
+  perfectlevel: { label: 'Perfect Level',       bg: '#fdf4ff', border: '#f0abfc', accent: '#86198f' },
+  unknown:      { label: 'Unknown vendor',      bg: '#f1f5f9', border: '#cbd5e1', accent: '#475569' },
+};
+
+async function fbaLoadCart() {
+  try {
+    const r = await fetch('/api/fba/po-draft');
+    const data = await r.json();
+    if (!data.success) return;
+    const queued = new Set((data.draft.lines || []).map(l => l.asin));
+    window._fbaQueued = queued;
+    window._fbaDraft = data.draft;
+    window._fbaDraftSummary = data.summary;
+    fbaRenderCart();
+  } catch (err) {
+    console.error('cart load failed', err);
+  }
+}
+
+function fbaRenderCart() {
+  const el = document.getElementById('fbaPoCart');
+  if (!el) return;
+  const s = window._fbaDraftSummary;
+  if (!s || s.lineCount === 0) {
+    el.innerHTML = '<div style="padding:12px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;color:#64748b;font-size:13px">📦 PO draft is empty. Click <b>+ N</b> next to a Ship Qty to queue items for a vendor PO.</div>';
+    return;
+  }
+  const vendors = Object.values(s.vendorGroups);
+  el.innerHTML = `
+    <div style="padding:14px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <h3 style="margin:0;font-size:14px;color:#0f172a">📦 Draft POs — ${s.lineCount} lines · ${s.totalUnits} units across ${vendors.length} vendor${vendors.length===1?'':'s'}</h3>
+          <div style="font-size:11px;color:#64748b;margin-top:2px">draft id: ${esc(s.draftId)} · updated ${new Date(s.updatedAt).toLocaleTimeString()}</div>
+        </div>
+        <div>
+          <button class="btn btn-sm" style="padding:6px 10px;background:#dc2626;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px" onclick="fbaClearCart()">Clear All</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px">
+        ${vendors.map(g => {
+          const st = VENDOR_STYLES[g.vendor] || VENDOR_STYLES.unknown;
+          const emailStatus = g.email ? `✓ ${esc(g.email)}` : '<span style="color:#b91c1c">⚠ vendor email not set</span>';
+          return `
+            <div style="padding:12px;background:${st.bg};border:1px solid ${st.border};border-radius:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <div style="font-weight:700;color:${st.accent};font-size:13px">${esc(st.label)}</div>
+                <div style="font-size:11px;color:${st.accent}">${g.lineCount} line${g.lineCount===1?'':'s'} · ${g.totalUnits} units${g.hasCostData && g.totalCost ? ` · $${g.totalCost.toFixed(2)}` : ''}</div>
+              </div>
+              <div style="font-size:11px;color:#64748b;margin-bottom:8px">${emailStatus}</div>
+              <details style="font-size:11px">
+                <summary style="cursor:pointer;color:${st.accent};font-weight:500">Lines</summary>
+                <table style="margin-top:6px;font-size:11px">
+                  <tbody>
+                    ${g.lines.map(l => `<tr>
+                      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.product||l.asin)}">${esc((l.product||l.asin).slice(0,36))}</td>
+                      <td style="text-align:right"><input type="number" min="1" value="${l.qty}" style="width:60px;font-size:11px;padding:2px 4px" onchange="fbaUpdateLine('${esc(l.lineId)}', this.value)"></td>
+                      <td><span style="color:#94a3b8;font-size:10px">${l.recQty ? 'rec ' + l.recQty : ''}</span></td>
+                      <td><button style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:14px" title="Remove" onclick="fbaRemoveLine('${esc(l.lineId)}')">×</button></td>
+                    </tr>`).join('')}
+                  </tbody>
+                </table>
+              </details>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;padding-top:10px;border-top:1px solid #e2e8f0">
+        <button class="btn" disabled style="padding:8px 16px;background:#94a3b8;color:white;border:none;border-radius:6px;cursor:not-allowed;font-size:13px" title="Coming next session — needs vendor email wiring + Salesforce SO/PO creation">
+          🚧 Review & Send (Phase 2 — not wired)
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+async function fbaQueueLine(asin, qty, product, tier) {
+  try {
+    const r = await fetch('/api/fba/po-draft/add', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ asin, qty, recQty: qty, product, addedFromTier: tier }),
+    });
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error);
+    window._fbaQueued = window._fbaQueued || new Set();
+    window._fbaQueued.add(asin);
+    window._fbaDraftSummary = data.summary;
+    fbaRenderCart();
+    // Re-render rows to flip the button state
+    const snapshot = await (await fetch('/api/fba/today')).json();
+    if (snapshot.success && snapshot.snapshot) {
+      const byTier = {};
+      for (const row of snapshot.rows) (byTier[row.tier] ||= []).push(row);
+      document.getElementById('fbaTiers').innerHTML = FBA_TIERS.map(t => {
+        const rows = byTier[t.key] || [];
+        return rows.length ? fbaRenderTier(t, rows) : '';
+      }).join('');
+    }
+  } catch (err) {
+    alert('Queue failed: ' + err.message);
+  }
+}
+
+async function fbaUpdateLine(lineId, qty) {
+  try {
+    const r = await fetch('/api/fba/po-draft/line/' + encodeURIComponent(lineId), {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ qty: Number(qty) }),
+    });
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error);
+    window._fbaDraftSummary = data.summary;
+    fbaRenderCart();
+  } catch (err) {
+    alert('Update failed: ' + err.message);
+  }
+}
+
+async function fbaRemoveLine(lineId) {
+  try {
+    const r = await fetch('/api/fba/po-draft/line/' + encodeURIComponent(lineId), { method: 'DELETE' });
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error);
+    window._fbaDraftSummary = data.summary;
+    // Refresh queued set from scratch (line removed)
+    await fbaLoadCart();
+    await fbaLoadToday();
+  } catch (err) {
+    alert('Remove failed: ' + err.message);
+  }
+}
+
+async function fbaClearCart() {
+  if (!confirm('Clear all queued PO lines?')) return;
+  try {
+    await fetch('/api/fba/po-draft', { method: 'DELETE' });
+    await fbaLoadCart();
+    await fbaLoadToday();
+  } catch (err) {
+    alert('Clear failed: ' + err.message);
+  }
 }
 
 async function fbaShowViolatorReport() {
