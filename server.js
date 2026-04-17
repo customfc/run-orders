@@ -906,7 +906,19 @@ app.post('/api/fba/po-draft/send', async (req, res) => {
       // All vendors sent — clear the current draft (archived copy remains)
       poDrafts.clearCurrent();
     }
-    audit.log({ action: 'fba-po-send', vendor, to: result.to, cc: result.cc, lineCount: result.lineCount, totalUnits: result.totalUnits, draftId: draft.draftId, archived: !!archivedPath });
+    audit.log({
+      action: 'fba-po-send',
+      vendor,
+      to: result.to,
+      cc: result.cc,
+      lineCount: result.lineCount,
+      totalUnits: result.totalUnits,
+      draftId: draft.draftId,
+      archived: !!archivedPath,
+      sfPoNumber: result.sfPo?.poNumber || null,
+      sfPoSkipped: result.sfPo?.skipped || false,
+      sfPoErrors: result.sfPo?.errors || null,
+    });
     res.json({ success: true, result, archivedPath, remainingDraft: archivedPath ? null : poDrafts.summarize(poDrafts.loadCurrent()) });
   } catch (e) {
     audit.log({ action: 'fba-po-send', success: false, vendor: req.body?.vendor, error: e.message });

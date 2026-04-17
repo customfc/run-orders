@@ -1768,11 +1768,26 @@ async function fbaSendVendor(vendor) {
     if (!data.success) throw new Error(data.error || 'send failed');
 
     if (btn) { btn.textContent = '✓ Sent'; btn.style.background = '#059669'; }
+    // Build a status banner: email, then SF PO result
+    let banner = `✓ Sent to ${esc(data.result.to)} at ${new Date(data.result.sentAt).toLocaleTimeString()} · ${data.result.lineCount} line(s), ${data.result.totalUnits} units`;
+    const sfPo = data.result.sfPo;
+    if (sfPo) {
+      if (sfPo.created) {
+        banner += ` · <b>SF PO ${esc(sfPo.poNumber)}</b> (${sfPo.lineCount} lines${sfPo.totalCost ? ', $' + sfPo.totalCost.toFixed(2) : ''})`;
+        if (sfPo.errors && sfPo.errors.length) banner += ` <span style="color:#b91c1c">· ${sfPo.errors.length} line error(s)</span>`;
+      } else if (sfPo.skipped) {
+        banner += ` · <span style="color:#64748b">SF PO skipped</span>`;
+      } else if (sfPo.error) {
+        banner += ` · <span style="color:#b91c1c">SF PO failed: ${esc(sfPo.error)}</span>`;
+      } else if (sfPo.errors && sfPo.errors.length) {
+        banner += ` · <span style="color:#b91c1c">SF PO errors: ${sfPo.errors.length}</span>`;
+      }
+    }
     // Remove the card from the modal so it visually clears
     const card = document.querySelector(`#fbaReviewModal [data-vendor="${vendor}"]`);
     if (card) {
       card.style.opacity = '0.5';
-      card.insertAdjacentHTML('afterbegin', `<div style="padding:10px;background:#ecfdf5;color:#065f46;font-size:12px;border-bottom:1px solid #a7f3d0">✓ Sent to ${esc(data.result.to)} at ${new Date(data.result.sentAt).toLocaleTimeString()} · ${data.result.lineCount} line(s), ${data.result.totalUnits} units</div>`);
+      card.insertAdjacentHTML('afterbegin', `<div style="padding:10px;background:#ecfdf5;color:#065f46;font-size:12px;border-bottom:1px solid #a7f3d0">${banner}</div>`);
     }
     // Refresh the cart in the background
     await fbaLoadCart();
