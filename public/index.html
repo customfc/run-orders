@@ -230,6 +230,7 @@
       <div class="actions">
         <button class="btn btn-primary" id="btnFbaPull" onclick="fbaPullSignals()">Pull Inventory Planning</button>
         <button class="btn btn-primary" id="btnFbaPullBb" onclick="fbaPullBuyBox()">Pull Buy Box</button>
+        <button class="btn btn-primary" id="btnFbaPullProsol" onclick="fbaPullProsolStock()">Pull Prosol Stock</button>
         <button class="btn" onclick="fbaLoadToday()">Refresh View</button>
         <button class="btn" style="background:#7c3aed;color:white" onclick="fbaShowViolatorReport()">🎯 Schluter Violator Report</button>
         <span id="fbaSnapshotInfo" style="font-size:12px;color:#64748b;margin-left:12px"></span>
@@ -1486,6 +1487,10 @@ async function fbaPullBuyBox() {
   return fbaSsePull('/api/fba/buybox/pull', 'btnFbaPullBb', 'Pull Buy Box', 'Pulling BB (1–2 min)...');
 }
 
+async function fbaPullProsolStock() {
+  return fbaSsePull('/api/fba/prosol-stock/pull', 'btnFbaPullProsol', 'Pull Prosol Stock', 'Pulling Prosol (several min)...');
+}
+
 // ── PO Queue (cart) ──────────────────────────────────────────────────────────
 
 const VENDOR_STYLES = {
@@ -1551,16 +1556,34 @@ function fbaRenderCart() {
                 <div style="font-size:11px;color:${st.accent}">${g.lineCount} line${g.lineCount===1?'':'s'} · ${g.totalUnits} units${g.hasCostData && g.totalCost ? ` · $${g.totalCost.toFixed(2)}` : ''}</div>
               </div>
               <div style="font-size:11px;color:#64748b;margin-bottom:8px">${routeStatus}</div>
-              <details style="font-size:11px">
+              <details style="font-size:11px" open>
                 <summary style="cursor:pointer;color:${st.accent};font-weight:500">Lines</summary>
                 <table style="margin-top:6px;font-size:11px">
                   <tbody>
-                    ${g.lines.map(l => `<tr>
-                      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.product||l.asin)}">${esc((l.product||l.asin).slice(0,36))}</td>
+                    ${g.lines.map(l => {
+                      let stockBadge = '';
+                      if (l.prosolStock && l.prosolStock.decision) {
+                        const d = l.prosolStock.decision;
+                        const colors = { full:'#059669', backorder:'#d97706', capped:'#dc2626', oos:'#991b1b', unknown:'#94a3b8' };
+                        const labels = {
+                          full:      `✓ WCAS ${d.atPrimary}`,
+                          backorder: `⏳ backorder (WCAS ${d.atPrimary}, +${d.atOthers})`,
+                          capped:    `⚠ capped from ${l.recQty} (total ${d.total})`,
+                          oos:       `🚫 Prosol OOS`,
+                          unknown:   'no stock data',
+                        };
+                        stockBadge = `<div style="font-size:10px;color:${colors[d.action]||'#94a3b8'};margin-top:2px" title="${esc(d.reason||'')}">${esc(labels[d.action]||d.action)}</div>`;
+                      }
+                      return `<tr>
+                      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.product||l.asin)}">
+                        ${esc((l.product||l.asin).slice(0,36))}
+                        ${stockBadge}
+                      </td>
                       <td style="text-align:right"><input type="number" min="1" value="${l.qty}" style="width:60px;font-size:11px;padding:2px 4px" onchange="fbaUpdateLine('${esc(l.lineId)}', this.value)"></td>
                       <td><span style="color:#94a3b8;font-size:10px">${l.recQty ? 'rec ' + l.recQty : ''}</span></td>
                       <td><button style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:14px" title="Remove" onclick="fbaRemoveLine('${esc(l.lineId)}')">×</button></td>
-                    </tr>`).join('')}
+                    </tr>`;
+                    }).join('')}
                   </tbody>
                 </table>
               </details>
@@ -1585,7 +1608,20 @@ async function fbaQueueLine(asin, qty, product, tier) {
       body: JSON.stringify({ asin, qty, recQty: qty, product, addedFromTier: tier }),
     });
     const data = await r.json();
-    if (!data.success) throw new Error(data.error);
+    if (!data.success) {
+      if (data.code === 'PROSOL_OOS') {
+        alert('Prosol is out of stock on this SKU. Not queued.\n\n' + (data.error || ''));
+        return;
+      }
+      throw new Error(data.error);
+    }
+    // Surface capped/backorder info
+    const d = data.line?.prosolStock?.decision;
+    if (d && d.action === 'capped') {
+      console.log(`Capped from ${qty} to ${data.line.qty} — ${d.reason}`);
+    } else if (d && d.action === 'backorder') {
+      console.log(`Queued ${data.line.qty} (backorder expected) — ${d.reason}`);
+    }
     window._fbaQueued = window._fbaQueued || new Set();
     window._fbaQueued.add(asin);
     window._fbaDraftSummary = data.summary;

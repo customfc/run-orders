@@ -783,14 +783,60 @@ app.get('/api/fba/po-draft', (req, res) => {
 
 app.post('/api/fba/po-draft/add', (req, res) => {
   try {
-    const { asin, sku, product, qty, recQty, addedFromTier, vendor, mapCad, ourPrice, buyBoxPrice } = req.body || {};
+    const { asin, sku, product, qty, recQty, addedFromTier, vendor, mapCad, ourPrice, buyBoxPrice, autoAdjust } = req.body || {};
     if (!asin) return res.status(400).json({ success: false, error: 'asin required' });
     if (qty == null || qty < 1) return res.status(400).json({ success: false, error: 'qty must be >= 1' });
     const draft = poDrafts.loadCurrent();
-    const line = poDrafts.addLine(draft, { asin, sku, product, qty, recQty, addedFromTier, vendor, mapCad, ourPrice, buyBoxPrice });
+    let line;
+    try {
+      line = poDrafts.addLine(draft, { asin, sku, product, qty, recQty, addedFromTier, vendor, mapCad, ourPrice, buyBoxPrice, autoAdjust: autoAdjust !== false });
+    } catch (e) {
+      if (e.code === 'PROSOL_OOS') return res.status(422).json({ success: false, error: e.message, code: 'PROSOL_OOS', prosolStock: e.prosolStock });
+      throw e;
+    }
     poDrafts.saveCurrent(draft);
-    audit.log({ action: 'fba-po-queue', asin, qty, tier: addedFromTier, vendor: line.vendor });
+    audit.log({ action: 'fba-po-queue', asin, qtyRequested: qty, qtyQueued: line.qty, tier: addedFromTier, vendor: line.vendor, prosolAction: line.prosolStock?.decision?.action });
     res.json({ success: true, line, summary: poDrafts.summarize(draft) });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/fba/prosol-stock/pull', async (req, res) => {
+  if (fbaPullActive) return res.status(409).json({ error: 'FBA pull already in progress' });
+  fbaPullActive = true;
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  const send = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  try {
+    send('status', { message: 'Launching Prosol session and iterating SKUs (several minutes)...' });
+    const { main: pullProsolStock } = require('./scripts/fba/pull-prosol-stock');
+    const origLog = console.log;
+    console.log = (...args) => { send('progress', { line: args.join(' ') }); origLog(...args); };
+    try { await pullProsolStock(); } finally { console.log = origLog; }
+    // Invalidate lib/prosol-stock cache so next lookup reads fresh
+    require('./lib/prosol-stock').invalidate();
+    audit.log({ action: 'fba-prosol-stock-pull', success: true });
+    send('complete', { success: true });
+    res.end();
+  } catch (e) {
+    audit.log({ action: 'fba-prosol-stock-pull', success: false, error: e.message });
+    send('error', { error: e.message });
+    res.end();
+  } finally {
+    fbaPullActive = false;
+  }
+});
+
+app.get('/api/fba/prosol-stock/status', (req, res) => {
+  try {
+    const ps = require('./lib/prosol-stock');
+    const p = ps.latestSnapshotPath();
+    if (!p) return res.json({ success: true, snapshot: null });
+    const snap = ps.loadLatest();
+    res.json({ success: true, snapshot: { path: p, pulledAt: snap.pulledAt, skuCount: snap.skuCount } });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
