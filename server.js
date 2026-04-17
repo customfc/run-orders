@@ -875,6 +875,45 @@ app.delete('/api/fba/po-draft', (req, res) => {
   }
 });
 
+// Preview rendered HTML for a vendor group (for the Review modal)
+app.get('/api/fba/po-draft/preview/:vendor', (req, res) => {
+  try {
+    const poSender = require('./lib/fba-po-sender');
+    const draft = poDrafts.loadCurrent();
+    const lines = draft.lines.filter((l) => l.vendor === req.params.vendor && !l.sentAt);
+    if (!lines.length) return res.status(404).json({ success: false, error: `No queued lines for vendor '${req.params.vendor}'` });
+    const preview = poSender.preview(req.params.vendor, lines, draft.draftId);
+    res.json({ success: true, preview });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Send a single vendor group (requires explicit vendor)
+app.post('/api/fba/po-draft/send', async (req, res) => {
+  try {
+    const { vendor } = req.body || {};
+    if (!vendor) return res.status(400).json({ success: false, error: 'vendor required' });
+    const poSender = require('./lib/fba-po-sender');
+    const draft = poDrafts.loadCurrent();
+    const unsent = draft.lines.filter((l) => l.vendor === vendor && !l.sentAt);
+    if (!unsent.length) return res.status(400).json({ success: false, error: `No unsent lines for vendor '${vendor}'` });
+
+    const result = await poSender.sendVendorGroup({ draft, vendor });
+    poDrafts.saveCurrent(draft); // persist sentAt markers on lines
+    const archivedPath = poSender.archiveIfAllSent(draft);
+    if (archivedPath) {
+      // All vendors sent — clear the current draft (archived copy remains)
+      poDrafts.clearCurrent();
+    }
+    audit.log({ action: 'fba-po-send', vendor, to: result.to, cc: result.cc, lineCount: result.lineCount, totalUnits: result.totalUnits, draftId: draft.draftId, archived: !!archivedPath });
+    res.json({ success: true, result, archivedPath, remainingDraft: archivedPath ? null : poDrafts.summarize(poDrafts.loadCurrent()) });
+  } catch (e) {
+    audit.log({ action: 'fba-po-send', success: false, vendor: req.body?.vendor, error: e.message });
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.get('/api/fba/map-violators', (req, res) => {
   try {
     const snap = fbaSignals.loadLatestSnapshot();

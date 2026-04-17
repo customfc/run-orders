@@ -1595,8 +1595,8 @@ function fbaRenderCart() {
         }).join('')}
       </div>
       <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;padding-top:10px;border-top:1px solid #e2e8f0">
-        <button class="btn" disabled style="padding:8px 16px;background:#94a3b8;color:white;border:none;border-radius:6px;cursor:not-allowed;font-size:13px" title="Coming next session — needs vendor email wiring + Salesforce SO/PO creation">
-          🚧 Review & Send (Phase 2 — not wired)
+        <button class="btn btn-success" style="padding:8px 16px;background:#059669;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600" onclick="fbaShowReviewModal()">
+          📧 Review &amp; Send
         </button>
       </div>
     </div>
@@ -1671,6 +1671,124 @@ async function fbaRemoveLine(lineId) {
     await fbaLoadToday();
   } catch (err) {
     alert('Remove failed: ' + err.message);
+  }
+}
+
+async function fbaShowReviewModal() {
+  const s = window._fbaDraftSummary;
+  if (!s || s.lineCount === 0) {
+    alert('PO draft is empty. Queue some items first.');
+    return;
+  }
+  const existing = document.getElementById('fbaReviewModal');
+  if (existing) existing.remove();
+
+  // Fetch previews for each vendor group
+  const vendors = Object.keys(s.vendorGroups);
+  const previews = {};
+  for (const v of vendors) {
+    try {
+      const r = await fetch(`/api/fba/po-draft/preview/${encodeURIComponent(v)}`);
+      const data = await r.json();
+      if (data.success) previews[v] = data.preview;
+    } catch {}
+  }
+
+  const modal = document.createElement('div');
+  modal.id = 'fbaReviewModal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:white;max-width:1100px;width:100%;max-height:92vh;overflow:auto;border-radius:12px;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h2 style="margin:0">📧 Review &amp; Send POs</h2>
+        <button onclick="document.getElementById('fbaReviewModal').remove()" style="border:none;background:#f1f5f9;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:20px">×</button>
+      </div>
+      <div id="fbaReviewBody">
+        ${vendors.map(v => {
+          const g = s.vendorGroups[v];
+          const p = previews[v];
+          const st = VENDOR_STYLES[v] || VENDOR_STYLES.unknown;
+          const canSend = p && p.to;
+          const emailLine = p
+            ? `<code style="font-size:11px">to: ${esc(p.to)}${p.cc && p.cc.length ? ' · cc: ' + p.cc.map(esc).join(', ') : ''}</code>`
+            : '<span style="color:#b91c1c">no preview available</span>';
+          return `
+            <div data-vendor="${esc(v)}" style="margin-bottom:20px;border:1px solid ${st.border};border-radius:10px;overflow:hidden">
+              <div style="padding:14px;background:${st.bg}">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+                  <div>
+                    <div style="font-weight:700;color:${st.accent};font-size:15px">${esc(st.label)}</div>
+                    <div style="font-size:12px;color:${st.accent};margin-top:2px">${g.lineCount} line${g.lineCount===1?'':'s'} · ${g.totalUnits} units</div>
+                    <div style="margin-top:6px">${emailLine}</div>
+                    ${p ? `<div style="font-size:12px;color:#64748b;margin-top:4px">subject: ${esc(p.subject)}</div>` : ''}
+                  </div>
+                  <div>
+                    <button
+                      id="btnSend-${esc(v)}"
+                      ${canSend ? '' : 'disabled'}
+                      onclick="fbaSendVendor('${esc(v)}')"
+                      style="padding:8px 16px;background:${canSend ? '#059669' : '#94a3b8'};color:white;border:none;border-radius:6px;cursor:${canSend ? 'pointer' : 'not-allowed'};font-size:13px;font-weight:600;white-space:nowrap">
+                      Send to ${esc(st.label.split('—')[0].trim())}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <details style="padding:0 14px 14px;background:white">
+                <summary style="cursor:pointer;font-size:12px;color:#64748b;padding:8px 0">Email preview</summary>
+                ${p ? `<div style="border:1px solid #e2e8f0;border-radius:6px;padding:12px;max-height:400px;overflow:auto;background:#fafafa">${p.html}</div>` : ''}
+              </details>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:12px;color:#64748b">Sends one vendor at a time. Each send is logged + archived to data/fba/po-drafts/sent/</div>
+        <button onclick="document.getElementById('fbaReviewModal').remove()" style="padding:8px 16px;background:#f1f5f9;border:none;border-radius:6px;cursor:pointer;font-size:13px">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function fbaSendVendor(vendor) {
+  const s = window._fbaDraftSummary;
+  const g = s?.vendorGroups[vendor];
+  if (!g) return alert('Vendor not in draft');
+  if (!confirm(`Send PO to ${vendor} — ${g.lineCount} line${g.lineCount===1?'':'s'}, ${g.totalUnits} units?\n\nThis will actually email the vendor.`)) return;
+
+  const btn = document.getElementById(`btnSend-${vendor}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; btn.style.background = '#64748b'; }
+
+  try {
+    const r = await fetch('/api/fba/po-draft/send', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ vendor }),
+    });
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error || 'send failed');
+
+    if (btn) { btn.textContent = '✓ Sent'; btn.style.background = '#059669'; }
+    // Remove the card from the modal so it visually clears
+    const card = document.querySelector(`#fbaReviewModal [data-vendor="${vendor}"]`);
+    if (card) {
+      card.style.opacity = '0.5';
+      card.insertAdjacentHTML('afterbegin', `<div style="padding:10px;background:#ecfdf5;color:#065f46;font-size:12px;border-bottom:1px solid #a7f3d0">✓ Sent to ${esc(data.result.to)} at ${new Date(data.result.sentAt).toLocaleTimeString()} · ${data.result.lineCount} line(s), ${data.result.totalUnits} units</div>`);
+    }
+    // Refresh the cart in the background
+    await fbaLoadCart();
+    await fbaLoadToday();
+
+    // If whole draft archived, offer to close the modal
+    if (data.archivedPath) {
+      setTimeout(() => {
+        if (confirm('All vendor POs sent — draft archived. Close review modal?')) {
+          document.getElementById('fbaReviewModal')?.remove();
+        }
+      }, 800);
+    }
+  } catch (err) {
+    alert('Send failed: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Retry send'; btn.style.background = '#dc2626'; }
   }
 }
 
