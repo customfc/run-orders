@@ -1573,6 +1573,9 @@ function fbaRenderCart() {
                           unknown:   'no stock data',
                         };
                         stockBadge = `<div style="font-size:10px;color:${colors[d.action]||'#94a3b8'};margin-top:2px" title="${esc(d.reason||'')}">${esc(labels[d.action]||d.action)}</div>`;
+                        if (d.altSource) {
+                          stockBadge += `<div style="font-size:10px;color:#2563eb;margin-top:2px" title="${esc(d.altSourceNote||'')}">💡 ${esc(d.altSource.code || '?')}${d.altSource.city ? ` (${esc(d.altSource.city)})` : ''} has ${d.altSource.available} — ship all from there (needs MOQ bump)</div>`;
+                        }
                       }
                       return `<tr>
                       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.product||l.asin)}">
