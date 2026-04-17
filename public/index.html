@@ -1386,107 +1386,132 @@ async function fbaLoadToday() {
   }
 }
 
+// Tiers that are open by default — the ones requiring action today.
+const FBA_OPEN_TIERS = new Set([
+  'bleeding', 'our-map-violation', 'urgent', 'lipc-active',
+  'map-violator-detected', 'bb-losing',
+]);
+
 function fbaRenderTier(tier, rows) {
-  const isCollapsed = tier.key === 'dormant' || tier.key === 'healthy';
+  const open = FBA_OPEN_TIERS.has(tier.key);
+  const actionColors = {
+    'match': '#059669',
+    'hold-at-map': '#b45309',
+    'hold-at-floor': '#9a3412',
+    'competitor-below-map': '#7c3aed',
+    'violation-by-us': '#b91c1c',
+    'override-allowed': '#b45309',
+    'sole-offer': '#94a3b8',
+    'missing-map': '#94a3b8',
+    'no-map-rule': '#94a3b8',
+    'no-competition': '#94a3b8',
+  };
   return `
-    <details ${isCollapsed ? '' : 'open'} style="margin-top:16px">
-      <summary style="cursor:pointer;padding:8px;background:${tier.color}15;border-left:4px solid ${tier.color};border-radius:4px;font-weight:600;color:${tier.color}">
+    <details ${open ? 'open' : ''} style="margin-top:12px">
+      <summary style="cursor:pointer;padding:8px 12px;background:${tier.color}15;border-left:4px solid ${tier.color};border-radius:4px;font-weight:600;color:${tier.color};font-size:13px">
         ${tier.icon} ${tier.title}  <span style="color:#475569;font-weight:400">(${rows.length})</span>
       </summary>
-      <table style="margin-top:8px;font-size:12px">
+      <table style="margin-top:6px;font-size:12px">
         <thead>
           <tr>
-            <th style="text-align:left">Product</th>
-            <th style="text-align:right">Avail</th>
-            <th style="text-align:right">DoS</th>
-            <th style="text-align:right">v30</th>
-            <th style="text-align:right">Ship Qty</th>
-            <th style="text-align:right">Ship In</th>
-            <th style="text-align:right">MAP</th>
-            <th style="text-align:right">BuyBox</th>
-            <th style="text-align:right">Your Price</th>
+            <th style="text-align:left;width:38%">Product</th>
+            <th style="text-align:right;width:80px">Stock</th>
+            <th style="text-align:right;width:50px">v30</th>
+            <th style="text-align:center;width:90px">Ship</th>
+            <th style="text-align:right;width:130px">Pricing</th>
             <th style="text-align:left">Action</th>
-            <th style="text-align:left">ASIN</th>
           </tr>
         </thead>
         <tbody>
           ${rows.map(r => {
             const name = r.productName || r.sku;
-            // Real BB data (if pulled) — shows who owns it & gap
-            let bbCell = '';
-            let ourCell = '';
+            const amzLink = `https://www.amazon.ca/dp/${esc(r.asin)}`;
+            const productCell = `
+              <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(name)}">${esc(name)}</div>
+              <div style="font-size:10px"><a href="${amzLink}" target="_blank" style="color:#94a3b8;font-family:monospace;text-decoration:none">${esc(r.asin)}</a></div>
+            `;
+
+            // Stock cell: available + days-of-supply stacked
+            const dosColor = r.totalDaysOfSupply === 0 ? '#dc2626' : r.totalDaysOfSupply < 28 ? '#d97706' : '#64748b';
+            const stockCell = `
+              <div style="font-weight:600">${r.available}</div>
+              <div style="font-size:10px;color:${dosColor}">${r.totalDaysOfSupply}d cover</div>
+            `;
+
+            // Ship cell: queue button (if applicable) + days-until-ship
+            const queued = window._fbaQueued && window._fbaQueued.has(r.asin);
+            const canQueue = r.recShipQty > 0 && ['bleeding','urgent','low-cover'].includes(tier.key);
+            const dInBadge = r.daysUntilShip === null ? '' :
+              r.daysUntilShip <= 0 ? `<div style="font-size:10px;color:#dc2626;margin-top:2px">now</div>` :
+              `<div style="font-size:10px;color:#64748b;margin-top:2px">in ${r.daysUntilShip}d</div>`;
+            let shipCell = '';
+            if (canQueue && r.recShipQty > 0) {
+              shipCell = queued
+                ? `<span style="color:#059669;font-weight:700">✓ ${r.recShipQty}</span>${dInBadge}`
+                : `<button class="btn btn-sm" style="padding:3px 10px;font-size:11px;background:#0ea5e9;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600" onclick="fbaQueueLine('${esc(r.asin)}', ${r.recShipQty}, '${esc(r.productName||'').replace(/'/g, "\\'")}', '${tier.key}')">+ ${r.recShipQty}</button>${dInBadge}`;
+            } else if (r.recShipQty > 0) {
+              shipCell = `<span style="color:#64748b">${r.recShipQty}</span>${dInBadge}`;
+            }
+
+            // Pricing cell: MAP (muted), BB (with ownership), Your (with gap) stacked
+            const mapLine = r.mapCad
+              ? `<div style="font-size:10px;color:#94a3b8">MAP $${r.mapCad.toFixed(2)}${r.mapOverrideAllowed ? ' ⚡' : ''}</div>`
+              : '';
+            let bbLine = '';
+            let ourLine = '';
             if (r.bb) {
               const bb = r.bb;
               if (bb.buyBoxIsUs) {
-                bbCell = `$${(bb.buyBoxPrice||0).toFixed(2)} <span style="color:#059669;font-weight:700" title="You own Buy Box">✓</span>`;
+                bbLine = `<div style="color:#059669"><strong>BB $${(bb.buyBoxPrice||0).toFixed(2)}</strong> ✓</div>`;
               } else if (bb.buyBoxSellerId) {
-                bbCell = `$${(bb.buyBoxPrice||0).toFixed(2)} <span style="color:#dc2626;font-weight:700" title="Competitor owns BB">✗</span>`;
-              } else {
-                bbCell = bb.buyBoxPrice ? `$${bb.buyBoxPrice.toFixed(2)}` : '—';
+                bbLine = `<div style="color:#dc2626"><strong>BB $${(bb.buyBoxPrice||0).toFixed(2)}</strong> ✗</div>`;
+              } else if (bb.buyBoxPrice) {
+                bbLine = `<div style="color:#64748b">BB $${bb.buyBoxPrice.toFixed(2)}</div>`;
               }
               if (bb.ourPrice != null) {
                 const gap = bb.gap;
                 let gapStr = '';
                 if (gap != null && gap !== 0) {
                   const gapColor = gap > 0 ? '#dc2626' : '#059669';
-                  gapStr = ` <span style="color:${gapColor};font-size:10px">(${gap > 0 ? '+' : ''}${gap.toFixed(2)})</span>`;
+                  gapStr = ` <span style="color:${gapColor};font-size:10px">${gap > 0 ? '+' : ''}${gap.toFixed(2)}</span>`;
                 }
-                ourCell = `$${bb.ourPrice.toFixed(2)}${gapStr}`;
+                ourLine = `<div style="font-size:11px">us $${bb.ourPrice.toFixed(2)}${gapStr}</div>`;
               } else {
-                ourCell = '<span style="color:#94a3b8" title="No active offer from us">— not live</span>';
+                ourLine = `<div style="color:#94a3b8;font-size:10px">not live</div>`;
               }
             } else {
-              // fallback to snapshot prices when BB not yet pulled
-              const bbMatch = r.yourPrice > 0 && r.featuredOfferPrice > 0 && Math.abs(r.yourPrice - r.featuredOfferPrice) < 0.01;
-              bbCell = r.featuredOfferPrice ? `$${r.featuredOfferPrice.toFixed(2)}${bbMatch ? ' <span style="color:#059669">~</span>' : ''}` : '';
-              ourCell = r.yourPrice ? `$${r.yourPrice.toFixed(2)}` : '';
+              // fallback when BB snapshot not yet pulled
+              if (r.featuredOfferPrice) {
+                bbLine = `<div style="color:#64748b">BB $${r.featuredOfferPrice.toFixed(2)}</div>`;
+              }
+              if (r.yourPrice) {
+                ourLine = `<div style="font-size:11px">us $${r.yourPrice.toFixed(2)}</div>`;
+              }
             }
-            const mapCell = r.mapCad ? `$${r.mapCad.toFixed(2)}${r.mapOverrideAllowed ? ' <span title="Override allowed — user policy" style="color:#b45309">⚡</span>' : ''}` : '';
+            const pricingCell = `${bbLine}${ourLine}${mapLine}`;
+
+            // Action cell
             const d = r.mapDecision;
             let actionCell = '';
             if (d) {
-              const actionColors = {
-                'match': '#059669',
-                'hold-at-map': '#b45309',
-                'hold-at-floor': '#9a3412',
-                'competitor-below-map': '#7c3aed',
-                'violation-by-us': '#b91c1c',
-                'override-allowed': '#64748b',
-                'sole-offer': '#94a3b8',
-                'missing-map': '#94a3b8',
-                'no-map-rule': '#94a3b8',
-                'no-competition': '#94a3b8',
-              };
               const color = actionColors[d.action] || '#475569';
               let label = d.action;
               if (d.action === 'match' && d.recommendedPrice != null) label = `match → $${d.recommendedPrice.toFixed(2)}`;
-              if (d.action === 'hold-at-map' || d.action === 'hold-at-floor') label = `${d.action} → $${d.recommendedPrice.toFixed(2)}`;
-              if (d.action === 'competitor-below-map') label = `REPORT: ${d.buyBoxSellerId}`;
-              if (d.action === 'violation-by-us') label = `FIX → $${d.recommendedPrice.toFixed(2)}`;
-              actionCell = `<span style="color:${color};font-weight:500" title="${esc(d.reason || '')}">${esc(label)}</span>`;
+              else if (d.action === 'hold-at-map') label = `hold MAP $${d.recommendedPrice.toFixed(2)}`;
+              else if (d.action === 'hold-at-floor') label = `hold floor $${d.recommendedPrice.toFixed(2)}`;
+              else if (d.action === 'competitor-below-map') label = `report ${d.buyBoxSellerId}`;
+              else if (d.action === 'violation-by-us') label = `fix → $${d.recommendedPrice.toFixed(2)}`;
+              else if (d.action === 'override-allowed') label = `manual (thermostat)`;
+              actionCell = `<span style="color:${color};font-size:11px" title="${esc(d.reason || '')}">${esc(label)}</span>`;
             }
-            const queued = window._fbaQueued && window._fbaQueued.has(r.asin);
-            const canQueue = r.recShipQty > 0 && ['bleeding','urgent','low-cover'].includes(tier.key);
-            let shipQtyCell;
-            if (canQueue) {
-              shipQtyCell = queued
-                ? `<span style="color:#059669;font-weight:700">✓ ${r.recShipQty}</span>`
-                : `<button class="btn btn-sm" style="padding:2px 8px;font-size:11px;background:#0ea5e9;color:white;border:none;border-radius:4px;cursor:pointer" onclick="fbaQueueLine('${esc(r.asin)}', ${r.recShipQty}, '${esc(r.productName||'').replace(/'/g, "\\'")}', '${tier.key}')">+ ${r.recShipQty}</button>`;
-            } else {
-              shipQtyCell = `<span style="color:${r.recShipQty ? '#1f2937' : '#cbd5e1'};font-weight:${r.recShipQty ? 600 : 400}">${r.recShipQty || ''}</span>`;
-            }
+
             return `<tr>
-              <td style="max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(name)}">${esc(name)}</td>
-              <td style="text-align:right">${r.available}</td>
-              <td style="text-align:right">${r.totalDaysOfSupply}</td>
-              <td style="text-align:right">${r.units30}</td>
-              <td style="text-align:right">${shipQtyCell}</td>
-              <td style="text-align:right">${r.daysUntilShip === null ? '' : r.daysUntilShip + 'd'}</td>
-              <td style="text-align:right">${mapCell}</td>
-              <td style="text-align:right">${bbCell}</td>
-              <td style="text-align:right">${ourCell}</td>
+              <td style="max-width:0;padding-right:8px">${productCell}</td>
+              <td style="text-align:right">${stockCell}</td>
+              <td style="text-align:right;font-weight:500">${r.units30}</td>
+              <td style="text-align:center">${shipCell}</td>
+              <td style="text-align:right">${pricingCell}</td>
               <td>${actionCell}</td>
-              <td><a href="https://www.amazon.ca/dp/${esc(r.asin)}" target="_blank" style="font-family:monospace;font-size:11px">${esc(r.asin)}</a></td>
             </tr>`;
           }).join('')}
         </tbody>
