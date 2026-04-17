@@ -1058,20 +1058,28 @@ async function runCronPipeline(source, phases) {
   }
 }
 
+// Dev/smoke-test kill-switch: set DISABLE_CRON=1 to skip all scheduled work
+// and Telegram bot polling. Use when running a second instance of this server
+// for testing so it doesn't collide with the production cron + bot on the
+// Mac Mini.
+const CRON_DISABLED = process.env.DISABLE_CRON === '1';
+const schedule = CRON_DISABLED ? (() => ({ stop() {} })) : cron.schedule.bind(cron);
+if (CRON_DISABLED) console.warn('⚠️  DISABLE_CRON=1 — all scheduled jobs + telegram bot polling are OFF (dev/smoke mode)');
+
 // Stage + Buy + POs ticks (idempotent — state file ensures nothing duplicates)
-cron.schedule('0 7 * * 1-5',  () => runCronPipeline('07:00-stage', ['stage', 'buy', 'pos']), TZ);
-cron.schedule('0 10 * * 1-5', () => runCronPipeline('10:00-stage', ['stage', 'buy', 'pos']), TZ);
-cron.schedule('0 12 * * 1-5', () => runCronPipeline('12:00-stage', ['stage', 'buy', 'pos']), TZ);
-cron.schedule('30 13 * * 1-5', () => runCronPipeline('13:30-stage', ['stage', 'buy', 'pos']), TZ);
+schedule('0 7 * * 1-5',  () => runCronPipeline('07:00-stage', ['stage', 'buy', 'pos']), TZ);
+schedule('0 10 * * 1-5', () => runCronPipeline('10:00-stage', ['stage', 'buy', 'pos']), TZ);
+schedule('0 12 * * 1-5', () => runCronPipeline('12:00-stage', ['stage', 'buy', 'pos']), TZ);
+schedule('30 13 * * 1-5', () => runCronPipeline('13:30-stage', ['stage', 'buy', 'pos']), TZ);
 
 // Email sweep — after last stage tick
-cron.schedule('0 14 * * 1-5', () => runCronPipeline('14:00-email', ['email']), TZ);
+schedule('0 14 * * 1-5', () => runCronPipeline('14:00-email', ['email']), TZ);
 
 // Pickup sweep — books one pickup per (warehouse,carrier) for next biz day
-cron.schedule('30 14 * * 1-5', () => runCronPipeline('14:30-pickups', ['pickups']), TZ);
+schedule('30 14 * * 1-5', () => runCronPipeline('14:30-pickups', ['pickups']), TZ);
 
 // Daily digest at 15:00 — pure notification, reads today's ops-state
-cron.schedule('0 15 * * 1-5', async () => {
+schedule('0 15 * * 1-5', async () => {
   const state = opsState.load();
   const s = opsState.summarize(state);
   const g = ghostStatus();
@@ -1147,12 +1155,12 @@ async function morningStaleScan(source) {
     await telegram.notify('attn', `Morning stale scan failed (${source})`, err.message);
   }
 }
-cron.schedule('0 8 * * 1-5', () => morningStaleScan('08:00 weekday'), TZ);
-cron.schedule('0 10 * * 6', () => morningStaleScan('10:00 Saturday'), TZ);
+schedule('0 8 * * 1-5', () => morningStaleScan('08:00 weekday'), TZ);
+schedule('0 10 * * 6', () => morningStaleScan('10:00 Saturday'), TZ);
 
 // Daily ghost-label auto-void — voids labels whose pickup window closed yesterday.
 // Runs at 16:00 ET (after all pickups are done for the day).
-cron.schedule('0 16 * * *', async () => {
+schedule('0 16 * * *', async () => {
   try {
     const r = await processPendingVoids();
     if (r.attempted > 0) console.log(`[cron ghost-void] attempted=${r.attempted} voided=${r.voided} remaining=${r.remaining}`);
@@ -1390,10 +1398,14 @@ app.listen(PORT, () => {
   console.log(`  14:30 weekdays — pickup sweep (next biz day)`);
   console.log(`  15:00 weekdays — daily digest Telegram`);
   console.log(`  08:00 weekdays + 10:00 Sat — stale-tracker scan`);
-  telegram.startPolling({
-    allowedChatId: process.env.TELEGRAM_CHAT_ID,
-    onCommand: handleTelegramCommand,
-  });
+  if (!CRON_DISABLED) {
+    telegram.startPolling({
+      allowedChatId: process.env.TELEGRAM_CHAT_ID,
+      onCommand: handleTelegramCommand,
+    });
+  } else {
+    console.warn('⚠️  Telegram bot polling skipped (DISABLE_CRON=1)');
+  }
   // Ghost-ledger reconcile at startup: catches wiped state files or
   // crashed-mid-save inconsistencies. Alerts loudly via Telegram on mismatch.
   reconcileGhostLedger()
