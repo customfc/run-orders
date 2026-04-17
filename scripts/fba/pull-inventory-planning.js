@@ -28,6 +28,7 @@ const { fetchReport } = require('../../lib/sp-api-reports');
 const SNAP_DIR = path.join(__dirname, '..', '..', 'data', 'fba', 'snapshots');
 
 async function main() {
+  fs.mkdirSync(SNAP_DIR, { recursive: true });
   const marketplaceId = process.env.AMAZON_SP_MARKETPLACE_ID;
   if (!marketplaceId) throw new Error('AMAZON_SP_MARKETPLACE_ID not set');
 

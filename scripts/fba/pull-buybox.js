@@ -19,6 +19,7 @@ const { loadLatestSnapshot } = require('../../lib/fba-signals');
 const SNAP_DIR = path.join(__dirname, '..', '..', 'data', 'fba', 'snapshots');
 
 async function main() {
+  fs.mkdirSync(SNAP_DIR, { recursive: true });
   const sellerId = process.env.AMAZON_SELLER_ID?.replace(/"/g, '');
   if (!sellerId) throw new Error('AMAZON_SELLER_ID not set in .env');
 
