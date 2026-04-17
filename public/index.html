@@ -1651,6 +1651,13 @@ async function fbaUpdateLine(lineId, qty) {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ qty: Number(qty) }),
     });
+    if (r.status === 400 || r.status === 404) {
+      // Line vanished server-side (likely sent or cleared in another tab) — resync silently
+      console.warn('fba: line', lineId, 'not on server — resyncing');
+      await fbaLoadCart();
+      await fbaLoadToday();
+      return;
+    }
     const data = await r.json();
     if (!data.success) throw new Error(data.error);
     window._fbaDraftSummary = data.summary;
@@ -1663,16 +1670,29 @@ async function fbaUpdateLine(lineId, qty) {
 async function fbaRemoveLine(lineId) {
   try {
     const r = await fetch('/api/fba/po-draft/line/' + encodeURIComponent(lineId), { method: 'DELETE' });
+    if (r.status === 404) {
+      // Already gone server-side — just resync the UI silently
+      await fbaLoadCart();
+      await fbaLoadToday();
+      return;
+    }
     const data = await r.json();
     if (!data.success) throw new Error(data.error);
     window._fbaDraftSummary = data.summary;
-    // Refresh queued set from scratch (line removed)
     await fbaLoadCart();
     await fbaLoadToday();
   } catch (err) {
     alert('Remove failed: ' + err.message);
   }
 }
+
+// Refresh the cart whenever the FBA tab regains focus — keeps multi-tab /
+// cross-session state from drifting and avoids stale-lineId 404s.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && document.getElementById('tab-fba')?.classList.contains('active')) {
+    fbaLoadCart();
+  }
+});
 
 async function fbaShowReviewModal() {
   const s = window._fbaDraftSummary;
