@@ -1533,14 +1533,22 @@ function fbaRenderCart() {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px">
         ${vendors.map(g => {
           const st = VENDOR_STYLES[g.vendor] || VENDOR_STYLES.unknown;
-          const emailStatus = g.email ? `✓ ${esc(g.email)}` : '<span style="color:#b91c1c">⚠ vendor email not set</span>';
+          let routeStatus;
+          if (g.self_fulfill) {
+            routeStatus = `🏭 self-fulfill from ${esc(g.fulfillment_warehouse_label || g.fulfillment_warehouse || 'our warehouse')} (SF stock check)`;
+          } else if (g.email) {
+            const ccStr = g.cc && g.cc.length ? ` <span style="color:#94a3b8">· cc ${g.cc.map(esc).join(', ')}</span>` : '';
+            routeStatus = `✉️ ${esc(g.email)}${ccStr}`;
+          } else {
+            routeStatus = '<span style="color:#b91c1c">⚠ vendor email not set</span>';
+          }
           return `
             <div style="padding:12px;background:${st.bg};border:1px solid ${st.border};border-radius:8px">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
                 <div style="font-weight:700;color:${st.accent};font-size:13px">${esc(st.label)}</div>
                 <div style="font-size:11px;color:${st.accent}">${g.lineCount} line${g.lineCount===1?'':'s'} · ${g.totalUnits} units${g.hasCostData && g.totalCost ? ` · $${g.totalCost.toFixed(2)}` : ''}</div>
               </div>
-              <div style="font-size:11px;color:#64748b;margin-bottom:8px">${emailStatus}</div>
+              <div style="font-size:11px;color:#64748b;margin-bottom:8px">${routeStatus}</div>
               <details style="font-size:11px">
                 <summary style="cursor:pointer;color:${st.accent};font-weight:500">Lines</summary>
                 <table style="margin-top:6px;font-size:11px">
