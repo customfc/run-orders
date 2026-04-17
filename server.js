@@ -830,6 +830,14 @@ app.post('/api/fba/prosol-stock/pull', async (req, res) => {
   }
 });
 
+// Manually trigger the morning pull (same function the 6 AM cron runs).
+// Returns immediately; pull runs in background and posts Telegram digest on completion.
+app.post('/api/fba/morning-pull/trigger', (req, res) => {
+  if (fbaMorningActive) return res.status(409).json({ success: false, error: 'Morning pull already running' });
+  fbaMorningPull(`manual:${req.ip || '?'}`).catch(() => {});
+  res.json({ success: true, message: 'FBA morning pull started — Telegram digest will land when done (~5–10 min)' });
+});
+
 app.get('/api/fba/prosol-stock/status', (req, res) => {
   try {
     const ps = require('./lib/prosol-stock');
@@ -1209,6 +1217,88 @@ async function morningStaleScan(source) {
 schedule('0 8 * * 1-5', () => morningStaleScan('08:00 weekday'), TZ);
 schedule('0 10 * * 6', () => morningStaleScan('10:00 Saturday'), TZ);
 
+// ── FBA morning pull — inventory planning → Buy Box → Prosol stock ─────────
+//
+// Runs 06:00 ET weekdays, sequentially so we don't collide with SP-API
+// rate limits or spawn overlapping Puppeteer sessions against Prosol.
+// By 07:00 (when the staging cron fires) the dashboard is fully fresh.
+
+let fbaMorningActive = false;
+async function fbaMorningPull(source) {
+  if (fbaMorningActive) {
+    console.log(`[fba-morning ${source}] skipped — another run in progress`);
+    return;
+  }
+  fbaMorningActive = true;
+  const results = { steps: {}, startedAt: new Date().toISOString() };
+  const runStep = async (name, fn) => {
+    const t0 = Date.now();
+    try {
+      await fn();
+      results.steps[name] = { ok: true, ms: Date.now() - t0 };
+      console.log(`[fba-morning ${source}] ${name} ok (${Math.round((Date.now()-t0)/1000)}s)`);
+    } catch (err) {
+      results.steps[name] = { ok: false, ms: Date.now() - t0, error: err.message };
+      console.log(`[fba-morning ${source}] ${name} FAILED: ${err.message}`);
+    }
+  };
+
+  try {
+    const { main: pullIP } = require('./scripts/fba/pull-inventory-planning');
+    const { main: pullBB } = require('./scripts/fba/pull-buybox');
+    const { main: pullPS } = require('./scripts/fba/pull-prosol-stock');
+
+    await runStep('inventory-planning', pullIP);
+    await runStep('buy-box', pullBB);
+    await runStep('prosol-stock', pullPS);
+
+    // Summarize current state for the digest
+    const fbaSignals = require('./lib/fba-signals');
+    const snap = fbaSignals.loadLatestSnapshot();
+    const rows = snap ? fbaSignals.rankForToday(snap.rows) : [];
+    const byTier = {};
+    for (const r of rows) (byTier[r.tier] ||= []).push(r);
+
+    const failed = Object.entries(results.steps).filter(([_, r]) => !r.ok);
+    const bleedingRev = (byTier.bleeding || []).reduce((s, r) => s + (r.dailyVelocity || 0) * (r.featuredOfferPrice || r.yourPrice || 0), 0);
+    const recUnits = rows.reduce((s, r) => s + (r.recShipQty || 0), 0);
+
+    const lines = [];
+    for (const [name, r] of Object.entries(results.steps)) {
+      const icon = r.ok ? '✓' : '✗';
+      lines.push(`${icon} ${name}: ${Math.round(r.ms/1000)}s${r.error ? ' — ' + r.error.slice(0, 80) : ''}`);
+    }
+    lines.push('');
+    lines.push(`Tiers: ${Object.entries(byTier).map(([k,v]) => `${k}=${v.length}`).join(', ')}`);
+    lines.push(`Revenue bleeding: $${bleedingRev.toFixed(2)}/day · ${recUnits} units to ship`);
+    lines.push('');
+    lines.push(`http://localhost:3456#tab-fba`);
+
+    audit.log({
+      action: 'fba-morning-pull',
+      source,
+      success: failed.length === 0,
+      steps: results.steps,
+      tierCounts: Object.fromEntries(Object.entries(byTier).map(([k,v]) => [k, v.length])),
+      bleedingDailyRevenue: Number(bleedingRev.toFixed(2)),
+      totalRecommendedUnits: recUnits,
+    });
+
+    const sev = failed.length ? 'attn' : 'ok';
+    const title = failed.length
+      ? `FBA morning pull — ${failed.length} step(s) failed`
+      : `FBA morning pull — fresh data ready`;
+    await telegram.notify(sev, title, lines.join('\n'));
+  } catch (err) {
+    audit.log({ action: 'fba-morning-pull', source, success: false, error: err.message });
+    await telegram.notify('halt', 'FBA morning pull crashed', err.message).catch(() => {});
+  } finally {
+    fbaMorningActive = false;
+  }
+}
+
+schedule('0 6 * * 1-5', () => fbaMorningPull('06:00 weekday'), TZ);
+
 // Daily ghost-label auto-void — voids labels whose pickup window closed yesterday.
 // Runs at 16:00 ET (after all pickups are done for the day).
 schedule('0 16 * * *', async () => {
@@ -1448,6 +1538,7 @@ app.listen(PORT, () => {
   console.log(`  14:00 weekdays — email Kaitlyn sweep`);
   console.log(`  14:30 weekdays — pickup sweep (next biz day)`);
   console.log(`  15:00 weekdays — daily digest Telegram`);
+  console.log(`  06:00 weekdays — FBA morning pull (inventory planning + Buy Box + Prosol stock)`);
   console.log(`  08:00 weekdays + 10:00 Sat — stale-tracker scan`);
   if (!CRON_DISABLED) {
     telegram.startPolling({
