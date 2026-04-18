@@ -390,7 +390,16 @@ WITH lines AS (
     SUM(qty * COALESCE(price, 0)) AS line_revenue,
     SUM(COALESCE(total_discount, 0)) AS line_discount,
     SUM(qty) AS line_qty,
-    SUM(qty * COALESCE(cost_snapshot, ic.cost_cad, 0)) AS cogs
+    SUM(qty * COALESCE(cost_snapshot, ic.cost_cad, 0)) AS cogs,
+    -- Cost-confidence flag: if ANY line's cost_ratio (cost/price) is under
+    -- 15%, flag the order for manual review. Happens when SF cost is per-
+    -- piece but Shopify sells per-box/bundle (unit-of-measure mismatch).
+    SUM(CASE WHEN COALESCE(ic.cost_cad, 0) > 0
+             AND COALESCE(l.price, 0) > 0
+             AND COALESCE(ic.cost_cad, 0) / COALESCE(l.price, 1) < 0.15
+             THEN 1 ELSE 0 END) AS suspect_cost_lines,
+    COUNT(*) AS total_lines,
+    SUM(CASE WHEN COALESCE(ic.cost_cad, 0) = 0 AND COALESCE(l.price, 0) > 0 THEN 1 ELSE 0 END) AS missing_cost_lines
   FROM shopify_order_lines l
   LEFT JOIN item_costs ic ON ic.sku = l.sku
   GROUP BY shopify_order_id
@@ -435,6 +444,14 @@ SELECT
   o.total_shipping                                  AS shipping_charged,
   COALESCE(lines.line_qty, 0)                       AS qty_sold,
   COALESCE(lines.cogs, 0)                           AS cogs,
+  COALESCE(lines.suspect_cost_lines, 0)             AS suspect_cost_lines,
+  COALESCE(lines.missing_cost_lines, 0)             AS missing_cost_lines,
+  COALESCE(lines.total_lines, 0)                    AS total_lines,
+  CASE WHEN COALESCE(lines.suspect_cost_lines, 0) > 0
+       THEN 'suspect'
+       WHEN COALESCE(lines.missing_cost_lines, 0) > 0
+       THEN 'partial'
+       ELSE 'ok' END                                AS cost_confidence,
   COALESCE(fees.processor_fee, 0)                   AS processor_fee,
   COALESCE(refunds.refunded, 0)                     AS refunds,
   COALESCE(labels.label_cost, 0)                    AS label_cost,
@@ -464,6 +481,9 @@ CREATE VIEW v_shopify_monthly_pnl AS
 SELECT
   month,
   COUNT(*) AS order_count,
+  SUM(CASE WHEN cost_confidence = 'ok' THEN 1 ELSE 0 END) AS orders_cost_ok,
+  SUM(CASE WHEN cost_confidence = 'suspect' THEN 1 ELSE 0 END) AS orders_cost_suspect,
+  SUM(CASE WHEN cost_confidence = 'partial' THEN 1 ELSE 0 END) AS orders_cost_partial,
   SUM(qty_sold) AS qty_sold,
   ROUND(SUM(revenue_subtotal), 2) AS revenue,
   ROUND(SUM(cogs), 2) AS cogs,
@@ -473,7 +493,14 @@ SELECT
   ROUND(SUM(net_profit), 2) AS net_profit,
   CASE WHEN SUM(revenue_subtotal) > 0
        THEN ROUND(SUM(net_profit) * 100.0 / SUM(revenue_subtotal), 1)
-       ELSE NULL END AS net_margin_pct
+       ELSE NULL END AS net_margin_pct,
+  -- Margin restricted to orders with trustworthy cost data
+  ROUND(SUM(CASE WHEN cost_confidence = 'ok' THEN revenue_subtotal ELSE 0 END), 2) AS revenue_trusted,
+  ROUND(SUM(CASE WHEN cost_confidence = 'ok' THEN net_profit ELSE 0 END), 2) AS net_profit_trusted,
+  CASE WHEN SUM(CASE WHEN cost_confidence = 'ok' THEN revenue_subtotal ELSE 0 END) > 0
+       THEN ROUND(SUM(CASE WHEN cost_confidence = 'ok' THEN net_profit ELSE 0 END) * 100.0
+                  / SUM(CASE WHEN cost_confidence = 'ok' THEN revenue_subtotal ELSE 0 END), 1)
+       ELSE NULL END AS net_margin_pct_trusted
 FROM v_shopify_order_pnl
 GROUP BY month;
 
