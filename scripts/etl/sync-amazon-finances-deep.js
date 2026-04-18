@@ -206,7 +206,17 @@ function flattenAll(events) {
 
 async function fetchDayEvents(day) {
   const postedAfter = startOfDayIso(day);
-  const postedBefore = endOfDayIso(day);
+  // Amazon rejects PostedBefore > (now - 2 min). For today's window, clamp
+  // to 3 minutes ago; past days get 23:59:59 as usual.
+  const today = todayIso();
+  let postedBefore;
+  if (day === today) {
+    const now = new Date();
+    now.setUTCMinutes(now.getUTCMinutes() - 3);
+    postedBefore = now.toISOString().replace(/\.\d+Z$/, 'Z');
+  } else {
+    postedBefore = endOfDayIso(day);
+  }
   const allRows = [];
   let nextToken = null;
   do {
