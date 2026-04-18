@@ -76,6 +76,17 @@ async function main() {
     if (r.asin && r.sku) mskuByAsin[r.asin] = r.sku;
   }
 
+  // Default expiration for consumables (finishes, cleaners, sealers): ~2 years
+  // out. Amazon rejects inbound of consumables without an expiration date.
+  // Conservative default; user can override per-line later via sku-map
+  // expiration_months or similar.
+  const defaultExpiration = () => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 2);
+    return d.toISOString().slice(0, 10);
+  };
+  const needsExpiration = (product) => /\b(finish|sealer|cleaner|oil|polish|mop|coating|grout|spray|liquid|gallon|quart|litre|liter|473ml|946ml|3\.78l|3\.79l)\b/i.test(product || '');
+
   const items = [];
   const unresolved = [];
   for (const line of lines) {
@@ -84,12 +95,14 @@ async function main() {
       unresolved.push({ asin: line.asin, product: line.product });
       continue;
     }
-    items.push({
+    const item = {
       msku,
       quantity: line.qty,
       prepOwner: 'SELLER',
       labelOwner: 'SELLER',
-    });
+    };
+    if (needsExpiration(line.product)) item.expiration = defaultExpiration();
+    items.push(item);
   }
   if (!items.length) {
     console.error('No items resolved to MSKU — inventory-planning snapshot may be stale:');
@@ -117,11 +130,31 @@ async function main() {
       items,
     });
     state.inboundPlanId = created.inboundPlanId;
-    state.status = 'created';
+    state.createOperationId = created.operationId;
+    state.status = 'creating';
     plans.record(state, { step: 'create', ok: true, data: created });
-    console.log(`✓ Inbound plan created`);
     console.log(`  inboundPlanId: ${created.inboundPlanId}`);
-    if (created.operationId) console.log(`  operationId: ${created.operationId} (backgrounded)`);
+    console.log(`  operationId: ${created.operationId}  (polling for completion...)`);
+
+    // Poll the async creation — catches validation errors immediately so we
+    // don't discover them at step 2 when the plan is already ERRORED.
+    try {
+      await inbound.waitForOperation(created.operationId, {
+        onPoll: (op) => process.stdout.write(`  ${op.operationStatus}...\r`),
+      });
+    } catch (opErr) {
+      state.status = 'errored';
+      plans.record(state, { step: 'create-op', ok: false, error: opErr.message, data: opErr.operation });
+      console.error(`\n✗ createInboundPlan operation failed:`);
+      for (const p of (opErr.operation?.operationProblems || [])) {
+        console.error(`    [${p.severity}] ${p.code}: ${p.message}${p.details ? '  (' + p.details + ')' : ''}`);
+      }
+      process.exit(1);
+    }
+
+    state.status = 'created';
+    plans.save(state);
+    console.log(`\n✓ Inbound plan created and validated`);
     console.log(`  state saved → data/fba/inbound-plans/${planKey}.json`);
   } catch (err) {
     plans.record(state, { step: 'create', ok: false, error: err.message });
