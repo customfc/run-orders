@@ -144,27 +144,40 @@ async function main() {
     selected.push(picked);
   }
 
-  // Confirm a delivery window for each shipment BEFORE confirming transport.
-  // (New requirement in v2024-03-20.) Pick the earliest offered window.
-  console.log('\n[3/4] confirm delivery windows (required before transport)...');
+  // v2024-03-20 canonical ordering for transport options with program
+  // DELIVERY_WINDOW_REQUIRED (LTL / non-partnered / no-appointment carriers):
+  //   generateDeliveryWindowOptions (async) → listDeliveryWindowOptions
+  //   → confirmDeliveryWindowOption → confirmTransportationOptions
+  // Shipments where the picked option doesn't carry that program return empty
+  // from list and we skip them cleanly.
+  console.log('\n[3/4] generate + confirm delivery windows (required before transport for DELIVERY_WINDOW_REQUIRED options)...');
   for (const s of selected) {
+    const needsWindow = Array.isArray(s.programs) && s.programs.includes('DELIVERY_WINDOW_REQUIRED');
+    console.log(`    ${s.shipmentId}: programs=${JSON.stringify(s.programs || [])}${needsWindow ? ' (window required)' : ''}`);
+
+    const gen = await inbound.generateDeliveryWindowOptions(state.inboundPlanId, s.shipmentId);
+    if (gen.operationId) {
+      await inbound.waitForOperation(gen.operationId, {
+        onPoll: (op) => process.stdout.write(`      gen ${op.operationStatus}...\r`),
+      });
+    }
+
     const dwList = await inbound.listDeliveryWindowOptions(state.inboundPlanId, s.shipmentId);
     const windows = dwList.deliveryWindowOptions || [];
     if (!windows.length) {
-      console.log(`    ${s.shipmentId}: no delivery windows yet — waiting 5s and retrying...`);
-      await new Promise((r) => setTimeout(r, 5000));
-      const retry = await inbound.listDeliveryWindowOptions(state.inboundPlanId, s.shipmentId);
-      windows.push(...(retry.deliveryWindowOptions || []));
+      if (needsWindow) {
+        throw new Error(`${s.shipmentId}: DELIVERY_WINDOW_REQUIRED but no windows offered after generate — Amazon may be processing, retry in a minute`);
+      }
+      console.log(`      no window required — skipping`);
+      continue;
     }
-    if (!windows.length) throw new Error(`No delivery window options for ${s.shipmentId}`);
 
-    // Pick the earliest start window
     const picked = windows.reduce((a, b) => (new Date(a.startDate) < new Date(b.startDate) ? a : b));
-    console.log(`    ${s.shipmentId}: ${windows.length} window(s), picked ${picked.startDate} → ${picked.endDate} · validUntil=${picked.validUntil || '—'}`);
+    console.log(`      ${windows.length} window(s), picked ${picked.startDate} → ${picked.endDate}${picked.validUntil ? ` · validUntil=${picked.validUntil}` : ''}`);
     const cdwOp = await inbound.confirmDeliveryWindowOption(state.inboundPlanId, s.shipmentId, picked.deliveryWindowOptionId);
     if (cdwOp.operationId) {
       await inbound.waitForOperation(cdwOp.operationId, {
-        onPoll: (op) => process.stdout.write(`      ${op.operationStatus}...\r`),
+        onPoll: (op) => process.stdout.write(`      confirm ${op.operationStatus}...\r`),
       });
     }
     console.log(`      ✓ window confirmed`);
