@@ -204,6 +204,30 @@ CREATE TABLE IF NOT EXISTS item_costs (
   previous_updated_at TEXT
 );
 
+-- Canonical SKU mapping across the three universes: Amazon MSKU,
+-- ShipStation SKU (sku-map.json numeric keys), SF PBSI Item Name, and
+-- ASIN. Built by scripts/etl/sync-sku-map.js by walking sku-map.json ASIN
+-- entries and looking up each api_sku in SF (PBSI__Vendor_Item_ID__c).
+-- Downstream views JOIN via this table so analytics are cost-aware.
+
+CREATE TABLE IF NOT EXISTS sku_map_canonical (
+  asin TEXT PRIMARY KEY,
+  amazon_msku TEXT,                       -- seller SKU we gave Amazon (from inventory_daily)
+  api_sku TEXT,                           -- Prosol lookup SKU (sku-map.api_sku)
+  prosol_sku TEXT,                        -- Prosol order SKU (sku-map.prosol_sku)
+  sf_pbsi_item_id TEXT,                   -- SF record ID (PBSI__PBSI_Item__c.Id)
+  sf_item_name TEXT,                      -- SF Item Name (PBSI__PBSI_Item__c.Name) — joins item_costs.sku
+  brand TEXT,
+  category TEXT,
+  map_cad REAL,
+  product_name TEXT,
+  source TEXT,                            -- e.g. 'sku-map-asin', 'sku-map-override'
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_skumap_msku ON sku_map_canonical(amazon_msku);
+CREATE INDEX IF NOT EXISTS idx_skumap_sfitem ON sku_map_canonical(sf_item_name);
+CREATE INDEX IF NOT EXISTS idx_skumap_brand ON sku_map_canonical(brand);
+
 -- ── Inbound shipments (forward-only; powers freight attribution) ────────────
 
 CREATE TABLE IF NOT EXISTS inbound_shipments (

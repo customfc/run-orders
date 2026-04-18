@@ -24,8 +24,29 @@ DROP VIEW IF EXISTS v_money_daily;
 DROP VIEW IF EXISTS v_postal_heat;
 DROP VIEW IF EXISTS v_warehouse_split;
 DROP VIEW IF EXISTS v_sku_monthly_pnl;
+DROP VIEW IF EXISTS v_brand_monthly_pnl;
 DROP VIEW IF EXISTS v_missed_opportunity;
 DROP VIEW IF EXISTS v_returns;
+DROP VIEW IF EXISTS v_item_enrichment;
+
+-- ── Item enrichment — one row per Amazon ASIN with brand + cost resolved ─
+-- Bridge that turns order items (keyed by MSKU) into cost-aware rows.
+-- sku_map_canonical.sf_item_name matches item_costs.sku for the cost join.
+
+CREATE VIEW v_item_enrichment AS
+SELECT
+  sm.asin,
+  sm.amazon_msku                             AS msku,
+  sm.sf_item_name,
+  sm.brand,
+  sm.category,
+  sm.map_cad,
+  sm.product_name,
+  ic.cost_cad                                AS unit_cost_cad,
+  ic.cost_source                             AS cost_source,
+  ic.updated_at                              AS cost_updated_at
+FROM sku_map_canonical sm
+LEFT JOIN item_costs ic ON ic.sku = sm.sf_item_name;
 
 -- ── Unified orders (Amazon + Shopify) ──────────────────────────────────────
 -- Normalised column set so a dashboard doesn't care which channel an order
@@ -198,15 +219,25 @@ WITH amz AS (
   WHERE seller_sku IS NOT NULL
   GROUP BY seller_sku, substr(posted_at, 1, 7)
 ),
+-- qty_sold + COGS. Join amazon_order_items.asin → sku_map_canonical.asin →
+-- sf_item_name → item_costs.cost_cad. This is the bridge across the three
+-- SKU universes (Amazon MSKU / sku-map / SF PBSI Item Name).
 items AS (
   SELECT
-    seller_sku           AS sku,
+    i.seller_sku        AS sku,
     substr(o.purchase_date, 1, 7) AS month,
     SUM(i.qty_shipped)   AS qty_sold,
-    SUM(i.qty_shipped * COALESCE(i.cost_snapshot, c.cost_cad, 0)) AS cogs
+    SUM(i.qty_shipped * COALESCE(
+      i.cost_snapshot,
+      ic_via_map.cost_cad,         -- preferred: ASIN → sku_map_canonical → sf_item_name → cost
+      ic_direct.cost_cad,          -- fallback: direct SKU match (rare)
+      0
+    )) AS cogs
   FROM amazon_order_items i
   JOIN amazon_orders o ON o.amazon_order_id = i.amazon_order_id
-  LEFT JOIN item_costs c ON c.sku = i.seller_sku
+  LEFT JOIN sku_map_canonical sm ON sm.asin = i.asin
+  LEFT JOIN item_costs ic_via_map ON ic_via_map.sku = sm.sf_item_name
+  LEFT JOIN item_costs ic_direct ON ic_direct.sku = i.seller_sku
   WHERE i.seller_sku IS NOT NULL
   GROUP BY i.seller_sku, substr(o.purchase_date, 1, 7)
 ),
@@ -233,6 +264,10 @@ freight AS (
 SELECT
   COALESCE(amz.sku, items.sku)                                AS sku,
   COALESCE(amz.month, items.month)                            AS month,
+  sm2.asin                                                    AS asin,
+  sm2.brand                                                   AS brand,
+  sm2.category                                                AS category,
+  sm2.product_name                                            AS product_name,
   COALESCE(amz.revenue_principal, 0)                          AS revenue,
   COALESCE(items.qty_sold, 0)                                 AS qty_sold,
   COALESCE(items.cogs, 0)                                     AS cogs,
@@ -264,7 +299,31 @@ SELECT
 FROM amz
 LEFT JOIN items   ON items.sku = amz.sku AND items.month = amz.month
 LEFT JOIN storage ON storage.sku = amz.sku AND storage.month = amz.month
-LEFT JOIN freight ON freight.sku = amz.sku AND freight.month = amz.month;
+LEFT JOIN freight ON freight.sku = amz.sku AND freight.month = amz.month
+LEFT JOIN sku_map_canonical sm2 ON sm2.amazon_msku = amz.sku;
+
+-- ── Brand-level P&L (rollup of SKU P&L) ────────────────────────────────────
+
+CREATE VIEW v_brand_monthly_pnl AS
+SELECT
+  COALESCE(brand, '(unknown)') AS brand,
+  month,
+  COUNT(DISTINCT sku)          AS sku_count,
+  SUM(revenue)                 AS revenue,
+  SUM(qty_sold)                AS qty_sold,
+  SUM(cogs)                    AS cogs,
+  SUM(amazon_fees)             AS amazon_fees,
+  SUM(promotions)              AS promotions,
+  SUM(refunds)                 AS refunds,
+  SUM(storage_cost)            AS storage_cost,
+  SUM(inbound_freight)         AS inbound_freight,
+  SUM(net_profit)              AS net_profit,
+  CASE WHEN SUM(revenue) > 0
+       THEN ROUND(SUM(net_profit) * 100.0 / SUM(revenue), 1)
+       ELSE NULL END            AS net_margin_pct
+FROM v_sku_monthly_pnl
+WHERE month IS NOT NULL
+GROUP BY COALESCE(brand, '(unknown)'), month;
 
 -- ── Missed opportunity (BB loss + OOS) ─────────────────────────────────────
 -- Per-SKU estimate of revenue lost to (a) buy-box losses with velocity, and

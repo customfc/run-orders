@@ -30,6 +30,7 @@ const STEPS = [
   { name: 'amazon-finances-deep',  mod: './sync-amazon-finances-deep',  supportsBackfill: false }, // daily top-up only; use manual --backfill for cold start
   { name: 'shopify',               mod: './sync-shopify',               supportsBackfill: true },
   { name: 'item-costs',            mod: './sync-item-costs',            supportsBackfill: false },
+  { name: 'sku-map-canonical',     mod: './sync-sku-map',               supportsBackfill: false },
   { name: 'snapshots',             mod: './sync-snapshots',             supportsBackfill: false },
 ];
 
