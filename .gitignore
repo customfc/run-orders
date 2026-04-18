@@ -17,4 +17,6 @@ data/analytics.sqlite-shm
 data/analytics.sqlite-wal
 data/analytics-inventory.json
 data/analytics-backup/
+data/auto-reprice-config.json
+data/auto-reprice-state.json
 

@@ -1489,6 +1489,17 @@ async function fbaMorningPull(source) {
       ? `FBA morning pull — ${failed.length} step(s) failed`
       : `FBA morning pull — fresh data ready`;
     await telegram.notify(sev, title, lines.join('\n'));
+
+    // Auto-reprice on fresh BB data — silent if disabled or nothing to do
+    try {
+      const autoReprice = require('./lib/auto-reprice');
+      const summary = await autoReprice.run({ source: `post-morning-pull:${source}` });
+      const msg = autoReprice.formatTelegramSummary(summary);
+      if (msg) await telegram.notify(msg.severity, msg.title, msg.body);
+    } catch (arErr) {
+      console.error(`[fba-morning ${source}] auto-reprice error: ${arErr.message}`);
+      await telegram.notify('attn', 'Auto-reprice crashed', arErr.message).catch(() => {});
+    }
   } catch (err) {
     audit.log({ action: 'fba-morning-pull', source, success: false, error: err.message });
     await telegram.notify('halt', 'FBA morning pull crashed', err.message).catch(() => {});
@@ -1546,6 +1557,49 @@ schedule('30 2 * * *', async () => {
     telegram.notify('attn', 'Analytics DB backup failed', err.message).catch(() => {});
   }
 }, TZ);
+
+// Auto-reprice — manual trigger (same logic as runs after the 6 AM FBA
+// morning pull). ?dryRun=1 forces dry_run regardless of config. Returns
+// the full summary + whether Telegram was pinged.
+app.post('/api/fba/auto-reprice/trigger', async (req, res) => {
+  try {
+    const autoReprice = require('./lib/auto-reprice');
+    const overrides = {};
+    if (req.query.dryRun === '1' || req.body?.dryRun === true) overrides.dry_run = true;
+    if (req.query.force === '1') overrides.enabled = true;
+    const summary = await autoReprice.run({ source: `manual:${req.ip || '?'}`, config: Object.keys(overrides).length ? overrides : undefined });
+    const msg = autoReprice.formatTelegramSummary(summary);
+    if (msg) { try { await telegram.notify(msg.severity, msg.title, msg.body); } catch {} }
+    res.json({ success: true, summary, telegramMsg: msg });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/fba/auto-reprice/config', (req, res) => {
+  try {
+    const autoReprice = require('./lib/auto-reprice');
+    res.json({ success: true, config: autoReprice.loadConfig(), state: autoReprice.loadState() });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.put('/api/fba/auto-reprice/config', express.json(), (req, res) => {
+  try {
+    const autoReprice = require('./lib/auto-reprice');
+    const current = autoReprice.loadConfig();
+    const merged = { ...current, ...req.body };
+    const fs = require('fs');
+    const path = require('path');
+    const p = path.join(__dirname, 'data', 'auto-reprice-config.json');
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, JSON.stringify(merged, null, 2));
+    res.json({ success: true, config: merged });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 // Manually trigger a full ETL run (same orchestrator as 3 AM cron).
 // Returns immediately; run proceeds in background and posts Telegram summary.
@@ -2042,7 +2096,7 @@ app.listen(PORT, () => {
   console.log(`  14:00 weekdays — email Kaitlyn sweep`);
   console.log(`  14:30 weekdays — pickup sweep (next biz day)`);
   console.log(`  15:00 weekdays — daily digest Telegram`);
-  console.log(`  06:00 weekdays — FBA morning pull (inventory planning + Buy Box + Prosol stock)`);
+  console.log(`  06:00 weekdays — FBA morning pull (inventory planning + Buy Box + Prosol stock) + auto-reprice`);
   console.log(`  02:30 daily — analytics DB backup (online snapshot, 30-day retention)`);
   console.log(`  03:00 daily — analytics ETL (SP-API orders + settlements, Shopify, SF costs, snapshots)`);
   console.log(`  07:15 weekdays — daily analytics alerts (cost hikes, BB losers, low cover, new dogs, margin drop)`);
