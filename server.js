@@ -1558,6 +1558,60 @@ schedule('30 2 * * *', async () => {
   }
 }, TZ);
 
+// FBA Inbound orchestrator — one call walks all 5 steps for a sent PO
+// draft: create plan → pack → place → transport → FNSKU labels + email.
+// SSE progress stream so a UI can render live status.
+//
+// Body: { draftId, vendor, source?, emailTo?, emailCc?, transportMode?, pageType?, skipEmail?, confirm: true }
+// confirm:true is required to actually execute — otherwise returns 400.
+app.post('/api/fba/inbound/create-all', express.json(), async (req, res) => {
+  const { draftId, vendor, source, emailTo, emailCc, transportMode, pageType, skipEmail, confirm } = req.body || {};
+  if (!draftId) return res.status(400).json({ success: false, error: 'draftId required' });
+  if (!vendor) return res.status(400).json({ success: false, error: 'vendor required' });
+  if (!confirm) return res.status(400).json({ success: false, error: 'confirm:true required — inbound plans are irreversible on Amazon side (placement step)' });
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  const send = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  send('status', { message: `starting inbound orchestration for ${draftId} / ${vendor}` });
+
+  try {
+    const orchestrator = require('./lib/fba-inbound-orchestrator');
+    const result = await orchestrator.runAll({
+      draftId, vendor, source, emailTo, emailCc, transportMode, pageType, skipEmail,
+      onProgress: (event, data) => send(event, data),
+    });
+    audit.log({
+      action: 'fba-inbound-create-all',
+      draftId, vendor,
+      success: result.ok,
+      failedAt: result.failedAt,
+      planKey: result.planKey,
+      shipmentConfirmationIds: result.shipmentConfirmationIds,
+      emailedTo: result.emailedTo,
+    });
+    if (result.ok) {
+      const confIds = (result.shipmentConfirmationIds || []).join(', ');
+      await telegram.notify('ok', `FBA inbound ready — ${confIds || result.planKey}`, [
+        `Plan: ${result.planKey}`,
+        `Shipment confirmations: ${confIds || '(pending)'}`,
+        result.emailedTo ? `Labels emailed to: ${result.emailedTo}` : 'Labels saved (not emailed)',
+        result.itemLabelsPdfPath ? `PDF: ${result.itemLabelsPdfPath}` : '',
+      ].filter(Boolean).join('\n')).catch(() => {});
+    } else {
+      await telegram.notify('attn', `FBA inbound failed at step ${result.failedAt}`, `Plan: ${result.planKey}\n${result.error || 'see dashboard'}`).catch(() => {});
+    }
+    send('final', result);
+    res.end();
+  } catch (e) {
+    audit.log({ action: 'fba-inbound-create-all', success: false, error: e.message, draftId, vendor });
+    send('error', { error: e.message });
+    res.end();
+  }
+});
+
 // Auto-reprice — manual trigger (same logic as runs after the 6 AM FBA
 // morning pull). ?dryRun=1 forces dry_run regardless of config. Returns
 // the full summary + whether Telegram was pinged.
