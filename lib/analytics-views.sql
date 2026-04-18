@@ -230,10 +230,15 @@ items AS (
     e.seller_sku        AS sku,
     substr(e.posted_at, 1, 7) AS month,
     SUM(COALESCE(e.quantity, 0)) AS qty_sold,
-    SUM(COALESCE(e.quantity, 0) * COALESCE(ic.cost_cad, 0)) AS cogs
+    SUM(COALESCE(e.quantity, 0) * COALESCE(
+      ic_via_map.cost_cad,         -- preferred: ASIN → sku_map → sf_item_name → cost
+      ic_direct.cost_cad,          -- fallback: seller_sku IS an SF item name directly
+      0
+    )) AS cogs
   FROM amazon_financial_events e
   LEFT JOIN sku_map_canonical sm ON sm.amazon_msku = e.seller_sku
-  LEFT JOIN item_costs ic ON ic.sku = sm.sf_item_name
+  LEFT JOIN item_costs ic_via_map ON ic_via_map.sku = sm.sf_item_name
+  LEFT JOIN item_costs ic_direct ON ic_direct.sku = e.seller_sku
   WHERE e.seller_sku IS NOT NULL
     AND e.fee_type = 'ItemPrice:Principal'
     AND e.quantity > 0
