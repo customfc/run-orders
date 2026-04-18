@@ -91,15 +91,25 @@ async function main() {
     }
   }
 
-  // Amazon MSKU from latest inventory_daily snapshot (maps ASIN ↔ MSKU)
+  // Amazon MSKU resolution — populate from three sources (priority order):
+  //   1. inventory_daily (latest snapshot) — current FBA-active SKUs
+  //   2. amazon_order_items — every SKU that has ever been on an order
+  //   3. (future) could add catalog API listings for unsold SKUs
+  // Multiple MSKUs can share an ASIN (duplicate listings); we keep the
+  // first we see since the view only needs *a* join, not the unique one.
   const db = open();
-  const latestSnap = db.prepare('SELECT MAX(snapshot_date) d FROM inventory_daily').get();
   const mskuByAsin = {};
+  const latestSnap = db.prepare('SELECT MAX(snapshot_date) d FROM inventory_daily').get();
   if (latestSnap.d) {
     const rows = db.prepare('SELECT asin, sku FROM inventory_daily WHERE snapshot_date = ? AND sku IS NOT NULL').all(latestSnap.d);
-    for (const r of rows) mskuByAsin[r.asin] = r.sku;
+    for (const r of rows) if (!mskuByAsin[r.asin]) mskuByAsin[r.asin] = r.sku;
   }
-  console.log(`[sku-map] ${Object.keys(mskuByAsin).length} ASIN↔MSKU from inventory_daily ${latestSnap.d || '(no snapshot)'}`);
+  const fromInv = Object.keys(mskuByAsin).length;
+  const orderItemRows = db.prepare('SELECT DISTINCT asin, seller_sku FROM amazon_order_items WHERE asin IS NOT NULL AND seller_sku IS NOT NULL').all();
+  for (const r of orderItemRows) {
+    if (!mskuByAsin[r.asin]) mskuByAsin[r.asin] = r.seller_sku;
+  }
+  console.log(`[sku-map] ${fromInv} ASIN↔MSKU from inventory_daily + ${Object.keys(mskuByAsin).length - fromInv} additional from amazon_order_items`);
 
   // Build canonical rows
   const nowIso = new Date().toISOString();
