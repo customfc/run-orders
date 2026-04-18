@@ -680,7 +680,10 @@
     "is_main_hub": false,
     "non_prosol": true,
     "vendor": "CFC Sechelt",
-    "pickup_window": [11, 16]
+    "pickup_window": [
+      11,
+      16
+    ]
   },
   "torlys_ont": {
     "id": "torlys_ont",
@@ -737,10 +740,14 @@
     "id": "treeco_van",
     "active": true,
     "is_main_hub": false,
-    "contact_email": [],
-    "contact_phone": [],
-    "lat": 0,
-    "lng": 0,
+    "contact_email": [
+      "robynp@treeco.ca"
+    ],
+    "contact_phone": [
+      "604-523-2235"
+    ],
+    "lat": 49.18144,
+    "lng": -123.01232,
     "code": "TRCV",
     "city": "Delta",
     "province": "BC",
