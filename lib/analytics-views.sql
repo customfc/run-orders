@@ -29,6 +29,7 @@ DROP VIEW IF EXISTS v_missed_opportunity;
 DROP VIEW IF EXISTS v_returns;
 DROP VIEW IF EXISTS v_item_enrichment;
 DROP VIEW IF EXISTS v_label_cost_by_sku_month;
+DROP VIEW IF EXISTS v_label_attribution_status;
 
 -- ── Item enrichment — one row per Amazon ASIN with brand + cost resolved ─
 -- Bridge that turns order items (keyed by MSKU) into cost-aware rows.
@@ -355,6 +356,25 @@ SELECT
 FROM v_sku_monthly_pnl
 WHERE month IS NOT NULL
 GROUP BY COALESCE(brand, '(unknown)'), month;
+
+-- Label attribution health — shows how much label cost is currently
+-- allocated to per-SKU P&L vs unattributed (orders not yet backfilled).
+-- Converges to 100% attributed once amazon-orders backfill completes.
+CREATE VIEW v_label_attribution_status AS
+SELECT
+  substr(sl.purchased_at, 1, 7) AS month,
+  sl.channel,
+  COUNT(*) AS labels,
+  ROUND(SUM(sl.label_cost_cad), 2) AS total_cost,
+  ROUND(SUM(CASE WHEN EXISTS (
+    SELECT 1 FROM amazon_order_items i WHERE i.amazon_order_id = sl.order_number
+  ) THEN sl.label_cost_cad ELSE 0 END), 2) AS attributable_cost,
+  ROUND(SUM(CASE WHEN EXISTS (
+    SELECT 1 FROM amazon_order_items i WHERE i.amazon_order_id = sl.order_number
+  ) THEN 0 ELSE sl.label_cost_cad END), 2) AS unattributed_cost
+FROM shipping_labels sl
+WHERE sl.purchased_at IS NOT NULL
+GROUP BY substr(sl.purchased_at, 1, 7), sl.channel;
 
 -- Label costs broken out per channel per month (for tile/drill-down)
 CREATE VIEW v_label_cost_by_sku_month AS
