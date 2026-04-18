@@ -1499,6 +1499,18 @@ async function fbaMorningPull(source) {
 
 schedule('0 6 * * 1-5', () => fbaMorningPull('06:00 weekday'), TZ);
 
+// Daily analytics alerts — run 75 min after morning pull so FBA + ETL data is fresh.
+// Silent if nothing to surface. See lib/analytics-alerts.js.
+schedule('15 7 * * 1-5', async () => {
+  try {
+    const { main: runAlerts } = require('./scripts/alerts/daily-alerts');
+    await runAlerts();
+  } catch (err) {
+    console.error('[cron daily-alerts] failed:', err.message);
+    telegram.notify('attn', 'Daily analytics alerts crashed', err.message).catch(() => {});
+  }
+}, TZ);
+
 // ── Analytics ETL — 3 AM daily ──────────────────────────────────────────────
 // Orchestrator at scripts/etl/run-all.js pulls from SP-API (orders +
 // settlements), Shopify GraphQL, Salesforce cost master, and promotes the
@@ -2033,6 +2045,7 @@ app.listen(PORT, () => {
   console.log(`  06:00 weekdays — FBA morning pull (inventory planning + Buy Box + Prosol stock)`);
   console.log(`  02:30 daily — analytics DB backup (online snapshot, 30-day retention)`);
   console.log(`  03:00 daily — analytics ETL (SP-API orders + settlements, Shopify, SF costs, snapshots)`);
+  console.log(`  07:15 weekdays — daily analytics alerts (cost hikes, BB losers, low cover, new dogs, margin drop)`);
   console.log(`  08:00 weekdays + 10:00 Sat — stale-tracker scan`);
   if (!CRON_DISABLED) {
     telegram.startPolling({
