@@ -7,21 +7,25 @@
  * fees, refunds, promotional discounts, and payout totals. One report per
  * payout cycle (~14 days). Retained ~2 years.
  *
- * Flat file v2 is tab-separated text. Columns include:
+ * Flat file v2 is tab-separated text. Observed columns:
  *   settlement-id, settlement-start-date, settlement-end-date, deposit-date,
  *   total-amount, currency, transaction-type, order-id, merchant-order-id,
- *   shipment-id, marketplace-name, shipment-fee-type, shipment-fee-amount,
- *   order-fee-type, order-fee-amount, fulfillment-id, posted-date,
- *   posted-date-time, order-item-code, sku, quantity-purchased, price-type,
- *   price-amount, item-related-fee-type, item-related-fee-amount,
- *   misc-fee-amount, other-fee-amount, other-fee-reason-description,
- *   promotion-id, promotion-type, promotion-amount, direct-payment-type,
- *   direct-payment-amount, other-amount
+ *   adjustment-id, shipment-id, marketplace-name, amount-type,
+ *   amount-description, amount, fulfillment-id, posted-date,
+ *   posted-date-time, order-item-code, merchant-order-item-id,
+ *   merchant-adjustment-item-id, sku, quantity-purchased, promotion-id
  *
- * First row per settlement has a blank transaction-type and carries the
+ * Each data row carries a single charge / credit (amount-type +
+ * amount-description + amount + currency). Amount-type is a coarse bucket
+ * (ItemPrice, ItemFees, Promotion, Refund, ServiceFee), amount-description
+ * is the specific fee (Principal, Tax, Shipping, FBAPerUnitFulfillmentFee,
+ * Commission, etc.). We store both concatenated as fee_type.
+ *
+ * First row per settlement has blank transaction-type and carries the
  * payout header (deposit-date, total-amount). Every subsequent row is one
- * data point (fee, refund, item charge, etc.) that we flatten into
- * amazon_financial_events.
+ * data point that we flatten into amazon_financial_events. Multi-marketplace
+ * accounts (e.g. CA + US) surface all rows; filter by marketplace-name in
+ * downstream views if you want single-marketplace analytics.
  *
  * Modes:
  *   --backfill        — all settlements for the last 723 days
@@ -73,27 +77,14 @@ function parseSettlementFlatFile(csv) {
   return { header, rows };
 }
 
-// From a row, pick the most specific fee_type + amount. Settlement rows
-// have up to ~8 fee columns; only one usually populated per row.
-function pickFee(row) {
-  const candidates = [
-    ['item-related-fee-type', 'item-related-fee-amount'],
-    ['shipment-fee-type', 'shipment-fee-amount'],
-    ['order-fee-type', 'order-fee-amount'],
-    ['misc-fee-amount', null],           // misc has no type, just "Misc"
-    ['other-fee-reason-description', 'other-fee-amount'],
-    ['promotion-type', 'promotion-amount'],
-    ['direct-payment-type', 'direct-payment-amount'],
-    [null, 'price-amount'],              // raw item price
-    [null, 'other-amount'],
-  ];
-  for (const [typeKey, amtKey] of candidates) {
-    const amt = num(row[amtKey]);
-    if (amt === null || amt === 0) continue;
-    const t = typeKey ? (row[typeKey] || null) : (amtKey === 'misc-fee-amount' ? 'Misc' : amtKey === 'price-amount' ? 'ItemPrice' : 'Other');
-    return { feeType: t, amount: amt };
-  }
-  return null;
+// Combine amount-type + amount-description into a single fee_type string.
+// E.g. "ItemPrice:Principal", "ItemFees:FBAPerUnitFulfillmentFee",
+// "Promotion:Shipping". If description missing, use type alone.
+function deriveFeeType(row) {
+  const t = (row['amount-type'] || '').trim();
+  const d = (row['amount-description'] || '').trim();
+  if (t && d) return `${t}:${d}`;
+  return t || d || null;
 }
 
 async function syncOneReport(db, report) {
@@ -154,13 +145,18 @@ async function syncOneReport(db, report) {
       const postedAt = r['posted-date-time'] || r['posted-date'] || header['deposit-date'] || null;
       if (!postedAt) continue;
 
-      const fee = pickFee(r);
-      if (!fee) continue;
+      const amount = num(r['amount']);
+      if (amount === null || amount === 0) continue;
 
-      // `price-amount` rows represent gross item revenue not a fee — still
-      // worth capturing with fee_type='ItemPrice' so the P&L view can sum
-      // revenue directly from the ledger without re-querying orders.
-      const desc = r['other-fee-reason-description'] || null;
+      const feeType = deriveFeeType(r);
+      if (!feeType) continue;
+
+      // marketplace-name stored in description so multi-marketplace accounts
+      // can filter in downstream views. Concat with amount-description if
+      // something interesting is there too.
+      const descParts = [r['marketplace-name'], r['amount-description']].filter(Boolean);
+      const desc = descParts.length ? descParts.join(' · ') : null;
+
       insEvent.run(
         settlementId,
         postedAt,
@@ -168,8 +164,8 @@ async function syncOneReport(db, report) {
         r['order-id'] || null,
         null, // ASIN not in settlement reports — resolve via order items
         r['sku'] || null,
-        fee.feeType,
-        fee.amount,
+        feeType,
+        amount,
         r['currency'] || header['currency'] || null,
         desc,
         JSON.stringify(r),
