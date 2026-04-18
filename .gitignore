@@ -16,4 +16,5 @@ data/analytics.sqlite
 data/analytics.sqlite-shm
 data/analytics.sqlite-wal
 data/analytics-inventory.json
+data/analytics-backup/
 

@@ -1410,6 +1410,50 @@ async function fbaMorningPull(source) {
 
 schedule('0 6 * * 1-5', () => fbaMorningPull('06:00 weekday'), TZ);
 
+// ── Analytics ETL — 3 AM daily ──────────────────────────────────────────────
+// Orchestrator at scripts/etl/run-all.js pulls from SP-API (orders +
+// settlements), Shopify GraphQL, Salesforce cost master, and promotes the
+// latest FBA JSON snapshots into the analytics SQLite DB. Posts a Telegram
+// summary on completion (attn if any step failed, ok otherwise).
+
+let analyticsEtlActive = false;
+async function runAnalyticsEtl(source) {
+  if (analyticsEtlActive) {
+    console.log(`[analytics-etl ${source}] skipped — another run in progress`);
+    return;
+  }
+  analyticsEtlActive = true;
+  try {
+    const { main: runAll } = require('./scripts/etl/run-all');
+    await runAll();
+  } catch (err) {
+    console.error(`[analytics-etl ${source}] crashed: ${err.message}`);
+    await telegram.notify('halt', 'Analytics ETL crashed', err.message).catch(() => {});
+  } finally {
+    analyticsEtlActive = false;
+  }
+}
+schedule('0 3 * * *', () => runAnalyticsEtl('03:00 daily'), TZ);
+
+// Daily analytics DB backup — 02:30 (before the ETL run writes fresh data)
+schedule('30 2 * * *', async () => {
+  try {
+    const { main: backup } = require('./scripts/etl/backup-analytics-db');
+    await backup();
+  } catch (err) {
+    console.error('[cron analytics-backup] failed:', err.message);
+    telegram.notify('attn', 'Analytics DB backup failed', err.message).catch(() => {});
+  }
+}, TZ);
+
+// Manually trigger a full ETL run (same orchestrator as 3 AM cron).
+// Returns immediately; run proceeds in background and posts Telegram summary.
+app.post('/api/analytics/etl/trigger', (req, res) => {
+  if (analyticsEtlActive) return res.status(409).json({ success: false, error: 'Analytics ETL already running' });
+  runAnalyticsEtl(`manual:${req.ip || '?'}`).catch(() => {});
+  res.json({ success: true, message: 'Analytics ETL started — Telegram summary will land when done' });
+});
+
 // Daily ghost-label auto-void — voids labels whose pickup window closed yesterday.
 // Runs at 16:00 ET (after all pickups are done for the day).
 schedule('0 16 * * *', async () => {
@@ -1650,6 +1694,8 @@ app.listen(PORT, () => {
   console.log(`  14:30 weekdays — pickup sweep (next biz day)`);
   console.log(`  15:00 weekdays — daily digest Telegram`);
   console.log(`  06:00 weekdays — FBA morning pull (inventory planning + Buy Box + Prosol stock)`);
+  console.log(`  02:30 daily — analytics DB backup (online snapshot, 30-day retention)`);
+  console.log(`  03:00 daily — analytics ETL (SP-API orders + settlements, Shopify, SF costs, snapshots)`);
   console.log(`  08:00 weekdays + 10:00 Sat — stale-tracker scan`);
   if (!CRON_DISABLED) {
     telegram.startPolling({
