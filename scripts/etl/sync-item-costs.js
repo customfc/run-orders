@@ -50,14 +50,22 @@ function loadSkuMapOverrides() {
 
 async function loadSfCosts() {
   const conn = await sfLib.connect();
-  // Pull items that have a positive cost. PBSI__Cost__c is populated on
-  // ~98.6% of rows per the inventory probe.
-  const rows = await sfLib.query(conn,
-    `SELECT Id, Name, PBSI__Cost__c, PBSI__Description__c
-     FROM PBSI__PBSI_Item__c
-     WHERE PBSI__Cost__c > 0
-     LIMIT 50000`);
-  return rows.map((r) => ({
+  // SOQL query defaults to 2000-row page size. For the full ~11.7K item
+  // master, stream via autoFetch with an explicit maxFetch ceiling.
+  const soql = `
+    SELECT Id, Name, PBSI__Cost__c, PBSI__Description__c
+    FROM PBSI__PBSI_Item__c
+    WHERE PBSI__Cost__c > 0
+  `;
+  const records = await new Promise((resolve, reject) => {
+    const out = [];
+    conn.query(soql)
+      .on('record', (r) => out.push(r))
+      .on('end', () => resolve(out))
+      .on('error', reject)
+      .run({ autoFetch: true, maxFetch: 100_000 });
+  });
+  return records.map((r) => ({
     sku: r.Name,                           // PBSI Item name == our internal SKU
     cost_cad: num(r.PBSI__Cost__c),
     cost_source: 'sf-primary',
