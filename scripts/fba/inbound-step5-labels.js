@@ -17,12 +17,20 @@
  *   3. Calls createMarketplaceItemLabels once to get the FNSKU PDF URL.
  *   4. Saves the URL, expiration, and per-shipment confirmation IDs to plan state.
  *
+ * **URL expiry:** the presigned PDF URL lives for only 29 seconds. Pass
+ * --download to fetch the bytes immediately after the call, else the URL
+ * will be dead by the time you open it. --email additionally mails the PDF
+ * as an attachment (uses the shared emailer SMTP transport).
+ *
  * Usage:
  *   node scripts/fba/inbound-step5-labels.js --plan <planKey>
  *   node scripts/fba/inbound-step5-labels.js --plan <planKey> --pageType Letter_30
+ *   node scripts/fba/inbound-step5-labels.js --plan <planKey> --download --email mac@customfc.ca
  */
 
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 const inbound = require('../../lib/sp-api-inbound');
 const plans = require('../../lib/fba-inbound-plans');
 
@@ -32,7 +40,19 @@ function parseArgs() {
     const a = process.argv[i];
     if (a.startsWith('--')) {
       const [k, v] = a.split('=');
-      args[k.slice(2)] = v !== undefined ? v : process.argv[++i];
+      if (v !== undefined) {
+        args[k.slice(2)] = v;
+      } else {
+        // If next token is another --flag (or absent), treat this as a boolean
+        // flag. Otherwise consume it as the value.
+        const next = process.argv[i + 1];
+        if (next === undefined || next.startsWith('--')) {
+          args[k.slice(2)] = true;
+        } else {
+          args[k.slice(2)] = next;
+          i++;
+        }
+      }
     }
   }
   return args;
@@ -79,10 +99,55 @@ async function main() {
     console.log(`  → ${d.downloadType} ${d.uri.slice(0, 80)}...  expires ${d.expiration || '—'}`);
   }
 
+  // Download immediately — URL expires in ~29s
+  let savedPdfPath = null;
+  if (args.download) {
+    const defaultPath = path.join(__dirname, '..', '..', 'data', 'fba', 'inbound-plans', `${state.planKey}-item-labels.pdf`);
+    savedPdfPath = args.download === true ? defaultPath : args.download;
+    console.log(`\n[3a/3] download PDF to ${savedPdfPath} (URL expires in seconds)...`);
+    const resDl = await fetch(docs[0].uri);
+    if (!resDl.ok) throw new Error(`PDF download failed: ${resDl.status} ${resDl.statusText}`);
+    const buf = Buffer.from(await resDl.arrayBuffer());
+    fs.mkdirSync(path.dirname(savedPdfPath), { recursive: true });
+    fs.writeFileSync(savedPdfPath, buf);
+    console.log(`  ✓ ${buf.length} bytes saved`);
+  }
+
+  if (args.email) {
+    if (!savedPdfPath) throw new Error('--email requires --download (need PDF bytes to attach)');
+    console.log(`\n[3b/3] email to ${args.email}${args['email-cc'] ? ' (cc ' + args['email-cc'] + ')' : ''}...`);
+    const { sendEmail } = require('../../lib/emailer');
+    const confIds = shipmentDetails.map((s) => s.shipmentConfirmationId).filter(Boolean).join(', ');
+    const refIds = shipmentDetails.map((s) => s.amazonReferenceId).filter(Boolean).join(', ');
+    const mskuList = mskuQuantities.map((m) => `${m.msku} × ${m.quantity}`).join('<br>');
+    const html = `
+      <div style="font-family:Arial,sans-serif;font-size:14px;color:#333">
+        <p>Hi,</p>
+        <p>Attached are the FNSKU item labels for the Amazon FBA inbound shipment below. Please apply one label per unit.</p>
+        <p>
+          <strong>Plan:</strong> ${state.name}<br>
+          <strong>Shipment Confirmation ID:</strong> ${confIds || '(pending)'}<br>
+          <strong>Amazon Reference ID:</strong> ${refIds || '(pending)'} <em>(use this on the BOL / carrier paperwork)</em><br>
+          <strong>Items:</strong><br>${mskuList}
+        </p>
+        <p>Thanks,<br>Mac</p>
+      </div>`;
+    await sendEmail({
+      to: args.email,
+      cc: args['email-cc'] || undefined,
+      subject: `FBA Inbound Labels — ${state.name}${confIds ? ' — ' + confIds : ''}`,
+      html,
+      attachments: [{ filename: path.basename(savedPdfPath), content: fs.readFileSync(savedPdfPath), contentType: 'application/pdf' }],
+    });
+    console.log(`  ✓ email sent`);
+  }
+
   console.log(`\n[3/3] save to plan state...`);
   state.labels = {
     itemLabelsPdfUrl: docs[0].uri,
     itemLabelsExpiration: docs[0].expiration,
+    itemLabelsPdfPath: savedPdfPath,
+    emailedTo: args.email || null,
     generatedAt: new Date().toISOString(),
     pageType,
     labelType,
