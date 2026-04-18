@@ -19,4 +19,7 @@ data/analytics-inventory.json
 data/analytics-backup/
 data/auto-reprice-config.json
 data/auto-reprice-state.json
+data/auto-restock-config.json
+data/auto-restock-state.json
+data/auto-restock-pending.json
 

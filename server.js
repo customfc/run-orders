@@ -1500,6 +1500,16 @@ async function fbaMorningPull(source) {
       console.error(`[fba-morning ${source}] auto-reprice error: ${arErr.message}`);
       await telegram.notify('attn', 'Auto-reprice crashed', arErr.message).catch(() => {});
     }
+
+    // Auto-restock proposal — builds per-vendor draft + posts Telegram approval URLs
+    try {
+      const summary = await autoRestock.run({ source: `post-morning-pull:${source}` });
+      const msg = autoRestock.formatTelegramSummary(summary, { baseUrl: publicBaseUrl() });
+      if (msg) await telegram.notify(msg.severity, msg.title, msg.body);
+    } catch (arsErr) {
+      console.error(`[fba-morning ${source}] auto-restock error: ${arsErr.message}`);
+      await telegram.notify('attn', 'Auto-restock crashed', arsErr.message).catch(() => {});
+    }
   } catch (err) {
     audit.log({ action: 'fba-morning-pull', source, success: false, error: err.message });
     await telegram.notify('halt', 'FBA morning pull crashed', err.message).catch(() => {});
@@ -1557,6 +1567,84 @@ schedule('30 2 * * *', async () => {
     telegram.notify('attn', 'Analytics DB backup failed', err.message).catch(() => {});
   }
 }, TZ);
+
+// ── Auto-restock — morning-pull triggered, Telegram-gated approval ────────
+
+const autoRestock = require('./lib/auto-restock');
+
+const publicBaseUrl = () => process.env.PUBLIC_BASE_URL || 'http://freds-mac-mini.taila452b5.ts.net:3456';
+
+app.post('/api/fba/auto-restock/trigger', async (req, res) => {
+  try {
+    const overrides = {};
+    if (req.query.dryRun === '1' || req.body?.dryRun === true) overrides.dry_run = true;
+    if (req.query.force === '1') overrides.enabled = true;
+    const summary = await autoRestock.run({ source: `manual:${req.ip || '?'}`, config: Object.keys(overrides).length ? overrides : undefined });
+    const msg = autoRestock.formatTelegramSummary(summary, { baseUrl: publicBaseUrl() });
+    if (msg) { try { await telegram.notify(msg.severity, msg.title, msg.body); } catch {} }
+    res.json({ success: true, summary, telegramMsg: msg });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/fba/auto-restock/approve/:token', async (req, res) => {
+  try {
+    const result = await autoRestock.approve({
+      token: req.params.token,
+      baseUrl: publicBaseUrl(),
+      labelEmail: req.query.labelEmail,
+      skipInbound: req.query.skipInbound === '1',
+    });
+    if (result.dryRun) {
+      await telegram.notify('ok', `Auto-restock ${result.vendor} — dry-run approval recorded`, 'Approve with ?force=1 to actually execute').catch(() => {});
+      return res.type('html').send(`<h2>Dry-run approved</h2><p>Vendor: ${result.vendor}</p><p>Lines would be sent: ${result.vendorLines.length}</p><p>Flip dry_run off in config to actually execute.</p>`);
+    }
+    const poLines = result.sendResult?.lineCount;
+    const conf = (result.inboundResult?.shipmentConfirmationIds || []).join(', ');
+    const inboundOk = result.inboundResult?.ok;
+    const inboundMsg = inboundOk
+      ? `Inbound: ✓ ${conf || '(pending)'}`
+      : result.inboundResult
+        ? `Inbound: ✗ failed at step ${result.inboundResult.failedAt} — ${result.inboundResult.error || ''}`
+        : 'Inbound: skipped';
+    await telegram.notify(inboundOk ? 'ok' : 'attn', `Auto-restock ${result.vendor} approved — PO sent (${poLines} lines)`, [
+      `To: ${result.sendResult?.to}`,
+      `PO: ${result.sendResult?.sfPo?.poNumber || 'DRAFT'}`,
+      inboundMsg,
+    ].join('\n')).catch(() => {});
+    res.type('html').send(`<h2>Approved — ${result.vendor}</h2>
+      <p>PO sent to ${result.sendResult?.to}: ${poLines} line(s), ${result.sendResult?.totalUnits} units · ${result.sendResult?.sfPo?.poNumber || 'DRAFT'}</p>
+      <p>${inboundMsg}</p>
+      ${result.inboundResult?.itemLabelsPdfPath ? `<p>Labels PDF: ${result.inboundResult.itemLabelsPdfPath}</p>` : ''}`);
+  } catch (e) {
+    res.status(500).type('html').send(`<h2>Approve failed</h2><p>${e.message}</p>`);
+  }
+});
+
+app.get('/api/fba/auto-restock/reject/:token', (req, res) => {
+  try {
+    const result = autoRestock.reject({ token: req.params.token, reason: req.query.reason || 'user-rejected-via-url' });
+    telegram.notify('ok', `Auto-restock ${result.vendor} — rejected`, 'Proposal cleared; nothing sent.').catch(() => {});
+    res.type('html').send(`<h2>Rejected — ${result.vendor}</h2><p>Proposal cleared. No PO sent, no inbound created.</p>`);
+  } catch (e) {
+    res.status(500).type('html').send(`<h2>Reject failed</h2><p>${e.message}</p>`);
+  }
+});
+
+app.get('/api/fba/auto-restock/config', (req, res) => {
+  try { res.json({ success: true, config: autoRestock.loadConfig(), pending: autoRestock.loadPending().filter((p) => p.status === 'pending'), state: autoRestock.loadState() }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.put('/api/fba/auto-restock/config', express.json(), (req, res) => {
+  try {
+    const cur = autoRestock.loadConfig();
+    const merged = { ...cur, ...req.body };
+    fs.writeFileSync(path.join(__dirname, 'data', 'auto-restock-config.json'), JSON.stringify(merged, null, 2));
+    res.json({ success: true, config: merged });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
 
 // FBA Inbound orchestrator — one call walks all 5 steps for a sent PO
 // draft: create plan → pack → place → transport → FNSKU labels + email.
