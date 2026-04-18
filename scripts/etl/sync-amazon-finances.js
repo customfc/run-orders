@@ -62,6 +62,33 @@ function isoAgo(days) {
 
 function num(v) { if (v == null || v === '') return null; const n = Number(v); return Number.isFinite(n) ? n : null; }
 
+// Amazon settlement reports surface dates in mixed formats within the same
+// file — some rows "2026-01-15 16:10:20 UTC" (ISO-style), others
+// "31.03.2026 22:24:32 UTC" (DD.MM.YYYY). Normalise to ISO 8601 so string
+// comparison works for downstream views.
+function normalizeAmazonDate(s) {
+  if (!s) return null;
+  const str = String(s).trim();
+  // Already ISO (YYYY-MM-DD at start, optionally with T or space)
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    // Normalise " UTC" suffix to "Z" for consistency
+    return str.replace(/ UTC$/, 'Z').replace(' ', 'T');
+  }
+  // DD.MM.YYYY format (European)
+  const m = str.match(/^(\d{2})\.(\d{2})\.(\d{4})(?:[ T](\d{2}):(\d{2}):(\d{2}))?(?: UTC)?/);
+  if (m) {
+    const [, dd, mm, yyyy, hh = '00', mi = '00', ss = '00'] = m;
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}Z`;
+  }
+  // DD/MM/YYYY fallback
+  const m2 = str.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2}):(\d{2}))?/);
+  if (m2) {
+    const [, dd, mm, yyyy, hh = '00', mi = '00', ss = '00'] = m2;
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}Z`;
+  }
+  return str;
+}
+
 // Parse tab-separated flat file v2 settlement report into { header, rows }.
 function parseSettlementFlatFile(csv) {
   // Split on any newline variant, drop empty trailing lines
@@ -120,9 +147,9 @@ async function syncOneReport(db, report) {
         ingested_at = excluded.ingested_at
     `).run(
       settlementId,
-      header['settlement-start-date'] || null,
-      header['settlement-end-date'] || null,
-      header['deposit-date'] || null,
+      normalizeAmazonDate(header['settlement-start-date']),
+      normalizeAmazonDate(header['settlement-end-date']),
+      normalizeAmazonDate(header['deposit-date']),
       num(header['total-amount']),
       header['currency'] || null,
       JSON.stringify({ reportId, reportDocumentId: report.reportDocumentId, headerRow: header }),
@@ -142,7 +169,8 @@ async function syncOneReport(db, report) {
     let eventRows = 0;
     for (const r of rows) {
       if (!r['transaction-type']) continue; // skip header + blank rows
-      const postedAt = r['posted-date-time'] || r['posted-date'] || header['deposit-date'] || null;
+      const rawPostedAt = r['posted-date-time'] || r['posted-date'] || header['deposit-date'] || null;
+      const postedAt = normalizeAmazonDate(rawPostedAt);
       if (!postedAt) continue;
 
       const amount = num(r['amount']);
