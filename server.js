@@ -1097,6 +1097,95 @@ app.post('/api/fba/reprice', async (req, res) => {
   }
 });
 
+// Bulk reprice — iterates every row in the latest snapshot whose mapDecision
+// is match/hold-at-map/hold-at-floor and whose recommendedPrice differs
+// from our current price by >= $0.01. Same per-row safety checks as /reprice.
+// SSE-style progress stream so a UI can render per-row status live; pass
+// ?dryRun=1 to see what would happen without calling SP-API.
+app.post('/api/fba/reprice/bulk', async (req, res) => {
+  const dryRun = req.query.dryRun === '1' || req.body?.dryRun === true;
+  const tierFilter = req.body?.tier || 'bb-losing'; // default: only BB-losing tier
+  const maxRows = Number(req.body?.max) || 100;
+
+  try {
+    const snap = fbaSignals.loadLatestSnapshot();
+    if (!snap) return res.status(409).json({ success: false, error: 'No FBA snapshot — run the morning pull first' });
+
+    // Filter candidates: BB-losing tier, has sku + mapDecision, recommendedPrice
+    // differs from current price, action in the safe set.
+    const candidates = snap.rows.filter((r) => {
+      if (!r.sku || !r.mapDecision) return false;
+      if (tierFilter !== 'all' && r.tier !== tierFilter) return false;
+      const d = r.mapDecision;
+      if (!['match', 'hold-at-map', 'hold-at-floor'].includes(d.action)) return false;
+      if (d.recommendedPrice == null) return false;
+      const current = r.bb?.ourPrice;
+      if (current == null) return false;
+      if (Math.abs(current - d.recommendedPrice) < 0.01) return false;
+      return true;
+    }).slice(0, maxRows);
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    const send = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+
+    send('status', { message: `${candidates.length} candidate(s), ${dryRun ? 'dry-run' : 'live'}` });
+
+    const sp = require('./lib/sp-api');
+    const results = [];
+    for (let i = 0; i < candidates.length; i++) {
+      const r = candidates[i];
+      const requested = r.mapDecision.recommendedPrice;
+      const current = r.bb?.ourPrice;
+      const row = {
+        sku: r.sku, asin: r.asin,
+        fromPrice: current, toPrice: requested,
+        action: r.mapDecision.action,
+        ok: false, error: null, submissionId: null,
+      };
+      if (dryRun) {
+        row.ok = true;
+        row.dryRun = true;
+      } else {
+        try {
+          const result = await sp.updateListingPrice(r.sku, requested);
+          row.ok = true;
+          row.submissionId = result.submissionId;
+          audit.log({
+            action: 'fba-reprice-bulk',
+            sku: r.sku, asin: r.asin,
+            fromPrice: current, toPrice: requested,
+            buyBoxPrice: r.bb?.buyBoxPrice,
+            decisionAction: r.mapDecision.action,
+            submissionId: result.submissionId,
+          });
+        } catch (e) {
+          row.error = e.message;
+          audit.log({ action: 'fba-reprice-bulk', success: false, sku: r.sku, error: e.message });
+        }
+      }
+      results.push(row);
+      send('row', { index: i + 1, total: candidates.length, ...row });
+    }
+
+    const okCount = results.filter((r) => r.ok).length;
+    const failCount = results.length - okCount;
+    send('complete', {
+      success: true,
+      dryRun,
+      totalCandidates: candidates.length,
+      ok: okCount,
+      failed: failCount,
+      results,
+    });
+    res.end();
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.post('/api/fba/buybox/pull', async (req, res) => {
   if (fbaPullActive) return res.status(409).json({ error: 'FBA pull already in progress' });
   fbaPullActive = true;
