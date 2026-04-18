@@ -1018,6 +1018,85 @@ app.get('/api/fba/map-violators', (req, res) => {
   }
 });
 
+// One-click reprice: match the Buy Box (or hold at MAP / margin floor).
+// Server-side re-validates the target against the current snapshot's mapDecision
+// before calling SP-API, so a stale client row can never push below MAP or floor.
+app.post('/api/fba/reprice', async (req, res) => {
+  try {
+    const { sku, asin, price } = req.body || {};
+    if (!sku) return res.status(400).json({ success: false, error: 'sku required' });
+    const requested = Number(price);
+    if (!Number.isFinite(requested) || requested <= 0) {
+      return res.status(400).json({ success: false, error: 'price must be a positive number' });
+    }
+
+    const snap = fbaSignals.loadLatestSnapshot();
+    if (!snap) return res.status(409).json({ success: false, error: 'No FBA snapshot — run the morning pull first' });
+    const row = snap.rows.find((r) => r.sku === sku || (asin && r.asin === asin));
+    if (!row) return res.status(404).json({ success: false, error: `SKU ${sku} not in latest snapshot` });
+
+    const decision = row.mapDecision;
+    if (!decision) return res.status(409).json({ success: false, error: 'No MAP decision available (no Buy Box data for this ASIN)' });
+
+    // Guardrails — refuse actions where auto-repricing is explicitly unsafe.
+    if (decision.action === 'override-allowed') {
+      return res.status(403).json({ success: false, error: 'SKU flagged for manual override (repricer stays out)', decision });
+    }
+    if (decision.action === 'violation-by-us') {
+      return res.status(403).json({ success: false, error: 'Current price is below MAP — fix via MAP compliance flow, not reprice', decision });
+    }
+    if (decision.action === 'missing-map') {
+      return res.status(403).json({ success: false, error: 'Brand is MAP-enforced but no MAP on file for this ASIN', decision });
+    }
+
+    // Floor: never let the request go below recommendedPrice (which already clamps
+    // to MAP and margin-floor). Requests equal or above are fine.
+    const floor = decision.recommendedPrice;
+    if (floor != null && requested < floor - 0.001) {
+      return res.status(422).json({
+        success: false,
+        error: `Requested $${requested.toFixed(2)} is below safe floor $${floor.toFixed(2)} (${decision.reason || decision.action})`,
+        decision,
+      });
+    }
+
+    // Sanity ceiling: don't let a fat-finger 2x the current price silently go through.
+    const current = row.bb?.ourPrice ?? row.yourPrice ?? null;
+    if (current && requested > current * 1.5) {
+      return res.status(422).json({
+        success: false,
+        error: `Requested $${requested.toFixed(2)} is >50% above current $${current.toFixed(2)} — aborting as fat-finger guard`,
+      });
+    }
+
+    const sp = require('./lib/sp-api');
+    const result = await sp.updateListingPrice(sku, requested);
+    audit.log({
+      action: 'fba-reprice',
+      sku, asin: row.asin,
+      fromPrice: current,
+      toPrice: requested,
+      buyBoxPrice: row.bb?.buyBoxPrice ?? null,
+      mapCad: decision.mapCad,
+      marginFloor: decision.marginFloor,
+      decisionAction: decision.action,
+      submissionId: result.submissionId,
+    });
+    res.json({
+      success: true,
+      sku, asin: row.asin,
+      fromPrice: current,
+      toPrice: requested,
+      submissionId: result.submissionId,
+      issues: result.issues,
+      decision,
+    });
+  } catch (e) {
+    audit.log({ action: 'fba-reprice', success: false, sku: req.body?.sku, error: e.message });
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.post('/api/fba/buybox/pull', async (req, res) => {
   if (fbaPullActive) return res.status(409).json({ error: 'FBA pull already in progress' });
   fbaPullActive = true;

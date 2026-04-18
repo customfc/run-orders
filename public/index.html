@@ -1490,11 +1490,15 @@ function fbaRenderTier(tier, rows) {
             }
             const pricingCell = `${bbLine}${ourLine}${mapLine}`;
 
-            // Action cell
+            // Action cell — clickable Reprice button for safe match/hold targets
             const d = r.mapDecision;
             let actionCell = '';
             if (d) {
               const color = actionColors[d.action] || '#475569';
+              const reprice = window._fbaRepriced && window._fbaRepriced.get(r.sku);
+              const canReprice = r.sku && d.recommendedPrice != null
+                && ['match', 'hold-at-map', 'hold-at-floor'].includes(d.action)
+                && (r.bb?.ourPrice != null ? Math.abs(r.bb.ourPrice - d.recommendedPrice) >= 0.01 : true);
               let label = d.action;
               if (d.action === 'match' && d.recommendedPrice != null) label = `match → $${d.recommendedPrice.toFixed(2)}`;
               else if (d.action === 'hold-at-map') label = `hold MAP $${d.recommendedPrice.toFixed(2)}`;
@@ -1502,7 +1506,14 @@ function fbaRenderTier(tier, rows) {
               else if (d.action === 'competitor-below-map') label = `report ${d.buyBoxSellerId}`;
               else if (d.action === 'violation-by-us') label = `fix → $${d.recommendedPrice.toFixed(2)}`;
               else if (d.action === 'override-allowed') label = `manual (thermostat)`;
-              actionCell = `<span style="color:${color};font-size:11px" title="${esc(d.reason || '')}">${esc(label)}</span>`;
+              if (reprice) {
+                actionCell = `<span style="color:#059669;font-size:11px;font-weight:600" title="Repriced to $${reprice.toPrice.toFixed(2)}">✓ $${reprice.toPrice.toFixed(2)}</span>`;
+              } else if (canReprice) {
+                const safeProd = (r.productName||'').replace(/'/g, "\\'").slice(0, 80);
+                actionCell = `<button class="btn btn-sm" style="padding:2px 8px;font-size:11px;background:${color};color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600" title="${esc(d.reason || '')}" onclick="fbaReprice('${esc(r.sku)}', '${esc(r.asin)}', ${d.recommendedPrice}, '${esc(safeProd)}')">${esc(label)}</button>`;
+              } else {
+                actionCell = `<span style="color:${color};font-size:11px" title="${esc(d.reason || '')}">${esc(label)}</span>`;
+              }
             }
 
             return `<tr>
@@ -1737,6 +1748,35 @@ async function fbaQueueLine(asin, qty, product, tier) {
     }
   } catch (err) {
     alert('Queue failed: ' + err.message);
+  }
+}
+
+async function fbaReprice(sku, asin, price, product) {
+  const msg = `Reprice ${product || sku}\n\nSKU: ${sku}\nNew price: $${Number(price).toFixed(2)} CAD\n\nProceed?`;
+  if (!confirm(msg)) return;
+  try {
+    const r = await fetch('/api/fba/reprice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sku, asin, price }),
+    });
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error || 'reprice failed');
+    window._fbaRepriced = window._fbaRepriced || new Map();
+    window._fbaRepriced.set(sku, { toPrice: data.toPrice, submissionId: data.submissionId, at: Date.now() });
+    // Re-render tiers from current snapshot (no refetch needed — local row.bb.ourPrice
+    // won't match Amazon immediately anyway; the checkmark is the truthful signal)
+    const snapshot = await (await fetch('/api/fba/today')).json();
+    if (snapshot.success && snapshot.snapshot) {
+      const byTier = {};
+      for (const row of snapshot.rows) (byTier[row.tier] ||= []).push(row);
+      document.getElementById('fbaTiers').innerHTML = FBA_TIERS.map(t => {
+        const rows = byTier[t.key] || [];
+        return rows.length ? fbaRenderTier(t, rows) : '';
+      }).join('');
+    }
+  } catch (err) {
+    alert('Reprice failed: ' + err.message);
   }
 }
 
