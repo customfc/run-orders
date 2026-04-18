@@ -10,6 +10,7 @@
     "book-cp": "node scripts/shipstation/book-cp-pickup.js"
   },
   "dependencies": {
+    "better-sqlite3": "^12.9.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsforce": "^1.11.1",

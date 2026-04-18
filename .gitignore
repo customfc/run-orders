@@ -12,4 +12,8 @@ data/telegram-state.json
 data/telegram-outbox.jsonl
 data/ops-state/
 data/fba/
+data/analytics.sqlite
+data/analytics.sqlite-shm
+data/analytics.sqlite-wal
+data/analytics-inventory.json
 
