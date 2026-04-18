@@ -1454,6 +1454,222 @@ app.post('/api/analytics/etl/trigger', (req, res) => {
   res.json({ success: true, message: 'Analytics ETL started — Telegram summary will land when done' });
 });
 
+// ── Analytics read endpoints — Phase C ──────────────────────────────────────
+//
+// Thin wrappers over the Phase B views. All JSON, all GET, all filterable by
+// date-range where meaningful. Designed for the new dashboard redesign; the
+// UI composes tiles by hitting multiple endpoints in parallel.
+
+const analyticsDb = require('./lib/analytics-db');
+
+function ageDaysAgo(n) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+function parseRange(req, defaultDays = 90) {
+  const to = (req.query.to || new Date().toISOString().slice(0, 10)).slice(0, 10);
+  const from = (req.query.from || ageDaysAgo(defaultDays)).slice(0, 10);
+  return { from, to };
+}
+
+// Sync state + DB health — for the dashboard status row
+app.get('/api/analytics/sync-state', (req, res) => {
+  try {
+    const db = analyticsDb.open();
+    const rows = db.prepare('SELECT * FROM etl_sync_state ORDER BY source').all();
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all();
+    const counts = {};
+    for (const t of tables) {
+      if (t.name === 'sqlite_sequence') continue;
+      counts[t.name] = db.prepare(`SELECT COUNT(*) c FROM ${t.name}`).get().c;
+    }
+    res.json({ success: true, sync: rows, tableCounts: counts, etlActive: analyticsEtlActive });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Headline summary — for the dashboard hero tile
+app.get('/api/analytics/summary', (req, res) => {
+  try {
+    const db = analyticsDb.open();
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    const lastMonth = (() => {
+      const d = new Date(); d.setUTCMonth(d.getUTCMonth() - 1);
+      return d.toISOString().slice(0, 7);
+    })();
+
+    const monthRevenue = (month) => db.prepare(`
+      SELECT ROUND(SUM(revenue), 2) revenue, ROUND(SUM(amazon_fees), 2) fees,
+             ROUND(SUM(refunds), 2) refunds, SUM(unique_orders) orders
+      FROM v_money_daily
+      WHERE source_tier = 'settled' AND substr(day, 1, 7) = ?
+    `).get(month);
+
+    const ws = db.prepare('SELECT * FROM v_warehouse_split').all();
+
+    // Cashflow this month = sum of deposit_amount from settlements posted this month
+    const cashflow = db.prepare(`
+      SELECT ROUND(SUM(deposit_amount), 2) cashflow_this_month, COUNT(*) settlements_this_month
+      FROM amazon_settlements
+      WHERE substr(deposit_date, 1, 7) = ?
+    `).get(thisMonth);
+
+    // Current in-flight BB loss / OOS tiers from latest buybox_daily
+    const latestSnap = db.prepare(`
+      SELECT MAX(snapshot_date) d FROM buybox_daily
+    `).get();
+    const tiers = latestSnap.d ? db.prepare(`
+      SELECT tier, COUNT(*) c FROM buybox_daily
+      WHERE snapshot_date = ? GROUP BY tier
+    `).all(latestSnap.d) : [];
+
+    res.json({
+      success: true,
+      thisMonth: monthRevenue(thisMonth),
+      lastMonth: monthRevenue(lastMonth),
+      cashflow,
+      warehouseSplit: ws,
+      latestSnapshot: latestSnap.d,
+      tierCounts: Object.fromEntries(tiers.map(t => [t.tier, t.c])),
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Money daily — the cashflow chart + money tab
+app.get('/api/analytics/money-daily', (req, res) => {
+  try {
+    const db = analyticsDb.open();
+    const { from, to } = parseRange(req, 90);
+    const tier = req.query.tier; // 'settled' | 'estimate' | (both if omitted)
+    let sql = `SELECT * FROM v_money_daily WHERE day >= ? AND day <= ?`;
+    const params = [from, to];
+    if (tier) { sql += ` AND source_tier = ?`; params.push(tier); }
+    sql += ` ORDER BY day DESC`;
+    const rows = db.prepare(sql).all(...params);
+    res.json({ success: true, from, to, tier: tier || 'all', rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// SKU × month P&L — the core table for the money tab + dog detector
+app.get('/api/analytics/sku-pnl', (req, res) => {
+  try {
+    const db = analyticsDb.open();
+    const fromMonth = req.query.fromMonth || new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 7);
+    const toMonth = req.query.toMonth || new Date().toISOString().slice(0, 7);
+    const order = req.query.order === 'margin' ? 'net_margin_pct' : 'net_profit';
+    const direction = req.query.direction === 'asc' ? 'ASC' : 'DESC';
+    const minRevenue = Number(req.query.minRevenue) || 0;
+    const limit = Math.min(Number(req.query.limit) || 200, 2000);
+
+    const rows = db.prepare(`
+      SELECT sku, month, revenue, qty_sold, cogs, amazon_fees, promotions,
+             refunds, storage_cost, inbound_freight, net_profit, net_margin_pct
+      FROM v_sku_monthly_pnl
+      WHERE month >= ? AND month <= ?
+        AND revenue >= ?
+      ORDER BY ${order} ${direction} NULLS LAST
+      LIMIT ?
+    `).all(fromMonth, toMonth, minRevenue, limit);
+
+    res.json({ success: true, fromMonth, toMonth, order, direction, minRevenue, rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Warehouse / fulfillment split — orders per warehouse tile
+app.get('/api/analytics/warehouse-split', (req, res) => {
+  try {
+    const db = analyticsDb.open();
+    const rows = db.prepare('SELECT * FROM v_warehouse_split').all();
+    res.json({ success: true, rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Postal code heat map — rollup for the map widget
+app.get('/api/analytics/postal-heat', (req, res) => {
+  try {
+    const db = analyticsDb.open();
+    const { from, to } = parseRange(req, 90);
+    const channel = req.query.channel; // 'amazon' | 'shopify' | undefined (both)
+    let sql = `
+      SELECT channel, ship_postal, ship_state, ship_country,
+             SUM(order_count) orders, ROUND(SUM(revenue), 2) revenue
+      FROM v_postal_heat
+      WHERE day >= ? AND day <= ?
+    `;
+    const params = [from, to];
+    if (channel) { sql += ` AND channel = ?`; params.push(channel); }
+    sql += ` GROUP BY channel, ship_postal, ship_state, ship_country ORDER BY orders DESC`;
+    const rows = db.prepare(sql).all(...params);
+    res.json({ success: true, from, to, channel: channel || 'all', rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Missed opportunity — per-SKU estimate (BB loss + OOS × velocity × price)
+app.get('/api/analytics/missed-opportunity', (req, res) => {
+  try {
+    const db = analyticsDb.open();
+    const month = req.query.month || new Date().toISOString().slice(0, 7);
+    const rows = db.prepare(`
+      SELECT * FROM v_missed_opportunity
+      WHERE month = ?
+      ORDER BY estimated_missed_revenue DESC
+    `).all(month);
+    res.json({ success: true, month, rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Returns — unified Amazon + Shopify
+app.get('/api/analytics/returns', (req, res) => {
+  try {
+    const db = analyticsDb.open();
+    const { from, to } = parseRange(req, 90);
+    const channel = req.query.channel;
+    let sql = `SELECT * FROM v_returns WHERE day >= ? AND day <= ?`;
+    const params = [from, to];
+    if (channel) { sql += ` AND channel = ?`; params.push(channel); }
+    sql += ` ORDER BY day DESC LIMIT 1000`;
+    const rows = db.prepare(sql).all(...params);
+    const total = rows.reduce((s, r) => s + (r.refund_amount || 0), 0);
+    res.json({ success: true, from, to, channel: channel || 'all', total: Number(total.toFixed(2)), rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Orders (raw, for drill-down from any tile)
+app.get('/api/analytics/orders', (req, res) => {
+  try {
+    const db = analyticsDb.open();
+    const { from, to } = parseRange(req, 30);
+    const channel = req.query.channel;
+    const limit = Math.min(Number(req.query.limit) || 500, 5000);
+    let sql = `SELECT * FROM v_orders_unified WHERE substr(ordered_at, 1, 10) >= ? AND substr(ordered_at, 1, 10) <= ?`;
+    const params = [from, to];
+    if (channel) { sql += ` AND channel = ?`; params.push(channel); }
+    sql += ` ORDER BY ordered_at DESC LIMIT ?`;
+    params.push(limit);
+    const rows = db.prepare(sql).all(...params);
+    res.json({ success: true, from, to, channel: channel || 'all', count: rows.length, rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Daily ghost-label auto-void — voids labels whose pickup window closed yesterday.
 // Runs at 16:00 ET (after all pickups are done for the day).
 schedule('0 16 * * *', async () => {
