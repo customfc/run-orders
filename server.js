@@ -1740,6 +1740,38 @@ app.get('/api/analytics/returns', (req, res) => {
   }
 });
 
+// Shopify P&L — per-order detail + monthly rollup. Separate lane from
+// Amazon margin since Shopify fees + COGS + label costs follow a different
+// shape (processor_fee vs commission, no FBA, etc).
+app.get('/api/analytics/shopify-pnl', (req, res) => {
+  try {
+    const db = analyticsDb.open();
+    const grain = req.query.grain === 'order' ? 'order' : 'month';
+    const fromMonth = req.query.fromMonth || new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 7);
+    const toMonth = req.query.toMonth || new Date().toISOString().slice(0, 7);
+    let rows;
+    if (grain === 'order') {
+      rows = db.prepare(`
+        SELECT shopify_order_id, order_name, created_at, month, financial_status,
+               ship_postal, qty_sold, revenue_subtotal, cogs, processor_fee,
+               refunds, label_cost, net_profit, net_margin_pct
+        FROM v_shopify_order_pnl
+        WHERE month >= ? AND month <= ?
+        ORDER BY created_at DESC
+      `).all(fromMonth, toMonth);
+    } else {
+      rows = db.prepare(`
+        SELECT * FROM v_shopify_monthly_pnl
+        WHERE month >= ? AND month <= ?
+        ORDER BY month DESC
+      `).all(fromMonth, toMonth);
+    }
+    res.json({ success: true, grain, fromMonth, toMonth, rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Orders (raw, for drill-down from any tile)
 app.get('/api/analytics/orders', (req, res) => {
   try {

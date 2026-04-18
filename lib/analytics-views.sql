@@ -25,6 +25,8 @@ DROP VIEW IF EXISTS v_postal_heat;
 DROP VIEW IF EXISTS v_warehouse_split;
 DROP VIEW IF EXISTS v_sku_monthly_pnl;
 DROP VIEW IF EXISTS v_brand_monthly_pnl;
+DROP VIEW IF EXISTS v_shopify_order_pnl;
+DROP VIEW IF EXISTS v_shopify_monthly_pnl;
 DROP VIEW IF EXISTS v_missed_opportunity;
 DROP VIEW IF EXISTS v_returns;
 DROP VIEW IF EXISTS v_item_enrichment;
@@ -375,6 +377,105 @@ SELECT
 FROM shipping_labels sl
 WHERE sl.purchased_at IS NOT NULL
 GROUP BY substr(sl.purchased_at, 1, 7), sl.channel;
+
+-- ── Shopify P&L — separate track from Amazon ──────────────────────────────
+-- Per-order then monthly rollup. Shopify order_name stores "#1244" with a
+-- leading hash; shipping_labels.order_number stores "1244" without. Strip
+-- the hash for the label join.
+
+CREATE VIEW v_shopify_order_pnl AS
+WITH lines AS (
+  SELECT
+    shopify_order_id,
+    SUM(qty * COALESCE(price, 0)) AS line_revenue,
+    SUM(COALESCE(total_discount, 0)) AS line_discount,
+    SUM(qty) AS line_qty,
+    SUM(qty * COALESCE(cost_snapshot, ic.cost_cad, 0)) AS cogs
+  FROM shopify_order_lines l
+  LEFT JOIN item_costs ic ON ic.sku = l.sku
+  GROUP BY shopify_order_id
+),
+fees AS (
+  SELECT
+    shopify_order_id,
+    SUM(CASE WHEN kind IN ('sale', 'SALE', 'CAPTURE', 'capture') THEN fee_amount ELSE 0 END) AS processor_fee
+  FROM shopify_order_fees
+  GROUP BY shopify_order_id
+),
+refunds AS (
+  SELECT
+    shopify_order_id,
+    SUM(COALESCE(amount, 0)) AS refunded
+  FROM shopify_refunds
+  GROUP BY shopify_order_id
+),
+labels AS (
+  SELECT
+    REPLACE(o.order_name, '#', '') AS joinkey,
+    o.shopify_order_id,
+    SUM(sl.label_cost_cad) AS label_cost
+  FROM shopify_orders o
+  JOIN shipping_labels sl
+    ON sl.order_number = REPLACE(o.order_name, '#', '')
+   AND sl.channel = 'shopify'
+  GROUP BY o.shopify_order_id
+)
+SELECT
+  o.shopify_order_id,
+  o.order_name,
+  o.created_at,
+  substr(o.created_at, 1, 7) AS month,
+  o.financial_status,
+  o.fulfillment_status,
+  o.ship_postal,
+  o.ship_country,
+  o.total_price,
+  o.subtotal_price                                  AS revenue_subtotal,
+  o.total_tax                                       AS tax_collected,
+  o.total_shipping                                  AS shipping_charged,
+  COALESCE(lines.line_qty, 0)                       AS qty_sold,
+  COALESCE(lines.cogs, 0)                           AS cogs,
+  COALESCE(fees.processor_fee, 0)                   AS processor_fee,
+  COALESCE(refunds.refunded, 0)                     AS refunds,
+  COALESCE(labels.label_cost, 0)                    AS label_cost,
+  -- Net profit: subtotal (excl tax/shipping) - cogs - processor_fee - refund - label
+  -- tax passes through to CRA; shipping is mostly pass-through to carrier (we paid label_cost)
+  COALESCE(o.subtotal_price, 0)
+    - COALESCE(lines.cogs, 0)
+    - COALESCE(fees.processor_fee, 0)
+    - COALESCE(refunds.refunded, 0)
+    - COALESCE(labels.label_cost, 0)                AS net_profit,
+  CASE WHEN COALESCE(o.subtotal_price, 0) > 0
+       THEN ROUND(
+         (COALESCE(o.subtotal_price, 0)
+          - COALESCE(lines.cogs, 0)
+          - COALESCE(fees.processor_fee, 0)
+          - COALESCE(refunds.refunded, 0)
+          - COALESCE(labels.label_cost, 0)
+         ) * 100.0 / o.subtotal_price, 1)
+       ELSE NULL END                                AS net_margin_pct
+FROM shopify_orders o
+LEFT JOIN lines    ON lines.shopify_order_id = o.shopify_order_id
+LEFT JOIN fees     ON fees.shopify_order_id = o.shopify_order_id
+LEFT JOIN refunds  ON refunds.shopify_order_id = o.shopify_order_id
+LEFT JOIN labels   ON labels.shopify_order_id = o.shopify_order_id;
+
+CREATE VIEW v_shopify_monthly_pnl AS
+SELECT
+  month,
+  COUNT(*) AS order_count,
+  SUM(qty_sold) AS qty_sold,
+  ROUND(SUM(revenue_subtotal), 2) AS revenue,
+  ROUND(SUM(cogs), 2) AS cogs,
+  ROUND(SUM(processor_fee), 2) AS processor_fees,
+  ROUND(SUM(refunds), 2) AS refunds,
+  ROUND(SUM(label_cost), 2) AS label_cost,
+  ROUND(SUM(net_profit), 2) AS net_profit,
+  CASE WHEN SUM(revenue_subtotal) > 0
+       THEN ROUND(SUM(net_profit) * 100.0 / SUM(revenue_subtotal), 1)
+       ELSE NULL END AS net_margin_pct
+FROM v_shopify_order_pnl
+GROUP BY month;
 
 -- Label costs broken out per channel per month (for tile/drill-down)
 CREATE VIEW v_label_cost_by_sku_month AS
