@@ -934,6 +934,38 @@ app.post('/api/fba/po-draft/send', async (req, res) => {
   }
 });
 
+// ── UPS direct pickup (external address, no ShipEngine label) ──────────────
+//
+// Used when the label was generated outside our ShipStation account — e.g.
+// Amazon Send-to-Amazon inbound labels that Treeco will apply. ShipEngine
+// pickup booking requires a ShipEngine label_id, which we don't have here.
+// This hits UPS Developer Pickup Creation API directly.
+
+app.post('/api/ups-pickup/book', async (req, res) => {
+  try {
+    const upsApi = require('./lib/ups-api');
+    const { pickupAddress, pickupDate, readyTime, closeTime, boxes, trackingNumbers, customerContext } = req.body || {};
+    if (!pickupAddress || !pickupDate || !readyTime || !closeTime || !boxes) {
+      return res.status(400).json({ success: false, error: 'pickupAddress, pickupDate, readyTime, closeTime, boxes are required' });
+    }
+    const result = await upsApi.createPickup({ pickupAddress, pickupDate, readyTime, closeTime, boxes, trackingNumbers, customerContext });
+    audit.log({
+      action: 'ups-pickup-external',
+      pickupRequestNumber: result.pickupRequestNumber,
+      pickupAddress: { company: pickupAddress.companyName, city: pickupAddress.city, postal: pickupAddress.postalCode },
+      pickupDate,
+      boxes: boxes.quantity,
+      totalWeightLb: boxes.totalWeightLb,
+      trackingNumbers: trackingNumbers || null,
+      success: true,
+    });
+    res.json({ success: true, result });
+  } catch (err) {
+    audit.log({ action: 'ups-pickup-external', success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message, body: err.body });
+  }
+});
+
 app.get('/api/fba/map-violators', (req, res) => {
   try {
     const snap = fbaSignals.loadLatestSnapshot();
