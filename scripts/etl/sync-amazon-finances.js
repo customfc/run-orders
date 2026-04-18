@@ -187,17 +187,23 @@ async function syncOneReport(db, report) {
 async function main() {
   const args = parseArgs();
 
+  // Amazon caps listReports createdSince at 90 days. Anything older has to
+  // come from the Finances API (/finances/v0/financialEvents) — not wired
+  // yet. For now, clamp to 89d max.
+  const MAX_AGO_DAYS = 89;
+  const maxAgoIso = isoAgo(MAX_AGO_DAYS);
   let createdSince = null;
   if (args.backfill) {
-    createdSince = isoAgo(723);
+    createdSince = maxAgoIso;
   } else if (args.since) {
-    createdSince = args.since;
+    createdSince = args.since < maxAgoIso ? maxAgoIso : args.since;
   } else {
     const state = getSyncState('amazon-finances');
-    createdSince = state?.cursor || isoAgo(723);
+    const cursor = state?.cursor;
+    createdSince = (!cursor || cursor < maxAgoIso) ? maxAgoIso : cursor;
   }
 
-  console.log(`[amazon-finances] listing settlement reports createdSince=${createdSince}`);
+  console.log(`[amazon-finances] listing settlement reports createdSince=${createdSince} (capped at ${MAX_AGO_DAYS}d)`);
   const db = open();
 
   let nextToken = null;
