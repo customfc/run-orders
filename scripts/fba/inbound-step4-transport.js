@@ -58,6 +58,17 @@ async function main() {
   const boxWeightLb = 42;
   const boxDims = { length: 14, width: 12, height: 12 };
 
+  // Ready-to-ship window: start 3 days out, end 10 days out. Gives the
+  // vendor a reasonable pickup buffer.
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const isoDate = (offsetDays) => {
+    const x = new Date(d);
+    x.setUTCDate(x.getUTCDate() + offsetDays);
+    return `${x.getUTCFullYear()}-${pad(x.getUTCMonth() + 1)}-${pad(x.getUTCDate())}T00:00:00Z`;
+  };
+  const readyWindow = { start: isoDate(3), end: isoDate(10) };
+
   const configs = [];
   for (const shipId of shipmentIds) {
     const totalUnits = state.lines.reduce((s, l) => s + l.quantity, 0);
@@ -70,6 +81,7 @@ async function main() {
         phoneNumber: state.sourceAddress.phoneNumber,
         email: state.sourceAddress.email || 'mac@customfc.ca',
       },
+      readyToShipWindow: readyWindow,
       pallets: [],
       boxes: [{
         weight: { unit: 'POUNDS', value: boxWeightLb },
