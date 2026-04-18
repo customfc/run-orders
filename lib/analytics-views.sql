@@ -28,6 +28,7 @@ DROP VIEW IF EXISTS v_brand_monthly_pnl;
 DROP VIEW IF EXISTS v_missed_opportunity;
 DROP VIEW IF EXISTS v_returns;
 DROP VIEW IF EXISTS v_item_enrichment;
+DROP VIEW IF EXISTS v_label_cost_by_sku_month;
 
 -- ── Item enrichment — one row per Amazon ASIN with brand + cost resolved ─
 -- Bridge that turns order items (keyed by MSKU) into cost-aware rows.
@@ -263,6 +264,28 @@ freight AS (
   JOIN inbound_shipments s ON s.shipment_id = l.shipment_id
   WHERE s.arrived_at IS NOT NULL
   GROUP BY l.sku, substr(s.arrived_at, 1, 7)
+),
+-- ShipStation outbound label allocation. For Amazon MFN orders, label
+-- joins via order_number → amazon_order_id → amazon_order_items.
+-- For each order's label cost, allocate across its items proportionally
+-- by qty_shipped. Per-SKU cost per month then sums.
+labels AS (
+  SELECT
+    i.seller_sku AS sku,
+    substr(sl.purchased_at, 1, 7) AS month,
+    SUM(
+      sl.label_cost_cad *
+      (COALESCE(i.qty_shipped, 0) * 1.0 /
+       NULLIF((SELECT SUM(COALESCE(qty_shipped, 0))
+               FROM amazon_order_items
+               WHERE amazon_order_id = i.amazon_order_id), 0))
+    ) AS label_cost
+  FROM shipping_labels sl
+  JOIN amazon_order_items i ON i.amazon_order_id = sl.order_number
+  WHERE sl.channel = 'amazon-mfn'
+    AND sl.purchased_at IS NOT NULL
+    AND i.seller_sku IS NOT NULL
+  GROUP BY i.seller_sku, substr(sl.purchased_at, 1, 7)
 )
 SELECT
   COALESCE(amz.sku, items.sku)                                AS sku,
@@ -279,7 +302,8 @@ SELECT
   COALESCE(amz.refund, 0)                                     AS refunds,
   COALESCE(storage.avg_storage_monthly, 0)                    AS storage_cost,
   COALESCE(freight.freight_cost, 0)                           AS inbound_freight,
-  -- Net margin = revenue - cogs + fees (fees are negative in DB) + refunds - storage - freight
+  COALESCE(labels.label_cost, 0)                              AS outbound_label_cost,
+  -- Net margin = revenue - cogs + fees (fees are negative in DB) + refunds - storage - freight - label
   -- Note: fees, refunds are negative amounts in the DB so they add correctly
   COALESCE(amz.revenue_principal, 0)
     - COALESCE(items.cogs, 0)
@@ -287,7 +311,8 @@ SELECT
     + COALESCE(amz.promotion, 0)
     + COALESCE(amz.refund, 0)
     - COALESCE(storage.avg_storage_monthly, 0)
-    - COALESCE(freight.freight_cost, 0)                       AS net_profit,
+    - COALESCE(freight.freight_cost, 0)
+    - COALESCE(labels.label_cost, 0)                          AS net_profit,
   CASE WHEN COALESCE(amz.revenue_principal, 0) > 0
        THEN ROUND(
          (COALESCE(amz.revenue_principal, 0)
@@ -297,12 +322,14 @@ SELECT
           + COALESCE(amz.refund, 0)
           - COALESCE(storage.avg_storage_monthly, 0)
           - COALESCE(freight.freight_cost, 0)
+          - COALESCE(labels.label_cost, 0)
          ) * 100.0 / amz.revenue_principal, 1)
        ELSE NULL END                                          AS net_margin_pct
 FROM amz
 LEFT JOIN items   ON items.sku = amz.sku AND items.month = amz.month
 LEFT JOIN storage ON storage.sku = amz.sku AND storage.month = amz.month
 LEFT JOIN freight ON freight.sku = amz.sku AND freight.month = amz.month
+LEFT JOIN labels  ON labels.sku = amz.sku AND labels.month = amz.month
 LEFT JOIN sku_map_canonical sm2 ON sm2.amazon_msku = amz.sku;
 
 -- ── Brand-level P&L (rollup of SKU P&L) ────────────────────────────────────
@@ -320,6 +347,7 @@ SELECT
   SUM(refunds)                 AS refunds,
   SUM(storage_cost)            AS storage_cost,
   SUM(inbound_freight)         AS inbound_freight,
+  SUM(outbound_label_cost)     AS outbound_label_cost,
   SUM(net_profit)              AS net_profit,
   CASE WHEN SUM(revenue) > 0
        THEN ROUND(SUM(net_profit) * 100.0 / SUM(revenue), 1)
@@ -327,6 +355,19 @@ SELECT
 FROM v_sku_monthly_pnl
 WHERE month IS NOT NULL
 GROUP BY COALESCE(brand, '(unknown)'), month;
+
+-- Label costs broken out per channel per month (for tile/drill-down)
+CREATE VIEW v_label_cost_by_sku_month AS
+SELECT
+  sl.channel,
+  COALESCE(li.sku, '(no-item-detail)') AS ship_sku,
+  substr(sl.purchased_at, 1, 7) AS month,
+  COUNT(DISTINCT sl.shipment_id) AS label_count,
+  SUM(sl.label_cost_cad) AS total_cost
+FROM shipping_labels sl
+LEFT JOIN shipping_label_items li ON li.shipment_id = sl.shipment_id
+WHERE sl.purchased_at IS NOT NULL
+GROUP BY sl.channel, COALESCE(li.sku, '(no-item-detail)'), substr(sl.purchased_at, 1, 7);
 
 -- ── Missed opportunity (BB loss + OOS) ─────────────────────────────────────
 -- Per-SKU estimate of revenue lost to (a) buy-box losses with velocity, and

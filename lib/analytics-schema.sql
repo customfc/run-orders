@@ -234,6 +234,41 @@ CREATE INDEX IF NOT EXISTS idx_skumap_brand ON sku_map_canonical(brand);
 
 -- ── Inbound shipments (forward-only; powers freight attribution) ────────────
 
+-- ── Outbound shipping labels (ShipStation — for MFN + Shopify orders) ─────
+-- Populated from data/ops-state/*.json nightly. Each row is one label
+-- bought; a multi-package shipment is one row per package.
+
+CREATE TABLE IF NOT EXISTS shipping_labels (
+  shipment_id TEXT PRIMARY KEY,           -- ShipStation shipmentId (numeric string)
+  order_number TEXT,                      -- Shopify order name (#1244) or Amazon MFN order id
+  channel TEXT,                           -- 'shopify' | 'amazon-mfn' | inferred
+  tracking_number TEXT,
+  label_cost_cad REAL NOT NULL,
+  estimated_cost_cad REAL,
+  carrier_code TEXT,
+  service_code TEXT,
+  warehouse_id INTEGER,
+  purchased_at TEXT,
+  raw TEXT,
+  ingested_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_labels_order ON shipping_labels(order_number);
+CREATE INDEX IF NOT EXISTS idx_labels_purchased ON shipping_labels(purchased_at);
+
+-- Per-label items (when the package's item list is available). Used to
+-- allocate per-line label cost when a shipment has multiple SKUs.
+CREATE TABLE IF NOT EXISTS shipping_label_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  shipment_id TEXT NOT NULL,
+  sku TEXT,
+  name TEXT,
+  qty INTEGER,
+  raw TEXT,
+  FOREIGN KEY (shipment_id) REFERENCES shipping_labels(shipment_id)
+);
+CREATE INDEX IF NOT EXISTS idx_label_items_sku ON shipping_label_items(sku);
+CREATE INDEX IF NOT EXISTS idx_label_items_shipment ON shipping_label_items(shipment_id);
+
 CREATE TABLE IF NOT EXISTS inbound_shipments (
   shipment_id TEXT PRIMARY KEY,           -- Amazon shipmentId or our internal id
   plan_key TEXT,                          -- links to data/fba/inbound-plans/<plan_key>.json
