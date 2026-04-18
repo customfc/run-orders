@@ -239,6 +239,24 @@ async function main() {
       }
     } while (nextToken);
 
+    // Dedup vs finances-api: wherever a settlement covers a date range,
+    // the settlement row is source-of-truth. Wipe overlapping finances-api
+    // rows so SUM queries don't double-count. Runs unconditionally so this
+    // stays self-healing even when settlements were already ingested in
+    // prior runs.
+    const cleanup = db.prepare(`
+      DELETE FROM amazon_financial_events
+      WHERE settlement_id = 'finances-api'
+        AND EXISTS (
+          SELECT 1 FROM amazon_settlements s
+          WHERE amazon_financial_events.posted_at >= s.start_date
+            AND amazon_financial_events.posted_at <= s.end_date
+        )
+    `).run();
+    if (cleanup.changes) {
+      console.log(`[amazon-finances] dedup: removed ${cleanup.changes} finances-api row(s) now covered by settlement reports`);
+    }
+
     setSyncState('amazon-finances', {
       cursor: maxCreated,
       rowsLastRun: totalEvents,

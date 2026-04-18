@@ -305,12 +305,26 @@ async function main() {
   console.log(`[finances-deep] iterating daily windows ${fromDay} → ${toDay}`);
   const db = open();
 
+  // Days covered by a settlement report are source-of-truth via the
+  // settlement lane — skip them here to avoid double-counting.
+  const coveredByStmt = db.prepare(`
+    SELECT 1 FROM amazon_settlements
+    WHERE substr(start_date, 1, 10) <= ? AND substr(end_date, 1, 10) >= ?
+    LIMIT 1
+  `);
+
   let day = toDay;
   let totalRows = 0;
   let daysDone = 0;
+  let daysSkipped = 0;
 
   try {
     while (day >= fromDay) {
+      if (coveredByStmt.get(day, day)) {
+        daysSkipped++;
+        day = addDays(day, -1);
+        continue;
+      }
       const t0 = Date.now();
       const rows = await fetchDayEvents(day);
       ingestDay(db, day, rows);
@@ -338,7 +352,7 @@ async function main() {
       rowsLastRun: totalRows,
       status: 'ok',
     });
-    console.log(`[finances-deep] ✓ ${daysDone} days, ${totalRows} events`);
+    console.log(`[finances-deep] ✓ ${daysDone} days processed, ${daysSkipped} days skipped (covered by settlement), ${totalRows} events`);
   } catch (e) {
     setSyncState('amazon-finances-deep', { cursor: day, rowsLastRun: totalRows, status: 'error', errorMessage: e.message.slice(0, 500) });
     throw e;
