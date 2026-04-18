@@ -45,9 +45,46 @@ async function main() {
   if (!state) throw new Error(`Plan state not found: ${args.plan}`);
   if (!state.placementOptionId) throw new Error('No placementOptionId — run step 3 first');
 
-  console.log('[1/3] generateTransportationOptions...');
+  // Get shipment IDs from the plan (listShipments endpoint 403s but
+  // getInboundPlan returns them fine).
+  const plan = await inbound.getInboundPlan(state.inboundPlanId);
+  const shipmentIds = (plan.shipments || []).map((s) => s.shipmentId);
+  if (!shipmentIds.length) throw new Error('No shipments on plan — placement may not have confirmed');
+  console.log(`  ${shipmentIds.length} shipment(s):`, shipmentIds.join(', '));
+
+  // Box split heuristic (MVP — Bona Mega EXTRA MATTE case pack).
+  // TODO: per-SKU case_pack + box_weight + box_dims fields in sku-map.
+  const itemsPerBox = 4;
+  const boxWeightLb = 42;
+  const boxDims = { length: 14, width: 12, height: 12 };
+
+  const configs = [];
+  for (const shipId of shipmentIds) {
+    const totalUnits = state.lines.reduce((s, l) => s + l.quantity, 0);
+    const boxCount = Math.ceil(totalUnits / itemsPerBox);
+    const items = state.lines.map((l) => ({ msku: l.msku, quantity: Math.ceil(l.quantity / boxCount) }));
+    configs.push({
+      shipmentId: shipId,
+      contactInformation: {
+        phoneNumber: state.sourceAddress.phoneNumber,
+        email: state.sourceAddress.email,
+      },
+      pallets: [],
+      boxes: [{
+        weight: { unit: 'POUNDS', value: boxWeightLb },
+        dimensions: { unit: 'INCHES', length: boxDims.length, width: boxDims.width, height: boxDims.height },
+        quantity: boxCount,
+        items,
+        contentInformationSource: 'BOX_CONTENT_PROVIDED',
+      }],
+    });
+  }
+  console.log(`  box config: ${configs[0].boxes[0].quantity} × ${boxDims.length}×${boxDims.width}×${boxDims.height}in @ ${boxWeightLb}lb`);
+
+  console.log('\n[1/3] generateTransportationOptions...');
   const gen = await inbound.generateTransportationOptions(state.inboundPlanId, {
     placementOptionId: state.placementOptionId,
+    shipmentTransportationConfigurations: configs,
   });
   console.log(`  operationId=${gen.operationId}`);
   await inbound.waitForOperation(gen.operationId, {
