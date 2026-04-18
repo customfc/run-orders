@@ -162,8 +162,8 @@ async function syncOneReport(db, report) {
     const insEvent = db.prepare(`
       INSERT INTO amazon_financial_events (
         settlement_id, posted_at, transaction_type, amazon_order_id,
-        asin, seller_sku, fee_type, amount_cad, currency, description, raw, ingested_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        asin, seller_sku, fee_type, amount_cad, currency, quantity, description, raw, ingested_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     let eventRows = 0;
@@ -195,6 +195,7 @@ async function syncOneReport(db, report) {
         feeType,
         amount,
         r['currency'] || header['currency'] || null,
+        num(r['quantity-purchased']),
         desc,
         JSON.stringify(r),
         new Date().toISOString(),

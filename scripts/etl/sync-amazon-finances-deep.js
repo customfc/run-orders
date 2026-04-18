@@ -77,6 +77,7 @@ function flattenShipmentEvent(ev, isRefund = false) {
   ];
   for (const item of itemLists) {
     const sku = item.SellerSKU || null;
+    const qty = num(item.QuantityShipped) ?? num(item.QuantityAmount);
     for (const charge of item.ItemChargeList || []) {
       const amt = num(charge.ChargeAmount?.CurrencyAmount);
       if (amt === null || amt === 0) continue;
@@ -85,6 +86,7 @@ function flattenShipmentEvent(ev, isRefund = false) {
         feeType: `ItemPrice:${charge.ChargeType}`,
         amountCad: amt,
         currency: charge.ChargeAmount?.CurrencyCode || null,
+        quantity: charge.ChargeType === 'Principal' ? qty : null,
         description: marketplace,
         raw: item,
       });
@@ -97,6 +99,7 @@ function flattenShipmentEvent(ev, isRefund = false) {
         feeType: `ItemFees:${fee.FeeType}`,
         amountCad: amt,
         currency: fee.FeeAmount?.CurrencyCode || null,
+        quantity: null,
         description: marketplace,
         raw: item,
       });
@@ -250,9 +253,9 @@ function ingestDay(db, day, rows) {
     const ins = db.prepare(`
       INSERT INTO amazon_financial_events (
         settlement_id, posted_at, transaction_type, amazon_order_id,
-        asin, seller_sku, fee_type, amount_cad, currency, description,
-        raw, ingested_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        asin, seller_sku, fee_type, amount_cad, currency, quantity,
+        description, raw, ingested_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const now = new Date().toISOString();
     for (const r of rows) {
@@ -267,6 +270,7 @@ function ingestDay(db, day, rows) {
         r.feeType,
         r.amountCad,
         r.currency,
+        r.quantity ?? null,
         r.description,
         JSON.stringify(r.raw),
         now,

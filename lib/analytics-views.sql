@@ -219,27 +219,25 @@ WITH amz AS (
   WHERE seller_sku IS NOT NULL
   GROUP BY seller_sku, substr(posted_at, 1, 7)
 ),
--- qty_sold + COGS. Join amazon_order_items.asin → sku_map_canonical.asin →
--- sf_item_name → item_costs.cost_cad. This is the bridge across the three
--- SKU universes (Amazon MSKU / sku-map / SF PBSI Item Name).
+-- qty_sold + COGS derived from financial events (settlement CSV's
+-- quantity-purchased column on Principal rows). This keeps qty
+-- CONSISTENT with revenue — both come from the same source — so margin
+-- isn't distorted when amazon_order_items backfill lags behind financial
+-- events. ASIN is not on financial events, so we resolve ASIN → cost via
+-- sku_map_canonical keyed on msku.
 items AS (
   SELECT
-    i.seller_sku        AS sku,
-    substr(o.purchase_date, 1, 7) AS month,
-    SUM(i.qty_shipped)   AS qty_sold,
-    SUM(i.qty_shipped * COALESCE(
-      i.cost_snapshot,
-      ic_via_map.cost_cad,         -- preferred: ASIN → sku_map_canonical → sf_item_name → cost
-      ic_direct.cost_cad,          -- fallback: direct SKU match (rare)
-      0
-    )) AS cogs
-  FROM amazon_order_items i
-  JOIN amazon_orders o ON o.amazon_order_id = i.amazon_order_id
-  LEFT JOIN sku_map_canonical sm ON sm.asin = i.asin
-  LEFT JOIN item_costs ic_via_map ON ic_via_map.sku = sm.sf_item_name
-  LEFT JOIN item_costs ic_direct ON ic_direct.sku = i.seller_sku
-  WHERE i.seller_sku IS NOT NULL
-  GROUP BY i.seller_sku, substr(o.purchase_date, 1, 7)
+    e.seller_sku        AS sku,
+    substr(e.posted_at, 1, 7) AS month,
+    SUM(COALESCE(e.quantity, 0)) AS qty_sold,
+    SUM(COALESCE(e.quantity, 0) * COALESCE(ic.cost_cad, 0)) AS cogs
+  FROM amazon_financial_events e
+  LEFT JOIN sku_map_canonical sm ON sm.amazon_msku = e.seller_sku
+  LEFT JOIN item_costs ic ON ic.sku = sm.sf_item_name
+  WHERE e.seller_sku IS NOT NULL
+    AND e.fee_type = 'ItemPrice:Principal'
+    AND e.quantity > 0
+  GROUP BY e.seller_sku, substr(e.posted_at, 1, 7)
 ),
 storage AS (
   SELECT

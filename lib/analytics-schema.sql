@@ -92,10 +92,14 @@ CREATE TABLE IF NOT EXISTS amazon_financial_events (
   fee_type TEXT,                          -- ReferralFee, FBAPerUnitFulfillmentFee, FBAStorageFee, etc.
   amount_cad REAL NOT NULL,
   currency TEXT,
+  quantity INTEGER,                       -- quantity-purchased column from settlement CSV (Principal rows); null for fee-only rows
   description TEXT,
   raw TEXT NOT NULL,
   ingested_at TEXT NOT NULL
 );
+-- Migration for pre-quantity rows: add column if missing
+-- (SQLite ignores ALTER TABLE ADD COLUMN if it already exists via error path,
+--  but CREATE TABLE IF NOT EXISTS keeps old schema. Apply idempotently.)
 CREATE UNIQUE INDEX IF NOT EXISTS uq_fin_events ON amazon_financial_events(settlement_id, posted_at, transaction_type, amazon_order_id, asin, fee_type, amount_cad);
 CREATE INDEX IF NOT EXISTS idx_fin_events_order ON amazon_financial_events(amazon_order_id);
 CREATE INDEX IF NOT EXISTS idx_fin_events_sku ON amazon_financial_events(seller_sku);
