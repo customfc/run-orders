@@ -152,21 +152,63 @@ function upsertOrderItem(db, amazonOrderId, item) {
   );
 }
 
+// OrderItems: 0.5 req/s sustained, burst 30. Sleep 2.1s after EVERY call
+// (not just between pagination) to stay comfortably under the sustained
+// rate. Retries once on 429 with a 30s pause.
 async function fetchAllItems(orderId) {
   const all = [];
   let nextToken = null;
   do {
-    const data = await sp.getOrderItems(orderId, { nextToken });
+    let data;
+    try {
+      data = await sp.getOrderItems(orderId, { nextToken });
+    } catch (e) {
+      if (e.status === 429) {
+        await new Promise((r) => setTimeout(r, 30_000));
+        data = await sp.getOrderItems(orderId, { nextToken });
+      } else throw e;
+    }
     all.push(...(data.payload?.OrderItems || []));
     nextToken = data.payload?.NextToken || null;
-    // OrderItems is ~2 req/s burst; small sleep keeps us well below.
-    if (nextToken) await new Promise((r) => setTimeout(r, 2100));
+    await new Promise((r) => setTimeout(r, 2100));
   } while (nextToken);
   return all;
 }
 
+// Retry pass: find already-ingested orders that have zero line items but
+// NumberOfItemsShipped > 0 in the order payload. Re-fetch items only.
+async function retryMissingItems() {
+  const db = open();
+  const rows = db.prepare(`
+    SELECT o.amazon_order_id, o.number_of_items_shipped, o.number_of_items_unshipped
+    FROM amazon_orders o
+    LEFT JOIN amazon_order_items i ON i.amazon_order_id = o.amazon_order_id
+    WHERE i.order_item_id IS NULL
+      AND ((o.number_of_items_shipped IS NOT NULL AND o.number_of_items_shipped > 0)
+           OR (o.number_of_items_unshipped IS NOT NULL AND o.number_of_items_unshipped > 0))
+    ORDER BY o.purchase_date DESC
+  `).all();
+  console.log(`[amazon-orders] retry: ${rows.length} orders with missing items`);
+  let fetched = 0;
+  for (const r of rows) {
+    try {
+      const items = await fetchAllItems(r.amazon_order_id);
+      if (items.length) {
+        tx(() => { for (const it of items) upsertOrderItem(db, r.amazon_order_id, it); });
+        fetched += items.length;
+      }
+    } catch (e) {
+      console.warn(`[amazon-orders] retry ${r.amazon_order_id}: ${e.message}`);
+    }
+  }
+  console.log(`[amazon-orders] retry ✓ ${fetched} items across ${rows.length} order(s)`);
+}
+
 async function main() {
   const args = parseArgs();
+  if (args['retry-missing-items']) {
+    return retryMissingItems();
+  }
 
   let createdAfter = null;
   let lastUpdatedAfter = null;
