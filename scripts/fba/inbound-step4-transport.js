@@ -66,8 +66,9 @@ async function main() {
     configs.push({
       shipmentId: shipId,
       contactInformation: {
+        name: 'Mac Roy',
         phoneNumber: state.sourceAddress.phoneNumber,
-        email: state.sourceAddress.email,
+        email: state.sourceAddress.email || 'mac@customfc.ca',
       },
       pallets: [],
       boxes: [{
