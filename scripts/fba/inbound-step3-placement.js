@@ -89,15 +89,20 @@ async function main() {
   state.status = 'placement-confirmed';
   plans.record(state, { step: 'confirm-placement', ok: true, data: { placementOptionId: picked.placementOptionId, shipmentIds: picked.shipmentIds } });
 
-  // Surface the concrete shipments that Amazon just created
-  const shipList = await inbound.listShipments(state.inboundPlanId);
-  const shipments = shipList.shipments || [];
-  console.log(`\n  ${shipments.length} shipment(s) now tied to this plan:`);
-  for (const s of shipments) {
-    console.log(`    ${s.shipmentId} → ${s.destination?.address?.city || '?'} (${s.destination?.warehouseId || '?'})`);
+  // Try to surface concrete shipments. Non-fatal if this endpoint 403s —
+  // we have placementOptionId which is all step 4 needs.
+  try {
+    const shipList = await inbound.listShipments(state.inboundPlanId);
+    const shipments = shipList.shipments || [];
+    console.log(`\n  ${shipments.length} shipment(s) now tied to this plan:`);
+    for (const s of shipments) {
+      console.log(`    ${s.shipmentId} → ${s.destination?.address?.city || '?'} (${s.destination?.warehouseId || '?'})`);
+    }
+    state.shipmentIds = shipments.map((s) => s.shipmentId);
+    plans.save(state);
+  } catch (err) {
+    console.warn(`\n  (listShipments skipped: ${err.status || ''} — we'll surface shipment info in step 4/5)`);
   }
-  state.shipmentIds = shipments.map((s) => s.shipmentId);
-  plans.save(state);
 
   console.log(`\n✓ step 3 complete. Next: step 4 (transportation).`);
 }
