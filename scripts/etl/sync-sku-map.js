@@ -52,11 +52,14 @@ async function main() {
   }
   console.log(`[sku-map] ${asinEntries.length} ASIN entries in sku-map.json`);
 
-  // Collect distinct Prosol / vendor identifiers to look up in SF
+  // Collect distinct Prosol + Treeco + other vendor identifiers to look up
+  // in SF. PBSI__Vendor_Item_ID__c is vendor-agnostic; whichever code was
+  // entered when the item was set up in SF, that's what we match against.
   const vendorIds = new Set();
   for (const e of asinEntries) {
     if (e.api_sku && e.api_sku !== 'NON_PROSOL' && !e.api_sku.startsWith('UNMAPPED')) vendorIds.add(e.api_sku);
     if (e.prosol_sku && e.prosol_sku !== 'NON_PROSOL' && !e.prosol_sku.startsWith('UNMAPPED')) vendorIds.add(e.prosol_sku);
+    if (e.treeco_sku) vendorIds.add(e.treeco_sku);
   }
   console.log(`[sku-map] ${vendorIds.size} distinct vendor SKUs to resolve in SF`);
 
@@ -103,9 +106,12 @@ async function main() {
   let resolvedInSf = 0, hasCost = 0, hasBrand = 0;
   const rowsToInsert = [];
   for (const e of asinEntries) {
-    // Try api_sku first (the Prosol lookup SKU), fallback to prosol_sku
+    // Match priority: api_sku → prosol_sku → treeco_sku. SF
+    // PBSI__Vendor_Item_ID__c stores whichever code was entered at item
+    // setup, so we check all known vendor SKUs in the sku-map entry.
     const sfItem = (e.api_sku && byVendorId.get(e.api_sku))
                 || (e.prosol_sku && byVendorId.get(e.prosol_sku))
+                || (e.treeco_sku && byVendorId.get(e.treeco_sku))
                 || null;
     if (sfItem) resolvedInSf++;
     if (sfItem?.PBSI__Cost__c > 0) hasCost++;
