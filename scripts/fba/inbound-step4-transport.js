@@ -145,9 +145,13 @@ async function main() {
   }
 
   console.log('\n[3/3] confirmTransportationOptions...');
+  const selections = selected.map((s) => ({
+    shipmentId: s.shipmentId,
+    transportationOptionId: s.transportationOptionId,
+  }));
   const confirm = await inbound.confirmTransportationOptions(
     state.inboundPlanId,
-    selected.map((s) => s.transportationOptionId),
+    selections,
   );
   console.log(`  operationId=${confirm.operationId}`);
   await inbound.waitForOperation(confirm.operationId, {
