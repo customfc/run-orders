@@ -31,7 +31,7 @@ const STEPS = [
   { name: 'shopify',               mod: './sync-shopify',               supportsBackfill: true },
   { name: 'item-costs',            mod: './sync-item-costs',            supportsBackfill: false },
   { name: 'sku-map-canonical',     mod: './sync-sku-map',               supportsBackfill: false },
-  { name: 'shipping-labels',       mod: './sync-shipping-labels',       supportsBackfill: false },
+  { name: 'shipping-labels',       mod: './sync-shipping-labels',       supportsBackfill: true },
   { name: 'snapshots',             mod: './sync-snapshots',             supportsBackfill: false },
 ];
 
