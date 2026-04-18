@@ -144,7 +144,33 @@ async function main() {
     selected.push(picked);
   }
 
-  console.log('\n[3/3] confirmTransportationOptions...');
+  // Confirm a delivery window for each shipment BEFORE confirming transport.
+  // (New requirement in v2024-03-20.) Pick the earliest offered window.
+  console.log('\n[3/4] confirm delivery windows (required before transport)...');
+  for (const s of selected) {
+    const dwList = await inbound.listDeliveryWindowOptions(state.inboundPlanId, s.shipmentId);
+    const windows = dwList.deliveryWindowOptions || [];
+    if (!windows.length) {
+      console.log(`    ${s.shipmentId}: no delivery windows yet — waiting 5s and retrying...`);
+      await new Promise((r) => setTimeout(r, 5000));
+      const retry = await inbound.listDeliveryWindowOptions(state.inboundPlanId, s.shipmentId);
+      windows.push(...(retry.deliveryWindowOptions || []));
+    }
+    if (!windows.length) throw new Error(`No delivery window options for ${s.shipmentId}`);
+
+    // Pick the earliest start window
+    const picked = windows.reduce((a, b) => (new Date(a.startDate) < new Date(b.startDate) ? a : b));
+    console.log(`    ${s.shipmentId}: ${windows.length} window(s), picked ${picked.startDate} → ${picked.endDate} · validUntil=${picked.validUntil || '—'}`);
+    const cdwOp = await inbound.confirmDeliveryWindowOption(state.inboundPlanId, s.shipmentId, picked.deliveryWindowOptionId);
+    if (cdwOp.operationId) {
+      await inbound.waitForOperation(cdwOp.operationId, {
+        onPoll: (op) => process.stdout.write(`      ${op.operationStatus}...\r`),
+      });
+    }
+    console.log(`      ✓ window confirmed`);
+  }
+
+  console.log('\n[4/4] confirmTransportationOptions...');
   const selections = selected.map((s) => ({
     shipmentId: s.shipmentId,
     transportationOptionId: s.transportationOptionId,
