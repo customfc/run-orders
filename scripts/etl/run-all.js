@@ -25,11 +25,12 @@ require('dotenv').config();
 const telegram = require('../../lib/telegram');
 
 const STEPS = [
-  { name: 'amazon-orders',    mod: './sync-amazon-orders',    supportsBackfill: true },
-  { name: 'amazon-finances',  mod: './sync-amazon-finances',  supportsBackfill: true },
-  { name: 'shopify',          mod: './sync-shopify',          supportsBackfill: true },
-  { name: 'item-costs',       mod: './sync-item-costs',       supportsBackfill: false },
-  { name: 'snapshots',        mod: './sync-snapshots',        supportsBackfill: false },
+  { name: 'amazon-orders',         mod: './sync-amazon-orders',         supportsBackfill: true },
+  { name: 'amazon-finances',       mod: './sync-amazon-finances',       supportsBackfill: true },
+  { name: 'amazon-finances-deep',  mod: './sync-amazon-finances-deep',  supportsBackfill: false }, // daily top-up only; use manual --backfill for cold start
+  { name: 'shopify',               mod: './sync-shopify',               supportsBackfill: true },
+  { name: 'item-costs',            mod: './sync-item-costs',            supportsBackfill: false },
+  { name: 'snapshots',             mod: './sync-snapshots',             supportsBackfill: false },
 ];
 
 function parseArgs() {
