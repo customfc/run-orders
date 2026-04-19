@@ -135,6 +135,16 @@ async function main() {
     const cost_cad = sfItem?.PBSI__Cost__c > 0 ? Number(sfItem.PBSI__Cost__c) : null;
     const cost_source = cost_cad ? 'sf-vendor-item-id' : null;
 
+    // UOM multiplier — when SF cost is per-unit (SQFT, LF, etc.) but we
+    // sell per-box. If sku-map has qty_per_unit, views multiply cost × qty
+    // to get the true per-Amazon-unit cost. Otherwise derive from product
+    // name ("XX SF" / "XX SQFT" / "= XX SF" pattern) when unambiguous.
+    let qty_per_unit = e.qty_per_unit != null ? Number(e.qty_per_unit) : null;
+    if (!qty_per_unit && typeof e.product === 'string') {
+      const m = e.product.match(/=?\s*(\d+(?:\.\d+)?)\s*(?:SF|SQ\s*FT|SQFT|LF)\b/i);
+      if (m) qty_per_unit = Number(m[1]);
+    }
+
     rowsToInsert.push({
       asin: e.asin,
       amazon_msku: mskuByAsin[e.asin] || null,
@@ -149,6 +159,7 @@ async function main() {
       source: 'sku-map-asin',
       cost_cad,
       cost_source,
+      qty_per_unit,
       updated_at: nowIso,
     });
   }
@@ -158,8 +169,8 @@ async function main() {
       INSERT INTO sku_map_canonical (
         asin, amazon_msku, api_sku, prosol_sku,
         sf_pbsi_item_id, sf_item_name, brand, category,
-        map_cad, product_name, source, cost_cad, cost_source, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        map_cad, product_name, source, cost_cad, cost_source, qty_per_unit, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(asin) DO UPDATE SET
         amazon_msku = COALESCE(excluded.amazon_msku, sku_map_canonical.amazon_msku),
         api_sku = excluded.api_sku,
@@ -173,13 +184,14 @@ async function main() {
         source = excluded.source,
         cost_cad = excluded.cost_cad,
         cost_source = excluded.cost_source,
+        qty_per_unit = excluded.qty_per_unit,
         updated_at = excluded.updated_at
     `);
     for (const r of rowsToInsert) {
       ins.run(
         r.asin, r.amazon_msku, r.api_sku, r.prosol_sku,
         r.sf_pbsi_item_id, r.sf_item_name, r.brand, r.category,
-        r.map_cad, r.product_name, r.source, r.cost_cad, r.cost_source, r.updated_at,
+        r.map_cad, r.product_name, r.source, r.cost_cad, r.cost_source, r.qty_per_unit, r.updated_at,
       );
     }
   });

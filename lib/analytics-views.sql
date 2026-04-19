@@ -231,21 +231,18 @@ WITH amz AS (
 -- sku_map_canonical keyed on msku.
 items AS (
   -- Cost resolution priority (most authoritative first):
-  --   1. sku_map_canonical.cost_cad — captured at sync-sku-map time via
-  --      vendor_item_id match (unique, authoritative for this ASIN).
-  --   2. item_costs.sku = sku_map_canonical.sf_item_name — legacy bridge;
-  --      unreliable when SF has duplicate Names. Fallback only.
-  --   3. item_costs.sku = seller_sku — direct match, very rare.
+  --   1. sku_map_canonical.cost_cad — captured via vendor_item_id match.
+  --   2. item_costs via sf_item_name — unreliable when SF Names duplicate.
+  --   3. item_costs via seller_sku — direct match, rare.
+  -- Multiply by qty_per_unit when SF cost is per-UOM (SQFT, LF) but we
+  -- sell per-box. Falls back to 1 if not specified.
   SELECT
     e.seller_sku        AS sku,
     substr(e.posted_at, 1, 7) AS month,
     SUM(COALESCE(e.quantity, 0)) AS qty_sold,
-    SUM(COALESCE(e.quantity, 0) * COALESCE(
-      sm.cost_cad,                 -- preferred: resolved via vendor_item_id
-      ic_via_map.cost_cad,         -- fallback: legacy Name join
-      ic_direct.cost_cad,          -- fallback: direct SKU match
-      0
-    )) AS cogs
+    SUM(COALESCE(e.quantity, 0)
+      * COALESCE(sm.cost_cad, ic_via_map.cost_cad, ic_direct.cost_cad, 0)
+      * COALESCE(sm.qty_per_unit, 1)) AS cogs
   FROM amazon_financial_events e
   LEFT JOIN sku_map_canonical sm ON sm.amazon_msku = e.seller_sku
   LEFT JOIN item_costs ic_via_map ON ic_via_map.sku = sm.sf_item_name
