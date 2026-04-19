@@ -242,16 +242,22 @@ items AS (
   -- quantity-purchased = "" (empty/null) so we count -1 per refund-
   -- Principal row. Net qty = sale units - refunded units. COGS uses net
   -- qty so a refunded unit doesn't double-charge COGS.
+  -- Accept both 'Order' (settlement CSV) and 'Shipment' (Finances API)
+  -- as sale transactions. If quantity missing (finances-api refund rows,
+  -- or settlement refund rows where Amazon empties the column), count
+  -- -1 per row as a unit refunded.
   SELECT
     e.seller_sku        AS sku,
     substr(e.posted_at, 1, 7) AS month,
     SUM(CASE
-      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Order' AND e.quantity > 0 THEN e.quantity
+      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type IN ('Order','Shipment') AND e.quantity > 0 THEN e.quantity
+      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type IN ('Order','Shipment') AND (e.quantity IS NULL OR e.quantity = 0) AND e.amount_cad > 0 THEN 1
       WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Refund' THEN -1
       ELSE 0
     END) AS qty_sold,
     SUM(CASE
-      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Order' AND e.quantity > 0 THEN e.quantity
+      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type IN ('Order','Shipment') AND e.quantity > 0 THEN e.quantity
+      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type IN ('Order','Shipment') AND (e.quantity IS NULL OR e.quantity = 0) AND e.amount_cad > 0 THEN 1
       WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Refund' THEN -1
       ELSE 0
     END * COALESCE(sm.cost_cad, ic_via_map.cost_cad, ic_direct.cost_cad, 0)
