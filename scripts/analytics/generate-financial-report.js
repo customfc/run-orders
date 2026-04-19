@@ -292,25 +292,60 @@ async function gatherData(db) {
     FROM sku_map_canonical
   `).get();
 
-  // Complete monthly P&L waterfall — all cash flows in one place
+  // Complete monthly P&L waterfall — aggregated from v_sku_monthly_pnl
+  // (single source of truth). That view has all the fixes applied:
+  // correct cost via vendor_item_id, qty_per_unit UOM multiplier, net
+  // refund qty, shipping revenue for MFN orders, dedup logic.
   const monthlyWaterfall = db.prepare(`
+    WITH per_sku AS (
+      SELECT
+        month,
+        revenue revenue_principal,
+        qty_sold,
+        cogs,
+        amazon_fees,
+        refunds,
+        storage_cost,
+        outbound_label_cost,
+        net_profit
+      FROM v_sku_monthly_pnl
+      WHERE month IS NOT NULL
+    ),
+    amazon_agg AS (
+      SELECT
+        substr(posted_at, 1, 7) month,
+        ROUND(SUM(CASE WHEN fee_type LIKE 'ItemPrice:Shipping%' THEN amount_cad ELSE 0 END), 2) shipping_revenue,
+        ROUND(SUM(CASE WHEN fee_type = 'ItemFees:Commission' THEN amount_cad ELSE 0 END), 2) commission,
+        ROUND(SUM(CASE WHEN fee_type = 'ItemFees:FBAPerUnitFulfillmentFee' THEN amount_cad ELSE 0 END), 2) fba_fulfillment_fee,
+        ROUND(SUM(CASE WHEN fee_type LIKE 'ItemFees:%' AND fee_type NOT IN ('ItemFees:Commission','ItemFees:FBAPerUnitFulfillmentFee') THEN amount_cad ELSE 0 END), 2) other_item_fees,
+        ROUND(SUM(CASE WHEN fee_type LIKE 'ServiceFee:%' THEN amount_cad ELSE 0 END), 2) service_fees,
+        ROUND(SUM(CASE WHEN fee_type LIKE 'other-transaction:%' THEN amount_cad ELSE 0 END), 2) other_transactions,
+        ROUND(SUM(CASE WHEN fee_type LIKE 'Promotion:%' THEN amount_cad ELSE 0 END), 2) promotions
+      FROM amazon_financial_events
+      WHERE posted_at IS NOT NULL
+      GROUP BY substr(posted_at, 1, 7)
+    )
     SELECT
-      substr(posted_at, 1, 7) month,
-      ROUND(SUM(CASE WHEN fee_type = 'ItemPrice:Principal' THEN amount_cad ELSE 0 END), 2) revenue_principal,
-      ROUND(SUM(CASE WHEN fee_type LIKE 'ItemPrice:Shipping%' THEN amount_cad ELSE 0 END), 2) shipping_charged,
-      ROUND(SUM(CASE WHEN fee_type = 'ItemFees:Commission' THEN amount_cad ELSE 0 END), 2) commission,
-      ROUND(SUM(CASE WHEN fee_type = 'ItemFees:FBAPerUnitFulfillmentFee' THEN amount_cad ELSE 0 END), 2) fba_fulfillment_fee,
-      ROUND(SUM(CASE WHEN fee_type LIKE 'ItemFees:%' AND fee_type NOT IN ('ItemFees:Commission', 'ItemFees:FBAPerUnitFulfillmentFee') THEN amount_cad ELSE 0 END), 2) other_item_fees,
-      ROUND(SUM(CASE WHEN fee_type LIKE 'ServiceFee:%' THEN amount_cad ELSE 0 END), 2) service_fees,
-      ROUND(SUM(CASE WHEN fee_type LIKE 'other-transaction:%' THEN amount_cad ELSE 0 END), 2) other_transactions,
-      ROUND(SUM(CASE WHEN fee_type LIKE 'Promotion:%' THEN amount_cad ELSE 0 END), 2) promotions,
-      ROUND(SUM(CASE WHEN transaction_type = 'Refund' THEN amount_cad ELSE 0 END), 2) refunds,
-      ROUND(SUM(CASE WHEN fee_type LIKE 'ItemWithheldTax:%' THEN amount_cad ELSE 0 END), 2) tax_withheld,
-      ROUND(SUM(amount_cad), 2) net_from_amazon
-    FROM amazon_financial_events
-    WHERE posted_at IS NOT NULL
-    GROUP BY substr(posted_at, 1, 7)
-    ORDER BY month DESC
+      p.month,
+      ROUND(SUM(p.revenue_principal), 2) revenue_principal,
+      ROUND(SUM(p.qty_sold), 2) qty_sold,
+      ROUND(SUM(p.cogs), 2) cogs_accurate,
+      ROUND(SUM(p.amazon_fees), 2) amazon_fees_total,
+      ROUND(SUM(p.refunds), 2) refunds,
+      ROUND(SUM(p.storage_cost), 2) storage,
+      ROUND(SUM(p.outbound_label_cost), 2) labels_allocated,
+      ROUND(SUM(p.net_profit), 2) net_profit,
+      a.shipping_revenue,
+      a.commission,
+      a.fba_fulfillment_fee,
+      a.other_item_fees,
+      a.service_fees,
+      a.other_transactions,
+      a.promotions
+    FROM per_sku p
+    LEFT JOIN amazon_agg a ON a.month = p.month
+    GROUP BY p.month
+    ORDER BY p.month DESC
     LIMIT 24
   `).all();
 
@@ -345,23 +380,13 @@ async function gatherData(db) {
     ORDER BY month DESC
   `).all();
 
-  // COGS by month (settled only, via sku_map_canonical → item_costs bridge)
+  // COGS by month — pulled from v_sku_monthly_pnl (single source of truth)
   const cogsMonthly = db.prepare(`
-    SELECT e.month,
-           ROUND(SUM(e.qty_sold * COALESCE(ic.cost_cad, ic2.cost_cad, 0)), 2) cogs
-    FROM (
-      SELECT seller_sku AS sku,
-             substr(posted_at, 1, 7) AS month,
-             SUM(COALESCE(quantity, 0)) qty_sold
-      FROM amazon_financial_events
-      WHERE fee_type = 'ItemPrice:Principal' AND seller_sku IS NOT NULL AND quantity > 0
-      GROUP BY seller_sku, substr(posted_at, 1, 7)
-    ) e
-    LEFT JOIN sku_map_canonical sm ON sm.amazon_msku = e.sku
-    LEFT JOIN item_costs ic ON ic.sku = sm.sf_item_name
-    LEFT JOIN item_costs ic2 ON ic2.sku = e.sku
-    GROUP BY e.month
-    ORDER BY e.month DESC
+    SELECT month, ROUND(SUM(cogs), 2) cogs
+    FROM v_sku_monthly_pnl
+    WHERE month IS NOT NULL
+    GROUP BY month
+    ORDER BY month DESC
     LIMIT 24
   `).all();
 
@@ -440,10 +465,10 @@ function renderHtml(d) {
 
   const fullPnl = allMonths.map((m) => {
     const w = waterfallByMonth[m] || {};
-    const amazonRev = num(w.revenue_principal);
+    const amazonRev = num(w.revenue_principal);       // net of refunds (Principal CTE)
     const shopify = shopifyMap[m] || {};
     const shopifyRev = num(shopify.subtotal);
-    const cogs = num(cogsMap[m]);
+    const cogs = num(w.cogs_accurate);                 // from v_sku_monthly_pnl (all fixes applied)
     const commission = num(w.commission);
     const fbaFee = num(w.fba_fulfillment_fee);
     const otherFees = num(w.other_item_fees);
@@ -451,21 +476,29 @@ function renderHtml(d) {
     const otherTx = num(w.other_transactions);
     const promos = num(w.promotions);
     const refunds = num(w.refunds);
+    const shippingRev = num(w.shipping_revenue);
+    const amazonFeesTotal = num(w.amazon_fees_total);  // sum of all ItemFees from the view
     const labels = num(labelsMap[m]?.total_cost);
     const poSpend = num(poMap[m]);
-    const netFromAmazon = num(w.net_from_amazon);
 
-    // Operating profit = Amazon net + Shopify subtotal - COGS - labels (approx)
-    // Cash delta = Amazon net + Shopify total - PO spend (money out to vendors) - labels
-    const operatingProfit = netFromAmazon + shopifyRev - cogs - labels;
+    // Operating profit — directly from v_sku_monthly_pnl (already nets
+    // refunds, includes shipping revenue, uses correct cost).
+    const operatingProfit = num(w.net_profit) + shopifyRev;
+
+    // For cashflow, compute "Amazon net" as revenue + shipping revenue + all
+    // Amazon fees + refunds + service fees + other-transactions + promos.
+    // This is what Amazon actually deposited us.
+    const netFromAmazon = amazonRev + shippingRev + amazonFeesTotal + refunds + serviceFees + otherTx + promos;
+
     const cashIn = netFromAmazon + num(shopify.total_revenue);
-    const cashOut = poSpend + labels; // POs to vendors + shipping labels
+    const cashOut = poSpend + labels;
     const cashDelta = cashIn - cashOut;
 
     return {
       month: m,
-      amazonRev, shopifyRev,
+      amazonRev, shopifyRev, shippingRev,
       cogs, commission, fbaFee, otherFees, serviceFees, otherTx, promos, refunds, labels, poSpend,
+      amazonFeesTotal,
       netFromAmazon,
       operatingProfit,
       cashIn, cashOut, cashDelta,
