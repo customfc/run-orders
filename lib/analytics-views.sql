@@ -214,7 +214,12 @@ WITH amz AS (
   SELECT
     seller_sku          AS sku,
     substr(posted_at, 1, 7) AS month,
+    -- revenue_principal = what buyer paid for the product (net of refunds)
     SUM(CASE WHEN fee_type = 'ItemPrice:Principal' THEN amount_cad ELSE 0 END)      AS revenue_principal,
+    -- revenue_shipping = what buyer paid for shipping (MFN only; FBA is
+    -- part of Prime, buyer doesn't pay shipping separately). Matches the
+    -- label cost we paid out for the same shipment.
+    SUM(CASE WHEN fee_type IN ('ItemPrice:Shipping','ItemPrice:ShippingCharge') THEN amount_cad ELSE 0 END) AS revenue_shipping,
     SUM(CASE WHEN fee_type = 'ItemFees:Commission' THEN amount_cad ELSE 0 END)      AS fee_commission,
     SUM(CASE WHEN fee_type LIKE 'ItemFees:%' THEN amount_cad ELSE 0 END)            AS fee_total,
     SUM(CASE WHEN fee_type LIKE 'Promotion:%' THEN amount_cad ELSE 0 END)           AS promotion,
@@ -328,12 +333,14 @@ SELECT
   COALESCE(storage.avg_storage_monthly, 0)                    AS storage_cost,
   COALESCE(freight.freight_cost, 0)                           AS inbound_freight,
   COALESCE(labels.label_cost, 0)                              AS outbound_label_cost,
-  -- Net profit: revenue + fees + promotions (+cogs/storage/freight/labels as expenses)
-  -- Refunds are NOT added separately — refund-type rows have negative
-  -- ItemPrice:Principal already baked into revenue_principal, and refund-
-  -- side fee reversals (RefundCommission, RefundAdminFee) are in fee_total
-  -- via the 'ItemFees:%' LIKE. The `refunds` column is informational only.
+  -- Net profit: product revenue + shipping revenue − cogs + fees + promos − outflows.
+  -- shipping revenue is important for MFN orders where buyer pays us for
+  -- shipping (approximately offsetting the label cost). FBA orders don't
+  -- have ItemPrice:Shipping entries so this adds 0 for them.
+  -- Refunds NOT added separately — baked into revenue_principal via
+  -- negative Principal entries + into fee_total via RefundCommission etc.
   COALESCE(amz.revenue_principal, 0)
+    + COALESCE(amz.revenue_shipping, 0)
     - COALESCE(items.cogs, 0)
     + COALESCE(amz.fee_total, 0)
     + COALESCE(amz.promotion, 0)
@@ -343,6 +350,7 @@ SELECT
   CASE WHEN COALESCE(amz.revenue_principal, 0) > 0
        THEN ROUND(
          (COALESCE(amz.revenue_principal, 0)
+          + COALESCE(amz.revenue_shipping, 0)
           - COALESCE(items.cogs, 0)
           + COALESCE(amz.fee_total, 0)
           + COALESCE(amz.promotion, 0)
