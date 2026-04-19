@@ -475,6 +475,8 @@ function renderHtml(d) {
   const chartData = {
     monthlyLabels: [...d.monthlyAmazon].reverse().map((r) => r.month),
     monthlyRev: [...d.monthlyAmazon].reverse().map((r) => r.gross_revenue),
+    monthlyOpProfit: [...fullPnl].reverse().map((r) => r.operatingProfit),
+    monthlyOpMarginPct: [...fullPnl].reverse().map((r) => r.amazonRev > 0 ? Math.round(r.operatingProfit / r.amazonRev * 1000) / 10 : 0),
     monthlyOrders: [...d.monthlyAmazon].reverse().map((r) => r.orders),
     cashflowLabels: d.cashflow.map((r) => r.day),
     cashflowRev: d.cashflow.map((r) => r.revenue),
@@ -518,6 +520,18 @@ function renderHtml(d) {
   const t12PoSpend = t12.reduce((s, r) => s + num(r.poSpend), 0);
   const t12Labels = t12.reduce((s, r) => s + num(r.labels), 0);
   const t12OpProfit = t12.reduce((s, r) => s + num(r.operatingProfit), 0);
+  const t12Cogs = t12.reduce((s, r) => s + num(r.cogs), 0);
+  const t12AmazonRev = t12.reduce((s, r) => s + num(r.amazonRev), 0);
+  const t12MarginPct = t12AmazonRev > 0 ? (t12OpProfit / t12AmazonRev) * 100 : 0;
+  const lastMonthOpProfit = num(fullPnl.find((r) => r.month === d.lastMonth)?.operatingProfit);
+  const lastMonthOpMargin = lastMonthOpProfit && lastMonthRow?.gross_revenue
+    ? (lastMonthOpProfit / lastMonthRow.gross_revenue * 100).toFixed(1)
+    : null;
+
+  // Best + worst months by profit
+  const profitMonths = fullPnl.filter((r) => r.amazonRev > 0).sort((a, b) => b.operatingProfit - a.operatingProfit);
+  const bestMonth = profitMonths[0];
+  const worstMonth = profitMonths[profitMonths.length - 1];
 
   const thisMonthRow = d.monthlyAmazon.find((r) => r.month === d.thisMonth);
   const lastMonthRow = d.monthlyAmazon.find((r) => r.month === d.lastMonth);
@@ -708,6 +722,29 @@ function renderHtml(d) {
     </div>
   </div>
 
+  <div class="grid grid-4" style="margin-top:24px">
+    <div class="card" style="background:linear-gradient(135deg,#064e3b 0%, #059669 100%);color:white;border:none">
+      <h3 style="color:white;opacity:0.95">T12m Net Profit</h3>
+      <div class="big-num" style="color:white">${fmtMoney(t12OpProfit / 1000, '$')}K</div>
+      <div class="caption" style="color:white;opacity:0.75">avg ${fmtMoney(t12OpProfit / 12)}<span style="font-weight:normal">/mo</span> · ${t12MarginPct.toFixed(1)}% margin</div>
+    </div>
+    <div class="card">
+      <h3>Last Month Net Profit</h3>
+      <div class="big-num ${lastMonthOpProfit >= 0 ? 'pos' : 'neg'}">${fmtMoney(lastMonthOpProfit)}</div>
+      <div class="caption">${lastMonthOpMargin ? lastMonthOpMargin + '% margin' : '—'} · ${d.lastMonth}</div>
+    </div>
+    <div class="card">
+      <h3>Best Profit Month</h3>
+      <div class="big-num pos">${fmtMoney(bestMonth?.operatingProfit || 0)}</div>
+      <div class="caption">${bestMonth?.month || '—'}</div>
+    </div>
+    <div class="card">
+      <h3>Worst Profit Month</h3>
+      <div class="big-num ${worstMonth?.operatingProfit < 0 ? 'neg' : 'neu'}">${fmtMoney(worstMonth?.operatingProfit || 0)}</div>
+      <div class="caption">${worstMonth?.month || '—'}</div>
+    </div>
+  </div>
+
   <h2>The headline</h2>
   <p>
     The business is <strong>doing ${fmtMoney(avgMonthly)}/mo on Amazon</strong> vs. the ${fmtMoney(100000)} goal —
@@ -729,9 +766,65 @@ function renderHtml(d) {
   </div>
 </section>
 
+<!-- MONTHLY NET PROFIT — the bottom line view -->
+<section class="slide">
+  <div class="slide-num">2 · Monthly Net Profit</div>
+  <h1>The bottom line, month by month</h1>
+  <p style="color:#64748b;font-size:17px;max-width:900px">
+    Operating Profit = Amazon revenue (incl. MFN shipping) + Shopify revenue − COGS (wholesale) − Amazon fees
+    (commission, FBA, storage, service fees, marketplace tax) − refunds impact − shipping labels paid.
+    This is the real dollars the business keeps before any overhead / SaaS / labor.
+  </p>
+  <div class="chart-container" style="height:420px"><canvas id="opProfitChart"></canvas></div>
+
+  <h2>Month-by-month net profit detail</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Month</th>
+        <th class="num">Amazon Rev</th>
+        <th class="num">Shopify Rev</th>
+        <th class="num">COGS</th>
+        <th class="num">Amazon Fees</th>
+        <th class="num">Labels</th>
+        <th class="num">Net Profit</th>
+        <th class="num">Margin %</th>
+      </tr>
+    </thead>
+    <tbody>
+${fullPnl.slice(0, 24).map((r) => {
+  const totalRev = r.amazonRev + r.shopifyRev;
+  const mPct = totalRev > 0 ? (r.operatingProfit / totalRev * 100).toFixed(1) : '—';
+  return `
+      <tr>
+        <td><strong>${r.month}</strong></td>
+        <td class="num">${fmtMoney(r.amazonRev)}</td>
+        <td class="num">${r.shopifyRev > 0 ? fmtMoney(r.shopifyRev) : '—'}</td>
+        <td class="num neg-num">${r.cogs > 0 ? '-' + fmtMoney(r.cogs) : '—'}</td>
+        <td class="num neg-num">${fmtMoney(r.commission + r.fbaFee + r.otherFees + r.serviceFees)}</td>
+        <td class="num neg-num">${r.labels > 0 ? '-' + fmtMoney(r.labels) : '—'}</td>
+        <td class="num ${r.operatingProfit >= 0 ? 'pos-num' : 'neg-num'}" style="font-size:15px"><strong>${fmtMoney(r.operatingProfit)}</strong></td>
+        <td class="num ${r.operatingProfit >= 0 ? 'pos-num' : 'neg-num'}"><strong>${mPct}${typeof mPct === 'string' ? '' : '%'}</strong></td>
+      </tr>`;
+}).join('')}
+    </tbody>
+  </table>
+  <p style="margin-top:20px">
+    Trailing 12-month totals: <strong>${fmtMoney(t12AmazonRev + t12.reduce((s, r) => s + num(r.shopifyRev), 0))}</strong> revenue,
+    <strong>${fmtMoney(t12Cogs)}</strong> COGS, <strong>${fmtMoney(t12Labels)}</strong> labels,
+    <strong>${fmtMoney(t12OpProfit)}</strong> net profit (${t12MarginPct.toFixed(1)}% margin).
+    Average monthly profit: <strong>${fmtMoney(t12OpProfit / 12)}</strong>.
+  </p>
+  <div class="footnote">
+    ⚠️ This is <em>operating profit</em> — revenue minus direct costs of getting the goods to Amazon customers.
+    Does NOT include business overhead (SaaS subs, labor, warehouse, insurance, etc.) or taxes.
+    Does NOT include PO cash outflows (those are cashflow, not margin — see slide 9 for cashflow view).
+  </div>
+</section>
+
 <!-- REVENUE TREND -->
 <section class="slide">
-  <div class="slide-num">2 · Revenue Trend</div>
+  <div class="slide-num">3 · Revenue Trend</div>
   <h1>24-month Amazon revenue</h1>
   <div class="chart-container"><canvas id="monthlyChart"></canvas></div>
   <p>
@@ -1241,6 +1334,41 @@ ${d.shopifyMonthly.map((r) => `
 
 <script>
 const data = ${JSON.stringify(chartData)};
+
+// Monthly OPERATING PROFIT chart — bars green/red, margin% line overlay
+new Chart(document.getElementById('opProfitChart'), {
+  type: 'bar',
+  data: {
+    labels: data.monthlyLabels,
+    datasets: [
+      {
+        label: 'Net Profit (CAD)',
+        data: data.monthlyOpProfit,
+        backgroundColor: data.monthlyOpProfit.map(v => v >= 0 ? '#059669' : '#dc2626'),
+        yAxisID: 'y',
+        order: 2,
+      },
+      {
+        label: 'Margin %',
+        data: data.monthlyOpMarginPct,
+        type: 'line',
+        borderColor: '#1e40af',
+        backgroundColor: '#1e40af',
+        tension: 0.3,
+        pointRadius: 4,
+        yAxisID: 'y1',
+        order: 1,
+      },
+    ],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Net Profit CAD' } },
+      y1: { position: 'right', grid: { display: false }, title: { display: true, text: 'Margin %' }, ticks: { callback: (v) => v + '%' } },
+    },
+  },
+});
 
 // Monthly revenue bar chart
 new Chart(document.getElementById('monthlyChart'), {
