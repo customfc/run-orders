@@ -860,7 +860,8 @@ function renderHtml(d) {
   <h2>Monthly cash flow (24 months)</h2>
   <div class="chart-container"><canvas id="cashFlowBarChart"></canvas></div>
 
-  <h2>Monthly P&amp;L breakdown</h2>
+  <h2>Operating P&amp;L (accrual basis) — "are we profitable?"</h2>
+  <p style="color:#64748b">Revenue matched to the cost of goods sold THAT month + all Amazon fees + refunds. Labels included (real expense). COGS is the wholesale cost of units sold (SF Item_Cost × qty). This is margin logic, not cashflow.</p>
   <div style="overflow-x:auto">
     <table>
       <thead>
@@ -872,11 +873,9 @@ function renderHtml(d) {
           <th class="num">Commission</th>
           <th class="num">FBA Fee</th>
           <th class="num">Other Fees</th>
-          <th class="num">Service Fees</th>
           <th class="num">Refunds</th>
           <th class="num">Labels</th>
-          <th class="num">PO Spend</th>
-          <th class="num">Net Cash</th>
+          <th class="num">Operating Profit</th>
         </tr>
       </thead>
       <tbody>
@@ -889,20 +888,44 @@ ${fullPnl.slice(0, 18).map((r) => `
           <td class="num neg-num">${fmtMoney(r.commission)}</td>
           <td class="num neg-num">${fmtMoney(r.fbaFee)}</td>
           <td class="num neg-num">${fmtMoney(r.otherFees)}</td>
-          <td class="num neg-num">${r.serviceFees ? fmtMoney(r.serviceFees) : '—'}</td>
           <td class="num neg-num">${fmtMoney(r.refunds)}</td>
           <td class="num neg-num">${r.labels > 0 ? '-' + fmtMoney(r.labels) : '—'}</td>
+          <td class="num ${r.operatingProfit >= 0 ? 'pos-num' : 'neg-num'}"><strong>${fmtMoney(r.operatingProfit)}</strong></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 style="margin-top:40px">Cash Flow (cash basis) — "does the bank account grow?"</h2>
+  <p style="color:#64748b">Cash IN = Amazon settlement deposits + Shopify received. Cash OUT = PO payments to vendors + shipping labels paid to carriers. <strong>COGS is NOT subtracted here</strong> — it's an accounting concept that belongs in the P&amp;L above. PO Spend IS the cash going to vendors. POs pay for INVENTORY that will sell over future months, so Net Cash dips on heavy restock months and recovers as that inventory sells through.</p>
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th class="num">Amazon Net</th>
+          <th class="num">Shopify Gross</th>
+          <th class="num">− PO Spend</th>
+          <th class="num">− Labels</th>
+          <th class="num">= Net Cash</th>
+        </tr>
+      </thead>
+      <tbody>
+${fullPnl.slice(0, 18).map((r) => `
+        <tr>
+          <td><strong>${r.month}</strong></td>
+          <td class="num">${fmtMoney(r.netFromAmazon)}</td>
+          <td class="num">${r.shopifyRev > 0 ? fmtMoney(r.shopifyRev) : '—'}</td>
           <td class="num neg-num">${r.poSpend > 0 ? '-' + fmtMoney(r.poSpend) : '—'}</td>
+          <td class="num neg-num">${r.labels > 0 ? '-' + fmtMoney(r.labels) : '—'}</td>
           <td class="num ${r.cashDelta >= 0 ? 'pos-num' : 'neg-num'}"><strong>${fmtMoney(r.cashDelta)}</strong></td>
         </tr>`).join('')}
       </tbody>
     </table>
   </div>
   <div class="footnote">
-    <strong>Net Cash</strong> = Amazon net (revenue − all fees − refunds − withheld tax) + Shopify gross − POs − shipping labels.
-    Represents the actual cash delta for the month. POs are <em>prepaid</em> supplier invoices (we pay upfront for future
-    inventory), so Net Cash can dip negative in heavy restock months and recover as that stock sells through.
-    ${d.poSpend.total > 0 ? `PO data pulled live from SF (${fmtInt(d.poSpend.byVendor.length)} vendors, ${fmtMoney(d.poSpend.total)} lifetime).` : 'PO data was unavailable from SF — check connection.'}
+    ${d.poSpend.total > 0 ? `PO data pulled live from SF filtered to <strong>Mac Roy's ownership only</strong> (${fmtInt(d.poSpend.byVendor.length)} vendors, ${fmtMoney(d.poSpend.total)} lifetime across 24m).` : 'PO data was unavailable from SF — check connection.'}
+    Other CFC staff orders from the same vendors for non-ecommerce purposes are excluded.
   </div>
 </section>
 
