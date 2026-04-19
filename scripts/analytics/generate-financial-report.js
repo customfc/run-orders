@@ -23,23 +23,45 @@ function fmtMoney(v, currency = '$') { return `${currency}${num(v).toLocaleStrin
 function fmtInt(v) { return num(v).toLocaleString('en-US'); }
 function fmtPct(v) { return (num(v) * 100).toFixed(1) + '%'; }
 
-// Pull PO spend from Salesforce — our cash outflow to vendors for inventory.
-// Covers both restocking POs (for FBA) and customer-order POs (Shopify/MFN
-// pass-through). Aggregated by month + vendor.
+// Pull PO spend from Salesforce — Mac Roy's POs only (the FBA/Shopify ones).
+// Other CustomFC staff also order from Prosol for non-ecommerce purposes;
+// we filter those out by PO owner.
 async function gatherSfPoSpend() {
   try {
     const conn = await sfLib.connect();
+
+    // Find Mac Roy's SF User Id (try Name, then Email)
+    const userLookup = await new Promise((resolve, reject) => {
+      const out = [];
+      conn.query(`SELECT Id, Name, Email FROM User WHERE (Name LIKE '%Mac%Roy%' OR Email = 'mac@customfc.ca' OR Email LIKE 'mac%customfc%') AND IsActive = true LIMIT 5`)
+        .on('record', (r) => out.push(r))
+        .on('end', () => resolve(out))
+        .on('error', reject)
+        .run({ autoFetch: true });
+    });
+    if (!userLookup.length) {
+      console.warn('[report] Mac Roy not found in SF Users — skipping PO pull');
+      return null;
+    }
+    const macUserId = userLookup[0].Id;
+    console.log(`[report] Mac Roy SF user: ${userLookup[0].Name} (${macUserId})`);
+
+    // Pull PO lines where parent PO is owned by Mac Roy.
+    // SOQL doesn't support field aliasing outside aggregate queries — use
+    // the full relationship field names and read them from the returned
+    // nested object shape.
     const soql = `
       SELECT
-        PBSI__Purchase_Order__r.PBSI__Order_Date__c orderDate,
-        PBSI__Purchase_Order__r.PBSI__Account__c vendorId,
-        PBSI__Purchase_Order__r.PBSI__Account__r.Name vendorName,
-        PBSI__Purchase_Order__r.Name poName,
-        PBSI__Quantity_Ordered__c qty,
-        PBSI__Unit_Cost__c unitCost
+        PBSI__Quantity_Ordered__c,
+        PBSI__Unit_Cost__c,
+        PBSI__Purchase_Order__r.Name,
+        PBSI__Purchase_Order__r.PBSI__Order_Date__c,
+        PBSI__Purchase_Order__r.PBSI__Account__r.Name,
+        PBSI__Purchase_Order__r.OwnerId,
+        PBSI__Purchase_Order__r.Owner.Name
       FROM PBSI__PBSI_Purchase_Order_Line__c
-      WHERE PBSI__Purchase_Order__r.PBSI__Order_Date__c >= LAST_N_DAYS:730
-      LIMIT 50000
+      WHERE PBSI__Purchase_Order__r.OwnerId = '${macUserId}'
+        AND PBSI__Purchase_Order__r.PBSI__Order_Date__c >= LAST_N_DAYS:730
     `;
     const records = await new Promise((resolve, reject) => {
       const out = [];
@@ -49,6 +71,7 @@ async function gatherSfPoSpend() {
         .on('error', reject)
         .run({ autoFetch: true, maxFetch: 100000 });
     });
+    console.log(`[report]   ${records.length} PO lines owned by Mac Roy`);
     return records;
   } catch (e) {
     console.warn('[report] SF PO pull failed:', e.message);
