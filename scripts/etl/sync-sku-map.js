@@ -135,12 +135,15 @@ async function main() {
     const cost_cad = sfItem?.PBSI__Cost__c > 0 ? Number(sfItem.PBSI__Cost__c) : null;
     const cost_source = cost_cad ? 'sf-vendor-item-id' : null;
 
-    // UOM multiplier — when SF cost is per-unit (SQFT, LF, etc.) but we
-    // sell per-box. If sku-map has qty_per_unit, views multiply cost × qty
-    // to get the true per-Amazon-unit cost. Otherwise derive from product
-    // name ("XX SF" / "XX SQFT" / "= XX SF" pattern) when unambiguous.
+    // UOM multiplier — apply only when SF cost is per-small-unit (SQFT, LF)
+    // and we sell per-box. Rules:
+    //   1. Explicit qty_per_unit in sku-map wins.
+    //   2. Auto-derive from "XX SF/SQFT/LF" in product name ONLY when
+    //      cost_cad < $10. This avoids false positives where "37.5 sqft" in
+    //      a DITRA-HEAT cable product name is a spec, not a pricing UOM —
+    //      those have cost ~$250 per piece.
     let qty_per_unit = e.qty_per_unit != null ? Number(e.qty_per_unit) : null;
-    if (!qty_per_unit && typeof e.product === 'string') {
+    if (!qty_per_unit && typeof e.product === 'string' && cost_cad && cost_cad < 10) {
       const m = e.product.match(/=?\s*(\d+(?:\.\d+)?)\s*(?:SF|SQ\s*FT|SQFT|LF)\b/i);
       if (m) qty_per_unit = Number(m[1]);
     }
