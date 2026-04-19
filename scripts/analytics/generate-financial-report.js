@@ -523,9 +523,10 @@ function renderHtml(d) {
   const t12Cogs = t12.reduce((s, r) => s + num(r.cogs), 0);
   const t12AmazonRev = t12.reduce((s, r) => s + num(r.amazonRev), 0);
   const t12MarginPct = t12AmazonRev > 0 ? (t12OpProfit / t12AmazonRev) * 100 : 0;
-  const lastMonthOpProfit = num(fullPnl.find((r) => r.month === d.lastMonth)?.operatingProfit);
-  const lastMonthOpMargin = lastMonthOpProfit && lastMonthRow?.gross_revenue
-    ? (lastMonthOpProfit / lastMonthRow.gross_revenue * 100).toFixed(1)
+  const lastMonthPnl = fullPnl.find((r) => r.month === d.lastMonth);
+  const lastMonthOpProfit = num(lastMonthPnl?.operatingProfit);
+  const lastMonthOpMargin = lastMonthOpProfit && lastMonthPnl?.amazonRev > 0
+    ? (lastMonthOpProfit / lastMonthPnl.amazonRev * 100).toFixed(1)
     : null;
 
   // Best + worst months by profit
