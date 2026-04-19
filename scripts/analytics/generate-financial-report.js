@@ -295,7 +295,15 @@ async function gatherData(db) {
   // Complete monthly P&L waterfall — aggregated from v_sku_monthly_pnl
   // (single source of truth). That view has all the fixes applied:
   // correct cost via vendor_item_id, qty_per_unit UOM multiplier, net
-  // refund qty, shipping revenue for MFN orders, dedup logic.
+  // refund qty, shipping revenue for MFN orders, dedup logic, cost
+  // confidence flag ('ok' vs 'missing').
+  //
+  // amazon_agg pulls the order-level rows that don't carry seller_sku
+  // (service fees, other-transactions, adjustments, reimbursements) so
+  // they can be added to operating profit at the month level without
+  // forcing per-SKU attribution. Refunds are NOT summed separately here
+  // — they're already netted into revenue_principal (negative Principal
+  // rows) and into fee_total (RefundCommission etc).
   const monthlyWaterfall = db.prepare(`
     WITH per_sku AS (
       SELECT
@@ -307,20 +315,26 @@ async function gatherData(db) {
         refunds,
         storage_cost,
         outbound_label_cost,
-        net_profit
+        net_profit,
+        cost_confidence
       FROM v_sku_monthly_pnl
       WHERE month IS NOT NULL
     ),
     amazon_agg AS (
       SELECT
         substr(posted_at, 1, 7) month,
-        ROUND(SUM(CASE WHEN fee_type LIKE 'ItemPrice:Shipping%' THEN amount_cad ELSE 0 END), 2) shipping_revenue,
+        ROUND(SUM(CASE WHEN fee_type LIKE 'ItemPrice:Shipping%' AND fee_type NOT LIKE '%Tax' THEN amount_cad ELSE 0 END), 2) shipping_revenue,
         ROUND(SUM(CASE WHEN fee_type = 'ItemFees:Commission' THEN amount_cad ELSE 0 END), 2) commission,
         ROUND(SUM(CASE WHEN fee_type = 'ItemFees:FBAPerUnitFulfillmentFee' THEN amount_cad ELSE 0 END), 2) fba_fulfillment_fee,
         ROUND(SUM(CASE WHEN fee_type LIKE 'ItemFees:%' AND fee_type NOT IN ('ItemFees:Commission','ItemFees:FBAPerUnitFulfillmentFee') THEN amount_cad ELSE 0 END), 2) other_item_fees,
-        ROUND(SUM(CASE WHEN fee_type LIKE 'ServiceFee:%' THEN amount_cad ELSE 0 END), 2) service_fees,
+        ROUND(SUM(CASE WHEN fee_type LIKE 'ServiceFee:%' OR fee_type LIKE 'Cost of Advertising%' THEN amount_cad ELSE 0 END), 2) service_fees,
         ROUND(SUM(CASE WHEN fee_type LIKE 'other-transaction:%' THEN amount_cad ELSE 0 END), 2) other_transactions,
-        ROUND(SUM(CASE WHEN fee_type LIKE 'Promotion:%' THEN amount_cad ELSE 0 END), 2) promotions
+        ROUND(SUM(CASE WHEN fee_type LIKE 'Promotion:%' THEN amount_cad ELSE 0 END), 2) promotions,
+        ROUND(SUM(CASE WHEN fee_type LIKE 'Adjustment:%' THEN amount_cad ELSE 0 END), 2) adjustments,
+        ROUND(SUM(CASE WHEN fee_type LIKE 'FBA Inventory Reimbursement:%' THEN amount_cad ELSE 0 END), 2) reimbursements,
+        ROUND(SUM(CASE WHEN fee_type IN ('ItemPrice:Tax','ItemPrice:ShippingTax') THEN amount_cad ELSE 0 END), 2) tax_collected,
+        ROUND(SUM(CASE WHEN fee_type LIKE 'ItemWithheldTax:%' THEN amount_cad ELSE 0 END), 2) tax_withheld,
+        ROUND(SUM(amount_cad), 2) net_deposit
       FROM amazon_financial_events
       WHERE posted_at IS NOT NULL
       GROUP BY substr(posted_at, 1, 7)
@@ -328,6 +342,8 @@ async function gatherData(db) {
     SELECT
       p.month,
       ROUND(SUM(p.revenue_principal), 2) revenue_principal,
+      ROUND(SUM(CASE WHEN p.cost_confidence = 'ok' THEN p.revenue_principal ELSE 0 END), 2) revenue_trusted,
+      ROUND(SUM(CASE WHEN p.cost_confidence = 'missing' THEN p.revenue_principal ELSE 0 END), 2) revenue_untrusted,
       ROUND(SUM(p.qty_sold), 2) qty_sold,
       ROUND(SUM(p.cogs), 2) cogs_accurate,
       ROUND(SUM(p.amazon_fees), 2) amazon_fees_total,
@@ -335,12 +351,18 @@ async function gatherData(db) {
       ROUND(SUM(p.storage_cost), 2) storage,
       ROUND(SUM(p.outbound_label_cost), 2) labels_allocated,
       ROUND(SUM(p.net_profit), 2) net_profit,
+      ROUND(SUM(CASE WHEN p.cost_confidence = 'ok' THEN p.net_profit ELSE 0 END), 2) net_profit_trusted,
       a.shipping_revenue,
       a.commission,
       a.fba_fulfillment_fee,
       a.other_item_fees,
       a.service_fees,
       a.other_transactions,
+      a.adjustments,
+      a.reimbursements,
+      a.tax_collected,
+      a.tax_withheld,
+      a.net_deposit,
       a.promotions
     FROM per_sku p
     LEFT JOIN amazon_agg a ON a.month = p.month
@@ -466,29 +488,62 @@ function renderHtml(d) {
   const fullPnl = allMonths.map((m) => {
     const w = waterfallByMonth[m] || {};
     const amazonRev = num(w.revenue_principal);       // net of refunds (Principal CTE)
+    const amazonRevTrusted = num(w.revenue_trusted);  // subset with resolved COGS
+    const amazonRevUntrusted = num(w.revenue_untrusted); // $0-COGS SKUs — margin unknown
     const shopify = shopifyMap[m] || {};
-    const shopifyRev = num(shopify.subtotal);
+    const shopifyRev = num(shopify.subtotal);         // display-only, NOT added to profit
+    const shopifyProfit = num(shopify.net_profit);    // real contribution after COGS+fees+labels+refunds
     const cogs = num(w.cogs_accurate);                 // from v_sku_monthly_pnl (all fixes applied)
     const commission = num(w.commission);
     const fbaFee = num(w.fba_fulfillment_fee);
     const otherFees = num(w.other_item_fees);
-    const serviceFees = num(w.service_fees);
-    const otherTx = num(w.other_transactions);
+    const serviceFees = num(w.service_fees);           // Amazon PPC/advertising (negative)
+    const otherTx = num(w.other_transactions);         // subscription/prep/inbound freight etc (mixed)
+    const adjustments = num(w.adjustments);            // disbursement reversals, damage comp (mostly positive)
+    const reimbursements = num(w.reimbursements);      // FBA inventory reimbursements (mostly positive)
     const promos = num(w.promotions);
     const refunds = num(w.refunds);
     const shippingRev = num(w.shipping_revenue);
-    const amazonFeesTotal = num(w.amazon_fees_total);  // sum of all ItemFees from the view
+    const amazonFeesTotal = num(w.amazon_fees_total);
+    const taxCollected = num(w.tax_collected);         // buyer-paid, owed to govt
+    const taxWithheld = num(w.tax_withheld);           // Amazon already remitted (negative)
+    const netDeposit = num(w.net_deposit);             // SUM(amount_cad) — actual bank deposit proxy
     const labels = num(labelsMap[m]?.total_cost);
     const poSpend = num(poMap[m]);
 
-    // Operating profit — directly from v_sku_monthly_pnl (already nets
-    // refunds, includes shipping revenue, uses correct cost).
-    const operatingProfit = num(w.net_profit) + shopifyRev;
+    // v_sku_monthly_pnl.net_profit covers: rev_principal + shipping_rev - cogs + itemFees + promos - storage - freight - labels.
+    // Missing pieces live on order/aggregate rows (no seller_sku): service fees (PPC),
+    // other-transactions (subscription, prep, inbound freight), and reimbursements/adjustments.
+    // Add them here to land on true operating profit.
+    const shopifyBookedProfit = num(shopifyProfit);
+    const operatingProfit = num(w.net_profit)
+      + serviceFees          // Amazon PPC — negative, reduces profit
+      + otherTx              // net of subscription/prep/inbound-freight/actual-storage etc
+      + adjustments          // disbursement reversals, warehouse damage comp
+      + reimbursements       // FBA inventory reimbursements
+      + shopifyBookedProfit; // Shopify contribution after its own COGS+fees+labels
+
+    // "Trusted" operating profit — excludes SKUs with missing COGS so the
+    // margin denominator matches the numerator. This prevents $0-COGS
+    // SKUs from silently showing as 100% margin.
+    const trustedNetProfit = num(w.net_profit_trusted)
+      + serviceFees
+      + otherTx
+      + adjustments
+      + reimbursements
+      + shopifyBookedProfit;
+
+    // Tax we owe to CRA / provinces. Marketplace facilitator covers GST/HST
+    // on most provinces (tax_withheld is what Amazon remits). The residual
+    // (tax_collected + tax_withheld where tax_withheld is stored negative)
+    // is PST/QST that we self-administer. It sits in our deposit but is
+    // a government liability — NOT income.
+    const taxOwed = taxCollected + taxWithheld; // both signed correctly
 
     // For cashflow, compute "Amazon net" as revenue + shipping revenue + all
     // Amazon fees + refunds + service fees + other-transactions + promos.
     // This is what Amazon actually deposited us.
-    const netFromAmazon = amazonRev + shippingRev + amazonFeesTotal + refunds + serviceFees + otherTx + promos;
+    const netFromAmazon = amazonRev + shippingRev + amazonFeesTotal + refunds + serviceFees + otherTx + adjustments + reimbursements + promos;
 
     const cashIn = netFromAmazon + num(shopify.total_revenue);
     const cashOut = poSpend + labels;
@@ -496,11 +551,15 @@ function renderHtml(d) {
 
     return {
       month: m,
-      amazonRev, shopifyRev, shippingRev,
-      cogs, commission, fbaFee, otherFees, serviceFees, otherTx, promos, refunds, labels, poSpend,
+      amazonRev, amazonRevTrusted, amazonRevUntrusted,
+      shopifyRev, shopifyProfit: shopifyBookedProfit, shippingRev,
+      cogs, commission, fbaFee, otherFees, serviceFees, otherTx,
+      adjustments, reimbursements,
+      promos, refunds, labels, poSpend,
       amazonFeesTotal,
+      taxCollected, taxWithheld, taxOwed, netDeposit,
       netFromAmazon,
-      operatingProfit,
+      operatingProfit, trustedNetProfit,
       cashIn, cashOut, cashDelta,
     };
   });
@@ -556,6 +615,27 @@ function renderHtml(d) {
   const t12Cogs = t12.reduce((s, r) => s + num(r.cogs), 0);
   const t12AmazonRev = t12.reduce((s, r) => s + num(r.amazonRev), 0);
   const t12MarginPct = t12AmazonRev > 0 ? (t12OpProfit / t12AmazonRev) * 100 : 0;
+  // Trusted rollup — only SKUs with resolved COGS
+  const t12TrustedProfit = t12.reduce((s, r) => s + num(r.trustedNetProfit), 0);
+  const t12TrustedRev = t12.reduce((s, r) => s + num(r.amazonRevTrusted), 0);
+  const t12UntrustedRev = t12.reduce((s, r) => s + num(r.amazonRevUntrusted), 0);
+  const t12TrustedMarginPct = t12TrustedRev > 0 ? (t12TrustedProfit / t12TrustedRev) * 100 : 0;
+  const untrustedSharePct = t12AmazonRev > 0 ? (t12UntrustedRev / t12AmazonRev) * 100 : 0;
+  // Cash-basis totals
+  const t12NetDeposit = t12.reduce((s, r) => s + num(r.netDeposit), 0);
+  const t12TaxOwed = t12.reduce((s, r) => s + num(r.taxOwed), 0);
+  const t12ServiceFees = t12.reduce((s, r) => s + num(r.serviceFees), 0);
+  const t12OtherTx = t12.reduce((s, r) => s + num(r.otherTx), 0);
+  const t12Adjustments = t12.reduce((s, r) => s + num(r.adjustments), 0);
+  const t12Reimbursements = t12.reduce((s, r) => s + num(r.reimbursements), 0);
+  const t12ShippingRev = t12.reduce((s, r) => s + num(r.shippingRev), 0);
+  const t12AmazonFees = t12.reduce((s, r) => s + num(r.amazonFeesTotal), 0);
+  const t12Promos = t12.reduce((s, r) => s + num(r.promos), 0);
+  const t12ShopifyProfit = t12.reduce((s, r) => s + num(r.shopifyProfit), 0);
+  // True-cash profit: net bank deposit − tax we owe govt − COGS − outbound labels + Shopify net
+  const t12TrueCashProfit = t12NetDeposit - t12TaxOwed - t12Cogs - t12Labels + t12ShopifyProfit;
+  const t12TrueCashMargin = t12AmazonRev > 0 ? (t12TrueCashProfit / t12AmazonRev) * 100 : 0;
+
   const lastMonthPnl = fullPnl.find((r) => r.month === d.lastMonth);
   const lastMonthOpProfit = num(lastMonthPnl?.operatingProfit);
   const lastMonthOpMargin = lastMonthOpProfit && lastMonthPnl?.amazonRev > 0
@@ -758,25 +838,79 @@ function renderHtml(d) {
 
   <div class="grid grid-4" style="margin-top:24px">
     <div class="card" style="background:linear-gradient(135deg,#064e3b 0%, #059669 100%);color:white;border:none">
-      <h3 style="color:white;opacity:0.95">T12m Net Profit</h3>
+      <h3 style="color:white;opacity:0.95">T12m Net Profit <span style="font-size:11px;opacity:0.8">(accrual)</span></h3>
       <div class="big-num" style="color:white">${fmtMoney(t12OpProfit / 1000, '$')}K</div>
-      <div class="caption" style="color:white;opacity:0.75">avg ${fmtMoney(t12OpProfit / 12)}<span style="font-weight:normal">/mo</span> · ${t12MarginPct.toFixed(1)}% margin</div>
+      <div class="caption" style="color:white;opacity:0.75">avg ${fmtMoney(t12OpProfit / 12)}/mo · ${t12MarginPct.toFixed(1)}% margin</div>
     </div>
-    <div class="card">
-      <h3>Last Month Net Profit</h3>
+    <div class="card" style="background:linear-gradient(135deg,#0c4a6e 0%, #0284c7 100%);color:white;border:none">
+      <h3 style="color:white;opacity:0.95">T12m True Cash Profit</h3>
+      <div class="big-num" style="color:white">${fmtMoney(t12TrueCashProfit / 1000, '$')}K</div>
+      <div class="caption" style="color:white;opacity:0.75">avg ${fmtMoney(t12TrueCashProfit / 12)}/mo · ${t12TrueCashMargin.toFixed(1)}% of revenue</div>
+    </div>
+    <div class="card" style="background:linear-gradient(135deg,#581c87 0%, #7e22ce 100%);color:white;border:none">
+      <h3 style="color:white;opacity:0.95">T12m Trusted Margin</h3>
+      <div class="big-num" style="color:white">${t12TrustedMarginPct.toFixed(1)}%</div>
+      <div class="caption" style="color:white;opacity:0.75">excl. ${untrustedSharePct.toFixed(1)}% of revenue with unresolved COGS</div>
+    </div>
+    <div class="card" style="background:#fef3c7;border:1px solid #fbbf24">
+      <h3 style="color:#78350f">Tax Owed to Govt</h3>
+      <div class="big-num" style="color:#78350f">${fmtMoney(t12TaxOwed / 1000, '$')}K</div>
+      <div class="caption" style="color:#92400e">PST/GST collected but not yet remitted · NOT profit</div>
+    </div>
+  </div>
+
+  <div class="grid grid-3" style="margin-top:16px">
+    <div class="card"><h3>Last Month Net Profit</h3>
       <div class="big-num ${lastMonthOpProfit >= 0 ? 'pos' : 'neg'}">${fmtMoney(lastMonthOpProfit)}</div>
-      <div class="caption">${lastMonthOpMargin ? lastMonthOpMargin + '% margin' : '—'} · ${d.lastMonth}</div>
-    </div>
-    <div class="card">
-      <h3>Best Profit Month</h3>
+      <div class="caption">${lastMonthOpMargin ? lastMonthOpMargin + '% margin' : '—'} · ${d.lastMonth}</div></div>
+    <div class="card"><h3>Best Profit Month</h3>
       <div class="big-num pos">${fmtMoney(bestMonth?.operatingProfit || 0)}</div>
-      <div class="caption">${bestMonth?.month || '—'}</div>
-    </div>
-    <div class="card">
-      <h3>Worst Profit Month</h3>
+      <div class="caption">${bestMonth?.month || '—'}</div></div>
+    <div class="card"><h3>Worst Profit Month</h3>
       <div class="big-num ${worstMonth?.operatingProfit < 0 ? 'neg' : 'neu'}">${fmtMoney(worstMonth?.operatingProfit || 0)}</div>
-      <div class="caption">${worstMonth?.month || '—'}</div>
-    </div>
+      <div class="caption">${worstMonth?.month || '—'}</div></div>
+  </div>
+
+  <!-- Honest walk: how we get from gross revenue to net profit -->
+  <h2 style="margin-top:48px">T12m P&amp;L walk (revenue → profit)</h2>
+  <p style="color:#64748b;font-size:15px;max-width:950px">
+    Every line comes from a single source that's verifiable in the raw Amazon financial events
+    and vendor POs. Nothing is estimated unless labelled.
+  </p>
+  <table>
+    <thead><tr><th>Line</th><th class="num">T12m</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Amazon Principal revenue</strong> (net of refunds)</td><td class="num"><strong>${fmtMoney(t12AmazonRev)}</strong></td><td>SUM(ItemPrice:Principal)</td></tr>
+      <tr><td style="padding-left:32px">&rarr; of which has resolved COGS</td><td class="num">${fmtMoney(t12TrustedRev)}</td><td><span class="badge ok">trusted</span> ${(t12TrustedRev/t12AmazonRev*100).toFixed(1)}% of revenue</td></tr>
+      <tr><td style="padding-left:32px">&rarr; of which has $0 COGS (unresolved)</td><td class="num neg-num">${fmtMoney(t12UntrustedRev)}</td><td><span class="badge warn">untrusted</span> inflates margin — see Cost Coverage</td></tr>
+      <tr><td>+ Amazon shipping revenue (MFN buyers)</td><td class="num pos-num">+${fmtMoney(t12ShippingRev)}</td><td>SUM(ItemPrice:Shipping*)</td></tr>
+      <tr><td>− COGS (vendor wholesale cost)</td><td class="num neg-num">${fmtMoney(-t12Cogs)}</td><td>qty × cost_cad × qty_per_unit · missing on ${fmtMoney(t12UntrustedRev)} revenue</td></tr>
+      <tr><td>+ Amazon item fees (net — commission + FBA + etc)</td><td class="num">${fmtMoney(t12AmazonFees)}</td><td>SUM(ItemFees:%)</td></tr>
+      <tr><td>+ Promotions</td><td class="num ${t12Promos < 0 ? 'neg-num' : 'pos-num'}">${fmtMoney(t12Promos)}</td><td>SUM(Promotion:%)</td></tr>
+      <tr><td>+ Amazon PPC / service fees</td><td class="num ${t12ServiceFees < 0 ? 'neg-num' : 'pos-num'}">${fmtMoney(t12ServiceFees)}</td><td>SUM(ServiceFee:% + Cost of Advertising)</td></tr>
+      <tr><td>+ Other transactions (subscription, prep, inbound freight)</td><td class="num ${t12OtherTx < 0 ? 'neg-num' : 'pos-num'}">${fmtMoney(t12OtherTx)}</td><td>SUM(other-transaction:%)</td></tr>
+      <tr><td>+ FBA inventory reimbursements</td><td class="num pos-num">+${fmtMoney(t12Reimbursements)}</td><td>Amazon paid for lost/damaged stock</td></tr>
+      <tr><td>+ Adjustments (disbursement reversals, damage comp)</td><td class="num ${t12Adjustments < 0 ? 'neg-num' : 'pos-num'}">${fmtMoney(t12Adjustments)}</td><td>SUM(Adjustment:%)</td></tr>
+      <tr><td>− Outbound shipping labels (MFN)</td><td class="num neg-num">${fmtMoney(-t12Labels)}</td><td>ShipStation spend</td></tr>
+      <tr><td>+ Shopify net profit (own COGS/fees/labels)</td><td class="num ${t12ShopifyProfit < 0 ? 'neg-num' : 'pos-num'}">${fmtMoney(t12ShopifyProfit)}</td><td>v_shopify_monthly_pnl — ${t12ShopifyProfit < 0 ? 'loss' : 'gain'} · low volume</td></tr>
+      <tr style="border-top:2px solid #0f172a;background:#ecfdf5"><td><strong>= Operating Profit (accrual)</strong></td><td class="num"><strong>${fmtMoney(t12OpProfit)}</strong></td><td><strong>${t12MarginPct.toFixed(1)}% of Amazon revenue</strong></td></tr>
+      <tr><td style="color:#94a3b8">Untracked overhead (ShipStation sub, SaaS, bookkeeping)</td><td class="num" style="color:#94a3b8">TBD</td><td>Not in database — populate via expense tracker</td></tr>
+      <tr><td style="color:#94a3b8">Amazon PPC outside settlement feed</td><td class="num" style="color:#94a3b8">TBD</td><td>Settlement captures some; Advertising Console captures all</td></tr>
+    </tbody>
+  </table>
+
+  <div class="recommendation">
+    <h3>Reality check on this number</h3>
+    <p style="margin-bottom:6px">
+      <strong>${untrustedSharePct.toFixed(1)}%</strong> of T12m revenue (${fmtMoney(t12UntrustedRev)}) is from SKUs where we
+      don't have a COGS resolved. Those items are implicitly treated as 100% margin in the accrual number.
+      At a plausible 30% gross margin, that's ~${fmtMoney(t12UntrustedRev * 0.7)} of hidden COGS not subtracted.
+      The <strong>Trusted Margin</strong> tile (${t12TrustedMarginPct.toFixed(1)}%) gives you the margin on the portion we can actually measure — that's the honest number.
+    </p>
+    <p class="impact">
+      Priority fix: get costs for unmapped SKUs in sku_map_canonical (Schluter DHE cables, CFCB parts, bundles).
+      That moves the trusted slice from ${(t12TrustedRev/t12AmazonRev*100).toFixed(0)}% → ~98%+ of revenue.
+    </p>
   </div>
 
   <h2>The headline</h2>

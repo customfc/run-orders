@@ -251,6 +251,10 @@ items AS (
   -- as sale transactions. If quantity missing (finances-api refund rows,
   -- or settlement refund rows where Amazon empties the column), count
   -- -1 per row as a unit refunded.
+  --
+  -- cost_confidence: 'ok' when a cost is resolved > 0; 'missing' when not.
+  -- Consumers should prefer trusted rollups that exclude 'missing' rows
+  -- to avoid margin inflation from unmapped SKUs or bundles.
   SELECT
     e.seller_sku        AS sku,
     substr(e.posted_at, 1, 7) AS month,
@@ -266,14 +270,17 @@ items AS (
       WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Refund' THEN -1
       ELSE 0
     END * COALESCE(sm.cost_cad, ic_via_map.cost_cad, ic_direct.cost_cad, 0)
-      * COALESCE(sm.qty_per_unit, 1)) AS cogs
+      * COALESCE(sm.qty_per_unit, 1)) AS cogs,
+    CASE WHEN COALESCE(sm.cost_cad, ic_via_map.cost_cad, ic_direct.cost_cad, 0) > 0
+         THEN 'ok' ELSE 'missing' END AS cost_confidence
   FROM amazon_financial_events e
   LEFT JOIN sku_map_canonical sm ON sm.amazon_msku = e.seller_sku
   LEFT JOIN item_costs ic_via_map ON ic_via_map.sku = sm.sf_item_name
   LEFT JOIN item_costs ic_direct ON ic_direct.sku = e.seller_sku
   WHERE e.seller_sku IS NOT NULL
     AND e.fee_type = 'ItemPrice:Principal'
-  GROUP BY e.seller_sku, substr(e.posted_at, 1, 7)
+  GROUP BY e.seller_sku, substr(e.posted_at, 1, 7),
+           CASE WHEN COALESCE(sm.cost_cad, ic_via_map.cost_cad, ic_direct.cost_cad, 0) > 0 THEN 'ok' ELSE 'missing' END
 ),
 storage AS (
   SELECT
@@ -327,6 +334,7 @@ SELECT
   COALESCE(amz.revenue_principal, 0)                          AS revenue,
   COALESCE(items.qty_sold, 0)                                 AS qty_sold,
   COALESCE(items.cogs, 0)                                     AS cogs,
+  COALESCE(items.cost_confidence, 'missing')                  AS cost_confidence,
   COALESCE(amz.fee_total, 0)                                  AS amazon_fees,
   COALESCE(amz.promotion, 0)                                  AS promotions,
   COALESCE(amz.refund, 0)                                     AS refunds,
