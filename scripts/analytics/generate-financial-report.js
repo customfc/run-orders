@@ -53,7 +53,9 @@ async function gatherSfPoSpend() {
     const soql = `
       SELECT
         PBSI__Quantity_Ordered__c,
-        PBSI__Unit_Cost__c,
+        PBSI__Item_Cost__c,
+        PBSI__Total_Price__c,
+        PBSI__Pre_Tax_Total_Price__c,
         PBSI__Purchase_Order__r.Name,
         PBSI__Purchase_Order__r.PBSI__Order_Date__c,
         PBSI__Purchase_Order__r.PBSI__Account__r.Name,
@@ -396,9 +398,14 @@ function aggregatePoSpend(records) {
     if (!d) continue;
     const month = String(d).slice(0, 7);
     const vendor = r.PBSI__Purchase_Order__r?.PBSI__Account__r?.Name || 'Unknown';
-    const qty = Number(r.PBSI__Quantity_Ordered__c || 0);
-    const unitCost = Number(r.PBSI__Unit_Cost__c || 0);
-    const lineTotal = qty * unitCost;
+    // Prefer pre-tax total if present, else total price, else qty × item_cost
+    let lineTotal = Number(r.PBSI__Pre_Tax_Total_Price__c);
+    if (!Number.isFinite(lineTotal) || lineTotal <= 0) lineTotal = Number(r.PBSI__Total_Price__c);
+    if (!Number.isFinite(lineTotal) || lineTotal <= 0) {
+      const qty = Number(r.PBSI__Quantity_Ordered__c || 0);
+      const unitCost = Number(r.PBSI__Item_Cost__c || 0);
+      lineTotal = qty * unitCost;
+    }
     if (!Number.isFinite(lineTotal) || lineTotal <= 0) continue;
     total += lineTotal;
     byMonth[month] = (byMonth[month] || 0) + lineTotal;
