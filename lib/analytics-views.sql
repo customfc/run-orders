@@ -236,12 +236,25 @@ items AS (
   --   3. item_costs via seller_sku — direct match, rare.
   -- Multiply by qty_per_unit when SF cost is per-UOM (SQFT, LF) but we
   -- sell per-box. Falls back to 1 if not specified.
+  --
+  -- Net qty: Amazon posts one Principal row per unit on sales (with
+  -- quantity-purchased populated). On refunds, the CSV has
+  -- quantity-purchased = "" (empty/null) so we count -1 per refund-
+  -- Principal row. Net qty = sale units - refunded units. COGS uses net
+  -- qty so a refunded unit doesn't double-charge COGS.
   SELECT
     e.seller_sku        AS sku,
     substr(e.posted_at, 1, 7) AS month,
-    SUM(COALESCE(e.quantity, 0)) AS qty_sold,
-    SUM(COALESCE(e.quantity, 0)
-      * COALESCE(sm.cost_cad, ic_via_map.cost_cad, ic_direct.cost_cad, 0)
+    SUM(CASE
+      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Order' AND e.quantity > 0 THEN e.quantity
+      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Refund' THEN -1
+      ELSE 0
+    END) AS qty_sold,
+    SUM(CASE
+      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Order' AND e.quantity > 0 THEN e.quantity
+      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Refund' THEN -1
+      ELSE 0
+    END * COALESCE(sm.cost_cad, ic_via_map.cost_cad, ic_direct.cost_cad, 0)
       * COALESCE(sm.qty_per_unit, 1)) AS cogs
   FROM amazon_financial_events e
   LEFT JOIN sku_map_canonical sm ON sm.amazon_msku = e.seller_sku
@@ -249,7 +262,6 @@ items AS (
   LEFT JOIN item_costs ic_direct ON ic_direct.sku = e.seller_sku
   WHERE e.seller_sku IS NOT NULL
     AND e.fee_type = 'ItemPrice:Principal'
-    AND e.quantity > 0
   GROUP BY e.seller_sku, substr(e.posted_at, 1, 7)
 ),
 storage AS (
