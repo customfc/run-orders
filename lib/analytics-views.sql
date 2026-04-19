@@ -306,13 +306,15 @@ SELECT
   COALESCE(storage.avg_storage_monthly, 0)                    AS storage_cost,
   COALESCE(freight.freight_cost, 0)                           AS inbound_freight,
   COALESCE(labels.label_cost, 0)                              AS outbound_label_cost,
-  -- Net margin = revenue - cogs + fees (fees are negative in DB) + refunds - storage - freight - label
-  -- Note: fees, refunds are negative amounts in the DB so they add correctly
+  -- Net profit: revenue + fees + promotions (+cogs/storage/freight/labels as expenses)
+  -- Refunds are NOT added separately — refund-type rows have negative
+  -- ItemPrice:Principal already baked into revenue_principal, and refund-
+  -- side fee reversals (RefundCommission, RefundAdminFee) are in fee_total
+  -- via the 'ItemFees:%' LIKE. The `refunds` column is informational only.
   COALESCE(amz.revenue_principal, 0)
     - COALESCE(items.cogs, 0)
     + COALESCE(amz.fee_total, 0)
     + COALESCE(amz.promotion, 0)
-    + COALESCE(amz.refund, 0)
     - COALESCE(storage.avg_storage_monthly, 0)
     - COALESCE(freight.freight_cost, 0)
     - COALESCE(labels.label_cost, 0)                          AS net_profit,
@@ -322,7 +324,6 @@ SELECT
           - COALESCE(items.cogs, 0)
           + COALESCE(amz.fee_total, 0)
           + COALESCE(amz.promotion, 0)
-          + COALESCE(amz.refund, 0)
           - COALESCE(storage.avg_storage_monthly, 0)
           - COALESCE(freight.freight_cost, 0)
           - COALESCE(labels.label_cost, 0)
