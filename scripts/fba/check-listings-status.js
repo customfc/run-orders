@@ -86,11 +86,25 @@ async function main() {
         } else {
           const s = it.summaries?.[0];
           const offer = (it.offers || [])[0];
+          // fulfillmentAvailability per Amazon: array of
+          // { fulfillmentChannelCode: 'DEFAULT'|'AMAZON_NA'|..., quantity }
+          // DEFAULT = MFN (merchant-fulfilled). AMAZON_* = FBA.
+          const fa = it.fulfillmentAvailability || [];
+          const mfn = fa.filter((x) => !x.fulfillmentChannelCode || x.fulfillmentChannelCode === 'DEFAULT');
+          const fba = fa.filter((x) => x.fulfillmentChannelCode && x.fulfillmentChannelCode !== 'DEFAULT');
+          const channels = [];
+          if (mfn.length) channels.push('MFN');
+          if (fba.length) channels.push('FBA');
+          const mfnQty = mfn.reduce((s, x) => s + (x.quantity || 0), 0);
+          const fbaQty = fba.reduce((s, x) => s + (x.quantity || 0), 0);
           results.push({
             ...b,
             sku: it.sku || s?.sellerSku || null,
             status: classifyItem(it),
             listingStatus: s?.status?.join(',') || null,
+            channels: channels.join(',') || null,
+            mfn_qty: mfnQty,
+            fba_qty: fbaQty,
             condition: s?.conditionType || null,
             productType: s?.productType || null,
             itemName: s?.itemName || null,
@@ -98,6 +112,7 @@ async function main() {
             offerCount: (it.offers || []).length,
             issueCount: (it.issues || []).length,
             issues: (it.issues || []).map((iss) => ({ code: iss.code, severity: iss.severity, message: iss.message })),
+            fulfillmentAvailability: fa,
           });
         }
       }
