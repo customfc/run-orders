@@ -128,6 +128,13 @@ async function main() {
     const brand = e.brand || deriveBrandFromProduct(e.product);
     if (brand) hasBrand++;
 
+    // Capture cost directly from the SF record we resolved via vendor_item_id.
+    // This is the authoritative cost for this specific ASIN — avoids the
+    // item_costs Name-collision bug where multiple SF items share a Name
+    // and the cost lookup by Name picks a different (wrong) item.
+    const cost_cad = sfItem?.PBSI__Cost__c > 0 ? Number(sfItem.PBSI__Cost__c) : null;
+    const cost_source = cost_cad ? 'sf-vendor-item-id' : null;
+
     rowsToInsert.push({
       asin: e.asin,
       amazon_msku: mskuByAsin[e.asin] || null,
@@ -140,6 +147,8 @@ async function main() {
       map_cad: e.map_cad || null,
       product_name: e.product || sfItem?.PBSI__Description__c || null,
       source: 'sku-map-asin',
+      cost_cad,
+      cost_source,
       updated_at: nowIso,
     });
   }
@@ -149,8 +158,8 @@ async function main() {
       INSERT INTO sku_map_canonical (
         asin, amazon_msku, api_sku, prosol_sku,
         sf_pbsi_item_id, sf_item_name, brand, category,
-        map_cad, product_name, source, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        map_cad, product_name, source, cost_cad, cost_source, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(asin) DO UPDATE SET
         amazon_msku = COALESCE(excluded.amazon_msku, sku_map_canonical.amazon_msku),
         api_sku = excluded.api_sku,
@@ -162,13 +171,15 @@ async function main() {
         map_cad = excluded.map_cad,
         product_name = excluded.product_name,
         source = excluded.source,
+        cost_cad = excluded.cost_cad,
+        cost_source = excluded.cost_source,
         updated_at = excluded.updated_at
     `);
     for (const r of rowsToInsert) {
       ins.run(
         r.asin, r.amazon_msku, r.api_sku, r.prosol_sku,
         r.sf_pbsi_item_id, r.sf_item_name, r.brand, r.category,
-        r.map_cad, r.product_name, r.source, r.updated_at,
+        r.map_cad, r.product_name, r.source, r.cost_cad, r.cost_source, r.updated_at,
       );
     }
   });

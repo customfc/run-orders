@@ -46,8 +46,8 @@ SELECT
   sm.category,
   sm.map_cad,
   sm.product_name,
-  ic.cost_cad                                AS unit_cost_cad,
-  ic.cost_source                             AS cost_source,
+  COALESCE(sm.cost_cad, ic.cost_cad)         AS unit_cost_cad,
+  COALESCE(sm.cost_source, ic.cost_source)   AS cost_source,
   ic.updated_at                              AS cost_updated_at
 FROM sku_map_canonical sm
 LEFT JOIN item_costs ic ON ic.sku = sm.sf_item_name;
@@ -230,13 +230,20 @@ WITH amz AS (
 -- events. ASIN is not on financial events, so we resolve ASIN → cost via
 -- sku_map_canonical keyed on msku.
 items AS (
+  -- Cost resolution priority (most authoritative first):
+  --   1. sku_map_canonical.cost_cad — captured at sync-sku-map time via
+  --      vendor_item_id match (unique, authoritative for this ASIN).
+  --   2. item_costs.sku = sku_map_canonical.sf_item_name — legacy bridge;
+  --      unreliable when SF has duplicate Names. Fallback only.
+  --   3. item_costs.sku = seller_sku — direct match, very rare.
   SELECT
     e.seller_sku        AS sku,
     substr(e.posted_at, 1, 7) AS month,
     SUM(COALESCE(e.quantity, 0)) AS qty_sold,
     SUM(COALESCE(e.quantity, 0) * COALESCE(
-      ic_via_map.cost_cad,         -- preferred: ASIN → sku_map → sf_item_name → cost
-      ic_direct.cost_cad,          -- fallback: seller_sku IS an SF item name directly
+      sm.cost_cad,                 -- preferred: resolved via vendor_item_id
+      ic_via_map.cost_cad,         -- fallback: legacy Name join
+      ic_direct.cost_cad,          -- fallback: direct SKU match
       0
     )) AS cogs
   FROM amazon_financial_events e
