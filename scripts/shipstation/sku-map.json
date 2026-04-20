@@ -1354,15 +1354,15 @@
       "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
     },
     "KD-STR": {
-      "api_sku": "KDSTR",
-      "prosol_sku": "KDSTR",
+      "api_sku": "KD-STR",
+      "prosol_sku": "KD-STR",
       "product": "Schluter KERDI-DRAIN STRAINER",
       "category": "KERDI",
       "verified": true,
       "source": "shopify-manual",
       "brand": "schluter",
-      "schluter_item": "KDSTR",
-      "note": "Shopify SKU KD-STR → Prosol KDSTR (SF PBSI Item 02602)"
+      "schluter_item": "KD-STR",
+      "note": "Prosol catalog uses KD-STR (verified 2026-04-20: productId 10256, 27 locations). SF PBSI Item 02602 has PBSI__Vendor_Item_ID__c=KDSTR — hyphen lost at SF entry time, should be KD-STR to match Prosol."
     },
     "B07PV4JQ13": {
       "api_sku": "KD2FLKPVC",
