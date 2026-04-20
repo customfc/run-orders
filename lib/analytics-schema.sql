@@ -57,7 +57,9 @@ CREATE TABLE IF NOT EXISTS amazon_orders (
 CREATE INDEX IF NOT EXISTS idx_amazon_orders_purchase ON amazon_orders(purchase_date);
 CREATE INDEX IF NOT EXISTS idx_amazon_orders_postal ON amazon_orders(ship_postal);
 CREATE INDEX IF NOT EXISTS idx_amazon_orders_channel ON amazon_orders(fulfillment_channel);
-CREATE INDEX IF NOT EXISTS idx_amazon_orders_cancel ON amazon_orders(is_buyer_requested_cancellation, order_status);
+-- idx_amazon_orders_cancel is created in analytics-db.js after the additive-column ALTERs
+-- run; putting it here would break migration on pre-existing DBs where the cancel column
+-- hasn't been added yet (CREATE TABLE IF NOT EXISTS is a no-op, then the index fails).
 
 CREATE TABLE IF NOT EXISTS amazon_order_items (
   order_item_id TEXT PRIMARY KEY,
