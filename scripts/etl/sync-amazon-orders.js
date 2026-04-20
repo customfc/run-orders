@@ -57,8 +57,9 @@ function upsertOrder(db, order) {
       number_of_items_shipped, number_of_items_unshipped,
       payment_method, is_business_order, is_prime, is_replacement,
       ship_city, ship_state, ship_postal, ship_country, buyer_email,
+      is_buyer_requested_cancellation,
       raw, ingested_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(amazon_order_id) DO UPDATE SET
       purchase_date = excluded.purchase_date,
       last_update_date = excluded.last_update_date,
@@ -79,6 +80,7 @@ function upsertOrder(db, order) {
       ship_postal = excluded.ship_postal,
       ship_country = excluded.ship_country,
       buyer_email = excluded.buyer_email,
+      is_buyer_requested_cancellation = excluded.is_buyer_requested_cancellation,
       raw = excluded.raw,
       ingested_at = excluded.ingested_at
   `).run(
@@ -102,6 +104,7 @@ function upsertOrder(db, order) {
     str(addr.PostalCode),
     str(addr.CountryCode),
     str(order.BuyerInfo?.BuyerEmail),
+    bool(order.IsBuyerRequestedCancellation),
     JSON.stringify(order),
     new Date().toISOString(),
   );

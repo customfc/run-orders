@@ -1397,8 +1397,20 @@ async function morningStaleScan(source) {
     const { scanStaleShipments } = require('./lib/stale-tracker');
     const scan = await scanStaleShipments({ days: 14 });
     const needAction = scan.shipments.filter(s => s.movement === 'hanging' && (s.suggestedAction === 'book' || s.suggestedAction === 'rebook'));
+    const stuck = scan.shipments.filter(s => s.movement === 'stuck-in-transit');
+
+    // Stuck-in-transit alert — A-to-Z "item not received" risk zone.
+    // Fires even if nothing else needs booking; these are the most urgent items.
+    if (stuck.length) {
+      const stuckBody = stuck.slice(0, 12).map(s => `• ${s.orderNumber || s.trackingNumber} (${s.carrier}, ${s.age}d, ${s.shipToCity || '?'}) — ${s.latestEvent || 'no recent event'}`).join('\n');
+      const extra = stuck.length > 12 ? `\n…and ${stuck.length - 12} more` : '';
+      await telegram.notify('attn', `Stuck in transit — ${stuck.length} shipment${stuck.length === 1 ? '' : 's'}`, stuckBody + extra + '\n\nRefund/contact carrier before buyer opens A-to-Z.\nhttp://localhost:3456#tab-tracking');
+    }
+
     if (!needAction.length) {
-      await telegram.notify('ok', `Morning scan clean (${source})`, `${scan.summary.hanging} hanging, all covered by booked pickups.`);
+      if (!stuck.length) {
+        await telegram.notify('ok', `Morning scan clean (${source})`, `${scan.summary.hanging} hanging, all covered by booked pickups.`);
+      }
       return;
     }
     const byGroup = {};
@@ -1416,6 +1428,19 @@ async function morningStaleScan(source) {
 }
 schedule('0 8 * * 1-5', () => morningStaleScan('08:00 weekday'), TZ);
 schedule('0 10 * * 6', () => morningStaleScan('10:00 Saturday'), TZ);
+
+// Buyer-cancellation poller — every 15 min, detects cancel requests on
+// unshipped MFN orders before they ship. See scripts/ops/poll-cancellations.js.
+async function pollCancellations(source) {
+  try {
+    const { main } = require('./scripts/ops/poll-cancellations');
+    await main();
+  } catch (err) {
+    console.error(`[cancel-poll ${source}] failed:`, err.message);
+    await telegram.notify('debug', `Cancel poller failed (${source})`, err.message);
+  }
+}
+schedule('*/15 * * * *', () => pollCancellations('15-min'), TZ);
 
 // ── FBA morning pull — inventory planning → Buy Box → Prosol stock ─────────
 //

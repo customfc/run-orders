@@ -49,12 +49,15 @@ CREATE TABLE IF NOT EXISTS amazon_orders (
   ship_postal TEXT,
   ship_country TEXT,
   buyer_email TEXT,                       -- anonymized Amazon address
+  is_buyer_requested_cancellation INTEGER DEFAULT 0,
+  cancel_alert_sent_at TEXT,              -- dedupe for the 15-min cancellation poller
   raw TEXT NOT NULL,
   ingested_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_amazon_orders_purchase ON amazon_orders(purchase_date);
 CREATE INDEX IF NOT EXISTS idx_amazon_orders_postal ON amazon_orders(ship_postal);
 CREATE INDEX IF NOT EXISTS idx_amazon_orders_channel ON amazon_orders(fulfillment_channel);
+CREATE INDEX IF NOT EXISTS idx_amazon_orders_cancel ON amazon_orders(is_buyer_requested_cancellation, order_status);
 
 CREATE TABLE IF NOT EXISTS amazon_order_items (
   order_item_id TEXT PRIMARY KEY,
