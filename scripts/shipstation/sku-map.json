@@ -647,40 +647,18 @@
       "needs_order_lookup": true
     },
     "B018A2XQSC": {
-      "bundle": true,
-      "components": [
-        {
-          "api_sku": "UNMAPPED_CABLE",
-          "prosol_sku": "UNMAPPED_CABLE",
-          "product": "DHEHK Cable - check order for sqft/voltage"
-        },
-        {
-          "api_sku": "DHERT103/BW",
-          "prosol_sku": "DHERT103BW",
-          "product": "Non-Programmable Thermostat"
-        }
-      ],
-      "product": "Schluter Cable Kit with Thermostat (variant)",
-      "note": "Cable model varies by order",
+      "api_sku": "UNMAPPED_CABLE",
+      "prosol_sku": "UNMAPPED_CABLE",
+      "product": "Schluter DITRA-HEAT-E-HK Cable (model varies by order)",
+      "note": "Cable-only listing — no thermostat in kit. Title ends with DHEHK{voltage}{code}; extractCableSku pulls it at stage time.",
       "verified": false,
       "needs_order_lookup": true
     },
     "B01MRNGVAY": {
-      "bundle": true,
-      "components": [
-        {
-          "api_sku": "UNMAPPED_CABLE",
-          "prosol_sku": "UNMAPPED_CABLE",
-          "product": "DHEHK Cable - check order for sqft/voltage"
-        },
-        {
-          "api_sku": "DHERT103/BW",
-          "prosol_sku": "DHERT103BW",
-          "product": "Non-Programmable Thermostat"
-        }
-      ],
-      "product": "Schluter Cable Kit with Thermostat (variant)",
-      "note": "Cable model varies by order",
+      "api_sku": "UNMAPPED_CABLE",
+      "prosol_sku": "UNMAPPED_CABLE",
+      "product": "Schluter DITRA-HEAT-E-HK Cable (model varies by order)",
+      "note": "Cable-only listing — no thermostat in kit. Title ends with DHEHK{voltage}{code}; extractCableSku pulls it at stage time.",
       "verified": false,
       "needs_order_lookup": true
     },
