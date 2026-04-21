@@ -522,10 +522,27 @@
       "verified": true,
       "brand": "schluter",
       "schluter_item": "DHEHK24085",
+      "package_shape": "cable_kit",
+      "max_per_pkg": 2,
       "map_cad": 633.35,
       "retail_cad": 703.72,
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
+    },
+    "B010MPZP84": {
+      "api_sku": "DHEHK24085",
+      "prosol_sku": "DHEHK24085",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 85.3 sqft",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK24085",
+      "package_shape": "cable_kit",
+      "max_per_pkg": 2,
+      "map_cad": 633.35,
+      "retail_cad": 703.72,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "note": "Alt ASIN for DHEHK24085 85.3 sqft cable (mirrors B071RTWHQB). Added 2026-04-21 after order 702-7750339 surfaced the gap."
     },
     "B01N26KH0N": {
       "api_sku": "DHEHK24021",
