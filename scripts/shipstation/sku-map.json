@@ -243,6 +243,13 @@
       "product": "Aqua Mix - Poultice Stain Remover 3/4 lb",
       "verified": true
     },
+    "11555": {
+      "api_sku": "C010861",
+      "prosol_sku": "C010861-01",
+      "product": "Aqua Mix - Poultice Stain Remover 3/4 lb",
+      "verified": true,
+      "note": "Shopify SKU for the same physical product as B000CD1L58. Added 2026-04-21 to unblock order #1248."
+    },
     "_section_aqua_mix_enrich_n_seal": "=== AQUA MIX - ENRICH 'N' SEAL ===",
     "B08HFY5BK4": {
       "api_sku": "C100250",
