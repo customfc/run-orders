@@ -1387,15 +1387,25 @@
       "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
     },
     "KD-STR": {
-      "api_sku": "KD-STR",
-      "prosol_sku": "KD-STR",
+      "api_sku": "13572",
+      "prosol_sku": "KDSTR",
       "product": "Schluter KERDI-DRAIN STRAINER",
       "category": "KERDI",
       "verified": true,
       "source": "shopify-manual",
       "brand": "schluter",
       "schluter_item": "KD-STR",
-      "note": "Prosol catalog uses KD-STR (verified 2026-04-20: productId 10256, 27 locations). SF PBSI Item 02602 has PBSI__Vendor_Item_ID__c=KDSTR — hyphen lost at SF entry time, should be KD-STR to match Prosol."
+      "note": "Shopify sends sku='KD-STR'. Prosol catalog uses KD-STR (productId 10256, 27 locations). SF PBSI Item Name='13572' with Manufacturer Code='KDSTR' (per Mac's 2026-04-22 screenshot). api_sku points to the SF Name so createShopifySoPo's findItemBySku lookup resolves; prosol_sku kept as manufacturer code. Backfill for orders #1246 #1247 pending."
+    },
+    "13572": {
+      "api_sku": "13572",
+      "prosol_sku": "KDSTR",
+      "product": "Schluter KERDI-DRAIN STRAINER",
+      "category": "KERDI",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KD-STR",
+      "note": "Mirror of KD-STR keyed by SF item number (what Sechelt uses manually). Added 2026-04-22."
     },
     "B07PV4JQ13": {
       "api_sku": "KD2FLKPVC",
