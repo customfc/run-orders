@@ -149,6 +149,29 @@ class ProsolClientV2 {
       }
     }
 
+    // Last-resort full-text search — Prosol's storefront shows SKU "ECO570-20"
+    // but neither filter[sku] nor filter[manufacturer_sku] returns it. The
+    // `keyword` query does a full-text search that DOES find it. Only accept
+    // an exact SKU match from the results to avoid false positives.
+    const res3 = await this.apiGet(
+      `/api/storefront/products?keyword=${encodeURIComponent(prosolSku)}&limit=10`
+    );
+    if (res3.status === 200) {
+      const data3 = JSON.parse(res3.body);
+      const products3 = data3.data || data3;
+      if (Array.isArray(products3) && products3.length > 0) {
+        const exact = products3.find(p =>
+          p.sku === prosolSku
+          || p.manufacturer_sku === prosolSku
+          || (typeof p.name === 'string' && p.name === prosolSku)
+        );
+        if (exact) {
+          this.skuToIdCache[prosolSku] = exact.id;
+          return exact.id;
+        }
+      }
+    }
+
     return null;
   }
 
