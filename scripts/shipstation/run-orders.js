@@ -624,6 +624,12 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
           weight: { value: Math.max(0.1, Number(toLb(staged.order.weight).toFixed(2))), units: 'pounds' },
           shipTo: staged.order.shipTo,
           items: staged.order.items,
+          // 'amazon_ca' | 'shopify' — drives phasePos routing (Amazon goes to
+          // the rotating 14-day SO; Shopify per-order calls createShopifySoPo
+          // to create an SF Sales Order + PO under the Shopify account). Was
+          // silently dropped from the row for a long time, which is why
+          // Shopify orders shipped without SF SOs getting created.
+          source: assignment.source || null,
         };
         assignments.push(row);
 
