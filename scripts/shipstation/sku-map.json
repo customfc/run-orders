@@ -143,6 +143,13 @@
       "product": "Mapei - Ultrabond ECO 975 Hardwood Adhesive 5 gal",
       "verified": true
     },
+    "9225": {
+      "api_sku": "ECO570-20",
+      "prosol_sku": "ECO570-20",
+      "product": "Mapei - Ultrabond ECO 570 Premium Universal Rubber-Flooring Adhesive",
+      "verified": true,
+      "note": "Shopify SKU 9225 is listed as 'ECO 560' but the physical product is ECO 570 (~$404 MAPEI item) — listing mix-up. Added 2026-04-22 to unblock order #1249."
+    },
     "11458": {
       "api_sku": "DHERT102/BW",
       "prosol_sku": "DHERT102BW",
