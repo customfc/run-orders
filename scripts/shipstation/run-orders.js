@@ -292,6 +292,26 @@ function haversineKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// Minimum qty required at a preferred hub for it to be chosen. Avoids the
+// "phantom last unit" trap (2026-04-21 order 702-7750339 routed to BURN
+// because Prosol reported qty=1 of DHEHK24085 there; physically BURN had
+// none — likely a reserved/allocated unit reported as available).
+// Tier-down to >= 1 in the fallback tier so low-stock items still ship.
+const MIN_QTY_PREFERRED = 2;
+
+function scoreWarehouseAgainstOrder(locId, inventoryBySku) {
+  // Returns the min qty across all SKUs at this warehouse, or 0 if any SKU
+  // has no stock there. Higher = more stock for the whole order.
+  let minQty = Infinity;
+  for (const entry of Object.values(inventoryBySku)) {
+    const stock = entry.locationStock?.[locId];
+    const q = (stock && stock.available) ? (Number(stock.quantity) || 0) : 0;
+    if (q === 0) return 0;
+    if (q < minQty) minQty = q;
+  }
+  return minQty === Infinity ? 0 : minQty;
+}
+
 function determineWarehouse(province, inventoryBySku) {
   const preferred = MAIN_HUBS[province] || [];
   const [provLat, provLng] = PROVINCE_LAT_LNG[province] || [45, -75];
@@ -304,19 +324,30 @@ function determineWarehouse(province, inventoryBySku) {
     .filter((c) => !preferred.includes(c.id))
     .sort((a, b) => haversineKm(provLat, provLng, a.lat || 0, a.lng || 0) - haversineKm(provLat, provLng, b.lat || 0, b.lng || 0));
 
-  const ranked = [
-    ...preferred,
-    ...fallback.map((c) => c.id),
-  ];
+  // Pass 1: preferred hubs, require qty >= MIN_QTY_PREFERRED across ALL SKUs.
+  // Among passing hubs, pick the one with the highest min-qty (most stock
+  // cushion) rather than the first in the hardcoded MAIN_HUBS list order.
+  // This would have rejected BURN for the Terrace DITRA-HEAT order on
+  // 2026-04-21 (1 phantom cable) and chosen WCAS or a fallback instead.
+  const preferredScored = preferred
+    .map((id) => ({ id, score: scoreWarehouseAgainstOrder(id, inventoryBySku) }))
+    .filter((c) => c.score >= MIN_QTY_PREFERRED)
+    .sort((a, b) => b.score - a.score);
+  if (preferredScored.length) {
+    const best = preferredScored[0];
+    const location = LOCATION_MAP[String(best.id)];
+    if (location && location.shipstation_warehouse_id) return { prosolLocId: best.id, location };
+  }
 
+  // Pass 2: preserve old ranked fallback (distance-sorted) with relaxed
+  // threshold (qty >= 1) so low-stock items still ship from nearest source.
+  const ranked = [...preferred, ...fallback.map((c) => c.id)];
   for (const locId of ranked) {
     const location = LOCATION_MAP[String(locId)];
     if (!location || !location.shipstation_warehouse_id) continue;
-    const ok = Object.values(inventoryBySku).every((entry) => {
-      const stock = entry.locationStock?.[locId];
-      return stock && stock.available && Number(stock.quantity) > 0;
-    });
-    if (ok) return { prosolLocId: locId, location };
+    if (scoreWarehouseAgainstOrder(locId, inventoryBySku) > 0) {
+      return { prosolLocId: locId, location };
+    }
   }
   return null;
 }
