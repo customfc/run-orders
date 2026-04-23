@@ -897,6 +897,55 @@ app.get('/api/fba/po-draft/preview/:vendor', (req, res) => {
   }
 });
 
+// ── Microsoft Graph mail auth + poll endpoints ──────────────────────────────
+//
+// Basic-auth IMAP is blocked on the Custom Flooring Centres tenant (confirmed
+// 2026-04-23 via BasicAuthBlocked response). Graph API via OAuth2 is the
+// replacement. These endpoints handle the one-time user-consent flow; once
+// tokens are saved on disk, the poll loop refreshes silently.
+
+// Step 1 of OAuth2: send the user to Microsoft's consent page.
+app.get('/api/fba/mail-oauth/login', (req, res) => {
+  try {
+    const mailWatcher = require('./lib/mail-watcher');
+    const url = mailWatcher.getAuthUrl();
+    res.redirect(url);
+  } catch (e) {
+    res.status(500).send(`mail-oauth/login failed: ${e.message}`);
+  }
+});
+
+// Step 2: Microsoft redirects here with ?code=... after consent.
+app.get('/api/fba/mail-oauth/callback', async (req, res) => {
+  try {
+    const mailWatcher = require('./lib/mail-watcher');
+    const { code, error, error_description } = req.query;
+    if (error) {
+      audit.log({ action: 'mail-oauth-callback', success: false, error, error_description });
+      return res.status(400).send(`OAuth error: ${error} — ${error_description || ''}`);
+    }
+    if (!code) return res.status(400).send('missing ?code');
+    const tokens = await mailWatcher.exchangeCodeForTokens(code);
+    audit.log({ action: 'mail-oauth-callback', success: true, scope: tokens.scope, obtained_at: tokens.obtained_at });
+    res.send(`<html><body style="font-family:Arial;padding:40px;max-width:600px"><h2>✅ Graph API authorized</h2><p>Tokens saved. You can close this tab.</p><p>The watcher will start polling automatically (gated on <code>FBA_IMAP_POLL=1</code>).</p></body></html>`);
+  } catch (e) {
+    audit.log({ action: 'mail-oauth-callback', success: false, error: e.message });
+    res.status(500).send(`callback failed: ${e.message}`);
+  }
+});
+
+// Manual one-shot Graph mail poll (same shape as the IMAP version).
+app.post('/api/fba/mail-poll', async (req, res) => {
+  try {
+    const mailWatcher = require('./lib/mail-watcher');
+    const autoIngest = req.body?.autoIngest === true;
+    const summary = await mailWatcher.pollOnce({ autoIngest });
+    res.json({ success: true, autoIngest, summary });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Manual one-shot IMAP poll (for testing the watcher on demand).
 // POST body: { autoIngest?: boolean }  — defaults to log-only regardless of
 // FBA_IMAP_AUTO_INGEST env flag, so you can preview without mutating state.
@@ -2358,7 +2407,7 @@ const COMMAND_HELP = `Commands:
 /deploy — git pull main + restart server
 /budget [show] — FBA replenishment spend vs. caps
 /budget set <daily|weekly|openPo|perPo> <amount> — tune caps
-/imap [poll|status] — one-shot poll of vendor reply inbox (log-only)
+/mail [poll|status|login] — one-shot poll of vendor reply inbox (log-only); /mail login for Graph setup
 /claude <message> — ask Claude anything (full repo + tool access)
 /ghost-pickup <WH_CODE> <ups|purolator> [--force] — trigger a carrier visit at a fringe warehouse (ghost label, auto-refunded). --force skips the "real shipments exist" guard.
 /ghost-track <trackingNumber> [WH_CODE] — rescue an orphan ghost (add to void ledger). Use when /ghosts doesn't show a Mac-Roy label that exists in SS.
@@ -2544,23 +2593,31 @@ async function handleTelegramCommand(command, args) {
       return `${header}\n${rows.join('\n')}`;
     }
 
+    case 'mail':
     case 'imap': {
       const sub = (args[0] || 'poll').toLowerCase();
+      const hasGraph = !!(process.env.MSGRAPH_CLIENT_ID && process.env.MSGRAPH_TENANT_ID && process.env.MSGRAPH_CLIENT_SECRET);
+      const backendName = hasGraph ? 'Graph' : 'IMAP';
+      const watcher = hasGraph ? require('./lib/mail-watcher') : require('./lib/imap-watcher');
       if (sub === 'poll' || sub === '') {
         try {
-          const imapWatcher = require('./lib/imap-watcher');
-          const summary = await imapWatcher.pollOnce({ autoIngest: false });
-          return `IMAP poll (log-only): seen=${summary.seen} parsed=${summary.parsed} skipped=${summary.skipped}${summary.errors.length ? `\nerrors: ${summary.errors.join('; ')}` : ''}`;
+          const summary = await watcher.pollOnce({ autoIngest: false });
+          return `${backendName} poll (log-only): seen=${summary.seen} parsed=${summary.parsed} skipped=${summary.skipped}${summary.errors.length ? `\nerrors: ${summary.errors.join('; ')}` : ''}`;
         } catch (e) {
-          return `❌ IMAP poll failed: ${e.message.slice(0, 400)}`;
+          return `❌ ${backendName} poll failed: ${e.message.slice(0, 400)}`;
         }
       }
       if (sub === 'status') {
-        const imapWatcher = require('./lib/imap-watcher');
-        const state = imapWatcher.loadState();
-        return `IMAP state:\n  lastSeenUid: ${state.lastSeenUid}\n  lastPolledAt: ${state.lastPolledAt || '(never)'}\n  autoIngest: ${process.env.FBA_IMAP_AUTO_INGEST === '1' ? 'ON' : 'OFF (log-only)'}`;
+        const state = watcher.loadState();
+        const tokenLine = hasGraph
+          ? `  graph tokens: ${watcher.loadTokens ? (watcher.loadTokens() ? 'present' : '(none — /api/fba/mail-oauth/login first)') : 'n/a'}\n`
+          : `  lastSeenUid: ${state.lastSeenUid}\n`;
+        return `${backendName} state:\n${tokenLine}  lastPolledAt: ${state.lastPolledAt || '(never)'}\n  autoIngest: ${process.env.FBA_IMAP_AUTO_INGEST === '1' ? 'ON' : 'OFF (log-only)'}`;
       }
-      return 'Usage: /imap [poll|status]';
+      if (sub === 'login' && hasGraph) {
+        return 'To authorize Graph API: from your laptop, run:\n\n  ssh -L 3456:localhost:3456 fred@freds-mac-mini.taila452b5.ts.net\n\nthen open http://localhost:3456/api/fba/mail-oauth/login in your browser and consent with mac@customfc.ca.';
+      }
+      return 'Usage: /mail [poll|status|login]';
     }
 
     case 'budget': {
@@ -2630,19 +2687,22 @@ app.listen(PORT, () => {
     console.warn('⚠️  Telegram bot polling skipped (DISABLE_CRON=1)');
   }
 
-  // IMAP watcher for vendor replies (carton dims + ready-to-ship acks). Gated
-  // on FBA_IMAP_POLL=1 so it doesn't fire without explicit opt-in. Defaults
-  // to LOG-ONLY — set FBA_IMAP_AUTO_INGEST=1 after verifying parse quality
-  // on a few real replies.
+  // Mail watcher for vendor replies (carton dims + ready-to-ship acks). Two
+  // possible backends — Graph API (if MSGRAPH_* env is set) or IMAP basic
+  // auth (legacy, blocked on most M365 tenants now). Graph is preferred;
+  // IMAP is retained for non-M365 setups or tenants where basic auth is on.
   if (process.env.FBA_IMAP_POLL === '1' && !CRON_DISABLED) {
+    const hasGraph = !!(process.env.MSGRAPH_CLIENT_ID && process.env.MSGRAPH_TENANT_ID && process.env.MSGRAPH_CLIENT_SECRET);
+    const backend = hasGraph ? './lib/mail-watcher' : './lib/imap-watcher';
     try {
-      const imapWatcher = require('./lib/imap-watcher');
-      imapWatcher.startPolling({
+      const watcher = require(backend);
+      watcher.startPolling({
         intervalMs: Number(process.env.FBA_IMAP_POLL_INTERVAL_MS || 5 * 60 * 1000),
         autoIngest: process.env.FBA_IMAP_AUTO_INGEST === '1',
       });
+      console.log(`[startup] mail watcher: ${hasGraph ? 'Graph API' : 'IMAP basic auth'}`);
     } catch (e) {
-      console.error('[startup] imap-watcher failed to start:', e.message);
+      console.error(`[startup] mail watcher (${backend}) failed to start:`, e.message);
     }
   }
   // Ghost-ledger reconcile at startup: catches wiped state files or
