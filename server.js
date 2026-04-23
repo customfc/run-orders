@@ -939,6 +939,63 @@ app.post('/api/fba/budget-config', (req, res) => {
   }
 });
 
+// Record vendor-confirmed carton dimensions against a (vendor, bucket) in the
+// current draft and transition state awaiting-dims → awaiting-labels-ack.
+// This persists dims but does NOT yet run the SP-API inbound-plan orchestration
+// — that's the 1c-ii-b commit. For now the UI uses this to record parsed /
+// pasted dims so ops has them when they fire the orchestrator manually.
+//
+// POST body: { vendor, bucket, cartonDims: { count, L, W, H, weightLb, parseConfidence, raw } }
+app.post('/api/fba/po-draft/confirm-dims', (req, res) => {
+  try {
+    const { vendor, bucket, cartonDims } = req.body || {};
+    if (!vendor) return res.status(400).json({ success: false, error: 'vendor required' });
+    if (!bucket) return res.status(400).json({ success: false, error: 'bucket required' });
+    if (!cartonDims || typeof cartonDims !== 'object') {
+      return res.status(400).json({ success: false, error: 'cartonDims required (object with count, L, W, H, weightLb)' });
+    }
+    for (const k of ['count', 'L', 'W', 'H', 'weightLb']) {
+      const v = Number(cartonDims[k]);
+      if (!Number.isFinite(v) || v <= 0) return res.status(400).json({ success: false, error: `cartonDims.${k} must be a positive number` });
+    }
+    const draft = poDrafts.loadCurrent();
+    const targets = poDrafts.linesFor(draft, { vendor, bucket, state: 'awaiting-dims' });
+    if (!targets.length) {
+      return res.status(400).json({ success: false, error: `No lines in state 'awaiting-dims' for ${vendor}/${bucket}` });
+    }
+    const patch = {
+      cartonDims: {
+        count: Number(cartonDims.count),
+        L: Number(cartonDims.L),
+        W: Number(cartonDims.W),
+        H: Number(cartonDims.H),
+        weightLb: Number(cartonDims.weightLb),
+        parseConfidence: Number(cartonDims.parseConfidence || 1),
+        raw: cartonDims.raw || null,
+        recordedAt: new Date().toISOString(),
+      },
+    };
+    const { changed, refused } = poDrafts.transitionLines(
+      draft,
+      targets.map((l) => l.lineId),
+      'awaiting-labels-ack',
+      { patch },
+    );
+    poDrafts.saveCurrent(draft);
+    audit.log({
+      action: 'fba-po-confirm-dims',
+      vendor, bucket,
+      cartonDims: patch.cartonDims,
+      lineCount: changed.length,
+      refused,
+    });
+    res.json({ success: true, changedCount: changed.length, refused, draft: poDrafts.summarize(draft) });
+  } catch (e) {
+    audit.log({ action: 'fba-po-confirm-dims', success: false, error: e.message, body: req.body });
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Send a vendor group. Optional `bucket` ('ready' | 'backorder' | 'sechelt')
 // filters to that availability bucket so in-stock and backorder POs don't
 // share an email (2026-04-23 redesign). Omit `bucket` for legacy combined

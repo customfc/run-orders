@@ -213,6 +213,44 @@ function reset() { sentMails.length = 0; sfCreates.length = 0; }
     global.setTimeout = origSetTimeout;
   }
 
+  // 5. state machine — send transitions draft→awaiting-dims, transitionLines
+  //    advances, illegal transitions refused.
+  {
+    reset();
+    const draft = buildDraft();
+    patchProsolLines(draft);
+    try {
+      for (const l of draft.lines) assert.strictEqual(l.state, 'draft', `line ${l.lineId} initial state`);
+      await poSender.sendVendorGroup({ draft, vendor: 'prosol', bucket: 'ready' });
+      const readyLines = draft.lines.filter((l) => l.vendor === 'prosol' && l.availabilityBucket === 'ready');
+      assert.ok(readyLines.every((l) => l.state === 'awaiting-dims'), 'ready lines → awaiting-dims');
+      const backorderLines = draft.lines.filter((l) => l.vendor === 'prosol' && l.availabilityBucket === 'backorder');
+      assert.ok(backorderLines.every((l) => l.state === 'draft'), 'backorder lines still draft');
+
+      // Transition ready lines forward with cartonDims patch
+      const r = poDrafts.transitionLines(
+        draft,
+        readyLines.map((l) => l.lineId),
+        'awaiting-labels-ack',
+        { patch: { cartonDims: { count: 20, L: 24, W: 18, H: 12, weightLb: 38 } } },
+      );
+      assert.strictEqual(r.changed.length, readyLines.length, 'all ready lines transitioned');
+      assert.strictEqual(r.refused.length, 0, 'none refused');
+      assert.ok(readyLines.every((l) => l.state === 'awaiting-labels-ack'), 'state advanced');
+      assert.strictEqual(readyLines[0].cartonDims.count, 20, 'cartonDims patched');
+
+      // Illegal jump should be refused
+      const bad = poDrafts.transitionLines(draft, [readyLines[0].lineId], 'in-transit');
+      assert.strictEqual(bad.changed.length, 0, 'illegal jump not applied');
+      assert.ok(/can't go/.test(bad.refused[0].reason), 'reason given');
+
+      // linesFor filter
+      const filt = poDrafts.linesFor(draft, { vendor: 'prosol', bucket: 'ready', state: 'awaiting-labels-ack' });
+      assert.strictEqual(filt.length, readyLines.length, 'linesFor filters correctly');
+      console.log('✓ scenario 5: state machine transitions + patches + refusal');
+    } catch (e) { failures.push(`scenario 5: ${e.message}`); }
+  }
+
   if (failures.length > 0) {
     console.error('\nFAILURES:');
     for (const f of failures) console.error(` - ${f}`);
