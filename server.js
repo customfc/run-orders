@@ -897,17 +897,23 @@ app.get('/api/fba/po-draft/preview/:vendor', (req, res) => {
   }
 });
 
-// Send a single vendor group (requires explicit vendor)
+// Send a vendor group. Optional `bucket` ('ready' | 'backorder' | 'sechelt')
+// filters to that availability bucket so in-stock and backorder POs don't
+// share an email (2026-04-23 redesign). Omit `bucket` for legacy combined
+// behavior (kept for backward compat with the Telegram auto-restock path).
 app.post('/api/fba/po-draft/send', async (req, res) => {
   try {
-    const { vendor } = req.body || {};
+    const { vendor, bucket } = req.body || {};
     if (!vendor) return res.status(400).json({ success: false, error: 'vendor required' });
     const poSender = require('./lib/fba-po-sender');
     const draft = poDrafts.loadCurrent();
-    const unsent = draft.lines.filter((l) => l.vendor === vendor && !l.sentAt);
-    if (!unsent.length) return res.status(400).json({ success: false, error: `No unsent lines for vendor '${vendor}'` });
+    const unsent = draft.lines.filter((l) =>
+      l.vendor === vendor && !l.sentAt && (!bucket || l.availabilityBucket === bucket));
+    if (!unsent.length) {
+      return res.status(400).json({ success: false, error: `No unsent lines for vendor '${vendor}'${bucket ? ` bucket '${bucket}'` : ''}` });
+    }
 
-    const result = await poSender.sendVendorGroup({ draft, vendor });
+    const result = await poSender.sendVendorGroup({ draft, vendor, bucket });
     poDrafts.saveCurrent(draft); // persist sentAt markers on lines
     const archivedPath = poSender.archiveIfAllSent(draft);
     if (archivedPath) {
@@ -917,6 +923,7 @@ app.post('/api/fba/po-draft/send', async (req, res) => {
     audit.log({
       action: 'fba-po-send',
       vendor,
+      bucket: bucket || null,
       to: result.to,
       cc: result.cc,
       lineCount: result.lineCount,
@@ -929,7 +936,33 @@ app.post('/api/fba/po-draft/send', async (req, res) => {
     });
     res.json({ success: true, result, archivedPath, remainingDraft: archivedPath ? null : poDrafts.summarize(poDrafts.loadCurrent()) });
   } catch (e) {
-    audit.log({ action: 'fba-po-send', success: false, vendor: req.body?.vendor, error: e.message });
+    audit.log({ action: 'fba-po-send', success: false, vendor: req.body?.vendor, bucket: req.body?.bucket, error: e.message });
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Send every bucket a vendor owns in priority order (ready → backorder → sechelt)
+// with 60s SMTP gaps. Dashboard's "Approve All for <vendor>" calls this.
+app.post('/api/fba/po-draft/send-all-buckets', async (req, res) => {
+  try {
+    const { vendor } = req.body || {};
+    if (!vendor) return res.status(400).json({ success: false, error: 'vendor required' });
+    const poSender = require('./lib/fba-po-sender');
+    const draft = poDrafts.loadCurrent();
+    const result = await poSender.sendAllBucketsForVendor({ draft, vendor });
+    poDrafts.saveCurrent(draft);
+    const archivedPath = poSender.archiveIfAllSent(draft);
+    if (archivedPath) poDrafts.clearCurrent();
+    audit.log({
+      action: 'fba-po-send-all-buckets',
+      vendor,
+      draftId: draft.draftId,
+      buckets: result.buckets.map((b) => ({ bucket: b.bucket, sent: b.sent, error: b.error || null, sfPoNumber: b.sfPo?.poNumber || null })),
+      archived: !!archivedPath,
+    });
+    res.json({ success: true, result, archivedPath, remainingDraft: archivedPath ? null : poDrafts.summarize(poDrafts.loadCurrent()) });
+  } catch (e) {
+    audit.log({ action: 'fba-po-send-all-buckets', success: false, vendor: req.body?.vendor, error: e.message });
     res.status(500).json({ success: false, error: e.message });
   }
 });
