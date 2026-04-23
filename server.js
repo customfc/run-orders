@@ -897,20 +897,77 @@ app.get('/api/fba/po-draft/preview/:vendor', (req, res) => {
   }
 });
 
+// Budget status — exposure vs. caps. Dashboard top-bar pulls this.
+app.get('/api/fba/budget-status', (req, res) => {
+  try {
+    const budgetGuards = require('./lib/budget-guards');
+    const draft = poDrafts.loadCurrent();
+    const exposure = budgetGuards.computeExposure();
+    const caps = budgetGuards.loadConfig();
+    // Per-vendor preview of what each pending bucket would cost if approved
+    const pendingByBucket = {};
+    for (const l of draft.lines) {
+      if (l.sentAt) continue;
+      const key = `${l.vendor}::${l.availabilityBucket || 'ready'}`;
+      pendingByBucket[key] = (pendingByBucket[key] || 0) + (Number(l.extCost) || 0);
+    }
+    for (const k of Object.keys(pendingByBucket)) pendingByBucket[k] = Number(pendingByBucket[k].toFixed(2));
+    res.json({ success: true, exposure, caps, pendingByBucket });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Update budget caps. POST { dailyCap?, weeklyCap?, openPoCap?, perPoCap? }
+app.post('/api/fba/budget-config', (req, res) => {
+  try {
+    const budgetGuards = require('./lib/budget-guards');
+    const allowed = ['dailyCap', 'weeklyCap', 'openPoCap', 'perPoCap'];
+    const patch = {};
+    for (const k of allowed) {
+      const v = req.body?.[k];
+      if (v == null) continue;
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < 0) return res.status(400).json({ success: false, error: `${k} must be a non-negative number` });
+      patch[k] = n;
+    }
+    const next = budgetGuards.saveConfig(patch);
+    audit.log({ action: 'fba-budget-config-update', patch });
+    res.json({ success: true, caps: next });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Send a vendor group. Optional `bucket` ('ready' | 'backorder' | 'sechelt')
 // filters to that availability bucket so in-stock and backorder POs don't
 // share an email (2026-04-23 redesign). Omit `bucket` for legacy combined
 // behavior (kept for backward compat with the Telegram auto-restock path).
 app.post('/api/fba/po-draft/send', async (req, res) => {
   try {
-    const { vendor, bucket } = req.body || {};
+    const { vendor, bucket, force } = req.body || {};
     if (!vendor) return res.status(400).json({ success: false, error: 'vendor required' });
     const poSender = require('./lib/fba-po-sender');
+    const budgetGuards = require('./lib/budget-guards');
     const draft = poDrafts.loadCurrent();
     const unsent = draft.lines.filter((l) =>
       l.vendor === vendor && !l.sentAt && (!bucket || l.availabilityBucket === bucket));
     if (!unsent.length) {
       return res.status(400).json({ success: false, error: `No unsent lines for vendor '${vendor}'${bucket ? ` bucket '${bucket}'` : ''}` });
+    }
+
+    // Tier-1 budget guard. Blocks the send unless the caller passes force:true.
+    // Overrides are loud: audit entry + Telegram attn so spend-over-cap is
+    // visible after the fact.
+    const guards = budgetGuards.evaluateGuards({ draft, bucket, vendor });
+    if (guards.blocks.length && !force) {
+      return res.status(403).json({ success: false, error: 'budget-block', guards });
+    }
+    if (guards.blocks.length && force) {
+      audit.log({ action: 'fba-po-send-budget-override', vendor, bucket: bucket || null, pendingCost: guards.pendingCost, blocks: guards.blocks });
+      try {
+        await telegram.notify('attn', `Budget override — ${vendor}${bucket ? ` (${bucket})` : ''} PO $${guards.pendingCost}`, guards.blocks.join('\n'));
+      } catch {}
     }
 
     const result = await poSender.sendVendorGroup({ draft, vendor, bucket });
@@ -945,10 +1002,25 @@ app.post('/api/fba/po-draft/send', async (req, res) => {
 // with 60s SMTP gaps. Dashboard's "Approve All for <vendor>" calls this.
 app.post('/api/fba/po-draft/send-all-buckets', async (req, res) => {
   try {
-    const { vendor } = req.body || {};
+    const { vendor, force } = req.body || {};
     if (!vendor) return res.status(400).json({ success: false, error: 'vendor required' });
     const poSender = require('./lib/fba-po-sender');
+    const budgetGuards = require('./lib/budget-guards');
     const draft = poDrafts.loadCurrent();
+
+    // Evaluate guards per-bucket; combined cost of all buckets matters for
+    // daily/weekly/exposure caps, so check the vendor-wide pending cost as well.
+    const vendorGuards = budgetGuards.evaluateGuards({ draft, vendor });
+    if (vendorGuards.blocks.length && !force) {
+      return res.status(403).json({ success: false, error: 'budget-block', guards: vendorGuards });
+    }
+    if (vendorGuards.blocks.length && force) {
+      audit.log({ action: 'fba-po-send-all-budget-override', vendor, pendingCost: vendorGuards.pendingCost, blocks: vendorGuards.blocks });
+      try {
+        await telegram.notify('attn', `Budget override — ${vendor} all-buckets PO $${vendorGuards.pendingCost}`, vendorGuards.blocks.join('\n'));
+      } catch {}
+    }
+
     const result = await poSender.sendAllBucketsForVendor({ draft, vendor });
     poDrafts.saveCurrent(draft);
     const archivedPath = poSender.archiveIfAllSent(draft);
@@ -2088,6 +2160,8 @@ const COMMAND_HELP = `Commands:
 /pickups — run just the pickup sweep (for tomorrow)
 /stage — run just the stage+buy+POs phases (no email, no pickups)
 /deploy — git pull main + restart server
+/budget [show] — FBA replenishment spend vs. caps
+/budget set <daily|weekly|openPo|perPo> <amount> — tune caps
 /claude <message> — ask Claude anything (full repo + tool access)
 /ghost-pickup <WH_CODE> <ups|purolator> [--force] — trigger a carrier visit at a fringe warehouse (ghost label, auto-refunded). --force skips the "real shipments exist" guard.
 /ghost-track <trackingNumber> [WH_CODE] — rescue an orphan ghost (add to void ledger). Use when /ghosts doesn't show a Mac-Roy label that exists in SS.
@@ -2271,6 +2345,36 @@ async function handleTelegramCommand(command, args) {
         return `• ${e.warehouseCode || '?'} ${e.carrier || '?'} — ${e.trackingNumber} · $${e.labelCost.toFixed(2)} · void ${voidDate}${overdue}`;
       });
       return `${header}\n${rows.join('\n')}`;
+    }
+
+    case 'budget': {
+      const budgetGuards = require('./lib/budget-guards');
+      const sub = (args[0] || 'show').toLowerCase();
+      if (sub === 'show' || sub === '') {
+        const cfg = budgetGuards.loadConfig();
+        const exposure = budgetGuards.computeExposure();
+        return [
+          `*Budget status*`,
+          `Today:  $${exposure.today.toFixed(2)} / $${cfg.dailyCap.toFixed(2)}`,
+          `Week:   $${exposure.week.toFixed(2)} / $${cfg.weeklyCap.toFixed(2)}`,
+          `Open:   $${exposure.openPoEstimate.toFixed(2)} / $${cfg.openPoCap.toFixed(2)}  (rough — 30d archive sum)`,
+          `Per-PO: $${cfg.perPoCap.toFixed(2)}`,
+          '',
+          `Tune: /budget set <daily|weekly|openPo|perPo> <amount>`,
+        ].join('\n');
+      }
+      if (sub === 'set') {
+        const key = args[1];
+        const amount = Number(args[2]);
+        const keyMap = { daily: 'dailyCap', weekly: 'weeklyCap', openpo: 'openPoCap', perpo: 'perPoCap' };
+        const field = keyMap[(key || '').toLowerCase()];
+        if (!field || !Number.isFinite(amount) || amount < 0) {
+          return 'Usage: /budget set <daily|weekly|openPo|perPo> <amount>\nExample: /budget set daily 20000';
+        }
+        const next = budgetGuards.saveConfig({ [field]: amount });
+        return `✅ ${field} set to $${amount.toFixed(2)}\n\n${JSON.stringify(next, null, 2)}`;
+      }
+      return 'Usage: /budget show | /budget set <daily|weekly|openPo|perPo> <amount>';
     }
 
     case 'claude': {
