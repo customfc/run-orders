@@ -897,6 +897,20 @@ app.get('/api/fba/po-draft/preview/:vendor', (req, res) => {
   }
 });
 
+// Manual one-shot IMAP poll (for testing the watcher on demand).
+// POST body: { autoIngest?: boolean }  — defaults to log-only regardless of
+// FBA_IMAP_AUTO_INGEST env flag, so you can preview without mutating state.
+app.post('/api/fba/imap-poll', async (req, res) => {
+  try {
+    const imapWatcher = require('./lib/imap-watcher');
+    const autoIngest = req.body?.autoIngest === true;
+    const summary = await imapWatcher.pollOnce({ autoIngest });
+    res.json({ success: true, autoIngest, summary });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Budget status — exposure vs. caps. Dashboard top-bar pulls this.
 app.get('/api/fba/budget-status', (req, res) => {
   try {
@@ -2344,6 +2358,7 @@ const COMMAND_HELP = `Commands:
 /deploy — git pull main + restart server
 /budget [show] — FBA replenishment spend vs. caps
 /budget set <daily|weekly|openPo|perPo> <amount> — tune caps
+/imap [poll|status] — one-shot poll of vendor reply inbox (log-only)
 /claude <message> — ask Claude anything (full repo + tool access)
 /ghost-pickup <WH_CODE> <ups|purolator> [--force] — trigger a carrier visit at a fringe warehouse (ghost label, auto-refunded). --force skips the "real shipments exist" guard.
 /ghost-track <trackingNumber> [WH_CODE] — rescue an orphan ghost (add to void ledger). Use when /ghosts doesn't show a Mac-Roy label that exists in SS.
@@ -2529,6 +2544,25 @@ async function handleTelegramCommand(command, args) {
       return `${header}\n${rows.join('\n')}`;
     }
 
+    case 'imap': {
+      const sub = (args[0] || 'poll').toLowerCase();
+      if (sub === 'poll' || sub === '') {
+        try {
+          const imapWatcher = require('./lib/imap-watcher');
+          const summary = await imapWatcher.pollOnce({ autoIngest: false });
+          return `IMAP poll (log-only): seen=${summary.seen} parsed=${summary.parsed} skipped=${summary.skipped}${summary.errors.length ? `\nerrors: ${summary.errors.join('; ')}` : ''}`;
+        } catch (e) {
+          return `❌ IMAP poll failed: ${e.message.slice(0, 400)}`;
+        }
+      }
+      if (sub === 'status') {
+        const imapWatcher = require('./lib/imap-watcher');
+        const state = imapWatcher.loadState();
+        return `IMAP state:\n  lastSeenUid: ${state.lastSeenUid}\n  lastPolledAt: ${state.lastPolledAt || '(never)'}\n  autoIngest: ${process.env.FBA_IMAP_AUTO_INGEST === '1' ? 'ON' : 'OFF (log-only)'}`;
+      }
+      return 'Usage: /imap [poll|status]';
+    }
+
     case 'budget': {
       const budgetGuards = require('./lib/budget-guards');
       const sub = (args[0] || 'show').toLowerCase();
@@ -2594,6 +2628,22 @@ app.listen(PORT, () => {
     });
   } else {
     console.warn('⚠️  Telegram bot polling skipped (DISABLE_CRON=1)');
+  }
+
+  // IMAP watcher for vendor replies (carton dims + ready-to-ship acks). Gated
+  // on FBA_IMAP_POLL=1 so it doesn't fire without explicit opt-in. Defaults
+  // to LOG-ONLY — set FBA_IMAP_AUTO_INGEST=1 after verifying parse quality
+  // on a few real replies.
+  if (process.env.FBA_IMAP_POLL === '1' && !CRON_DISABLED) {
+    try {
+      const imapWatcher = require('./lib/imap-watcher');
+      imapWatcher.startPolling({
+        intervalMs: Number(process.env.FBA_IMAP_POLL_INTERVAL_MS || 5 * 60 * 1000),
+        autoIngest: process.env.FBA_IMAP_AUTO_INGEST === '1',
+      });
+    } catch (e) {
+      console.error('[startup] imap-watcher failed to start:', e.message);
+    }
   }
   // Ghost-ledger reconcile at startup: catches wiped state files or
   // crashed-mid-save inconsistencies. Alerts loudly via Telegram on mismatch.
