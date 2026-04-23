@@ -915,16 +915,24 @@ app.get('/api/fba/mail-oauth/login', (req, res) => {
   }
 });
 
-// Step 2: Microsoft redirects here with ?code=... after consent.
+// Step 2: Microsoft redirects here after consent.
+// Handles three cases:
+//   - ?code=...              → normal auth-code exchange (user consent, token stored)
+//   - ?admin_consent=True    → admin pre-grant flow completed (no token exchanged)
+//   - ?error=...             → Microsoft surfaced an error
 app.get('/api/fba/mail-oauth/callback', async (req, res) => {
   try {
     const mailWatcher = require('./lib/mail-watcher');
-    const { code, error, error_description } = req.query;
+    const { code, admin_consent, tenant, error, error_description } = req.query;
     if (error) {
       audit.log({ action: 'mail-oauth-callback', success: false, error, error_description });
       return res.status(400).send(`OAuth error: ${error} — ${error_description || ''}`);
     }
-    if (!code) return res.status(400).send('missing ?code');
+    if (admin_consent === 'True' || admin_consent === 'true') {
+      audit.log({ action: 'mail-oauth-admin-consent', success: true, tenant });
+      return res.send(`<html><body style="font-family:Arial;padding:40px;max-width:600px"><h2>✅ Admin consent granted tenant-wide</h2><p>The app <code>run-orders-imap</code> is now approved for Custom Flooring Centres.</p><p><strong>Next step:</strong> the user whose mailbox should be watched (mac@customfc.ca) must visit <a href="/api/fba/mail-oauth/login">/api/fba/mail-oauth/login</a> to authorize their mailbox. That produces the refresh token the watcher needs.</p></body></html>`);
+    }
+    if (!code) return res.status(400).send('missing ?code or ?admin_consent');
     const tokens = await mailWatcher.exchangeCodeForTokens(code);
     audit.log({ action: 'mail-oauth-callback', success: true, scope: tokens.scope, obtained_at: tokens.obtained_at });
     res.send(`<html><body style="font-family:Arial;padding:40px;max-width:600px"><h2>✅ Graph API authorized</h2><p>Tokens saved. You can close this tab.</p><p>The watcher will start polling automatically (gated on <code>FBA_IMAP_POLL=1</code>).</p></body></html>`);
@@ -932,6 +940,18 @@ app.get('/api/fba/mail-oauth/callback', async (req, res) => {
     audit.log({ action: 'mail-oauth-callback', success: false, error: e.message });
     res.status(500).send(`callback failed: ${e.message}`);
   }
+});
+
+// Admin consent URL helper — returns the URL an admin (accounting@customfc.ca)
+// should visit to grant tenant-wide consent. No auth on this endpoint; the
+// URL it returns does the auth.
+app.get('/api/fba/mail-oauth/admin-consent-url', (req, res) => {
+  const clientId = process.env.MSGRAPH_CLIENT_ID;
+  const tenant = process.env.MSGRAPH_TENANT_ID;
+  const redirectUri = process.env.MSGRAPH_REDIRECT_URI || 'http://localhost:3456/api/fba/mail-oauth/callback';
+  if (!clientId || !tenant) return res.status(500).json({ success: false, error: 'MSGRAPH_CLIENT_ID / MSGRAPH_TENANT_ID required' });
+  const url = `https://login.microsoftonline.com/${tenant}/adminconsent?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  res.json({ success: true, url, instructions: 'Send this URL to the tenant admin (accounting@customfc.ca). They visit, sign in as admin, approve the app. Tenant-wide grant is recorded; no refresh token issued.' });
 });
 
 // Manual one-shot Graph mail poll (same shape as the IMAP version).
