@@ -164,7 +164,7 @@ function reset() { sentMails.length = 0; sfCreates.length = 0; }
     } catch (e) { failures.push(`scenario 2: ${e.message}`); }
   }
 
-  // 3. sendVendorGroup with bucket='ready' sends only ready lines
+  // 3. sendVendorGroup with bucket='ready' sends only ready lines + new FBA template shape
   {
     reset();
     const draft = buildDraft();
@@ -173,14 +173,18 @@ function reset() { sentMails.length = 0; sfCreates.length = 0; }
     try {
       assert.strictEqual(sentMails.length, 1, 'one email sent');
       assert.strictEqual(r.lineCount, 2, 'two ready lines in email');
-      assert.ok(/^Replenishment PO —/.test(sentMails[0].subject), 'ready bucket: no bucket tag in subject');
+      assert.ok(/^FBA Replenishment PO —/.test(sentMails[0].subject), 'ready subject says FBA');
+      assert.ok(/need carton dims/.test(sentMails[0].subject), 'subject asks for dims');
+      assert.ok(/Amazon FBA/.test(sentMails[0].html), 'body explicitly says FBA');
+      assert.ok(/carton dimensions/i.test(sentMails[0].html) && /L × W × H/.test(sentMails[0].html), 'body asks for dims');
+      assert.ok(/UPS Amazon Partner Carrier/.test(sentMails[0].html), 'body calls out UPS APC');
+      assert.ok(!/cross-warehouse stock/.test(sentMails[0].html), 'ready bucket: no backorder banner');
       const poCreates = sfCreates.filter((c) => c.object === 'PBSI__PBSI_Purchase_Order__c');
       assert.strictEqual(poCreates.length, 1, 'one SF PO created');
       assert.ok(/Amazon CA — READY/.test(poCreates[0].fields.PBSI__Shipping_Instructions__c), 'SF PO tagged READY');
-      // Backorder lines should NOT be marked sent
       const backLines = draft.lines.filter((l) => l.availabilityBucket === 'backorder' && l.vendor === 'prosol');
       assert.strictEqual(backLines.every((l) => !l.sentAt), true, 'backorder lines untouched');
-      console.log('✓ scenario 3: sendVendorGroup filters by bucket');
+      console.log('✓ scenario 3: sendVendorGroup filters by bucket + FBA template shape');
     } catch (e) { failures.push(`scenario 3: ${e.message}`); }
   }
 
@@ -198,8 +202,9 @@ function reset() { sentMails.length = 0; sfCreates.length = 0; }
       assert.strictEqual(r.buckets[0].bucket, 'ready', 'ready first');
       assert.strictEqual(r.buckets[1].bucket, 'backorder', 'backorder second');
       assert.strictEqual(sentMails.length, 2, 'two emails');
-      assert.ok(/READY/.test(sentMails[0].subject) === false && /Replenishment PO —/.test(sentMails[0].subject), 'email 1 subject bucketless (ready)');
+      assert.ok(/READY/.test(sentMails[0].subject) === false && /FBA Replenishment PO —/.test(sentMails[0].subject), 'email 1 subject bucketless (ready)');
       assert.ok(/\(BACKORDER\)/.test(sentMails[1].subject), 'email 2 subject shows BACKORDER');
+      assert.ok(/cross-warehouse stock/.test(sentMails[1].html), 'backorder body has consolidation banner');
       const poCreates = sfCreates.filter((c) => c.object === 'PBSI__PBSI_Purchase_Order__c');
       assert.strictEqual(poCreates.length, 2, 'two SF POs');
       assert.ok(draft.lines.filter((l) => l.vendor === 'prosol').every((l) => l.sentAt), 'all prosol lines marked sent');
