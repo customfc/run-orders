@@ -62,8 +62,10 @@ async function main() {
   if (!draft) throw new Error(`Draft not found: ${args.draft}`);
 
   const vendor = args.vendor || (draft.lines[0]?.vendor);
-  const lines = draft.lines.filter((l) => l.vendor === vendor);
-  if (!lines.length) throw new Error(`No lines for vendor '${vendor}' in draft ${args.draft}`);
+  const bucket = args.bucket || null;
+  const lines = draft.lines.filter((l) =>
+    l.vendor === vendor && (!bucket || l.availabilityBucket === bucket));
+  if (!lines.length) throw new Error(`No lines for vendor '${vendor}'${bucket ? ` bucket '${bucket}'` : ''} in draft ${args.draft}`);
 
   const sourceKey = args.source || defaultSourceForVendor(vendor);
   const sourceAddress = plans.SOURCE_ADDRESSES[sourceKey];
@@ -114,8 +116,8 @@ async function main() {
     for (const u of unresolved) console.warn(`  ${u.asin}  ${u.product}`);
   }
 
-  const planKey = `${args.draft}-${vendor}-inbound`;
-  const name = `${vendor.toUpperCase()} — ${args.draft.replace('draft-', '')} — ${items.length} SKU`;
+  const planKey = `${args.draft}-${vendor}${bucket ? '-' + bucket : ''}-inbound`;
+  const name = `${vendor.toUpperCase()}${bucket ? ' ' + bucket.toUpperCase() : ''} — ${args.draft.replace('draft-', '')} — ${items.length} SKU`;
 
   console.log(`Creating inbound plan for ${items.length} SKU(s) from ${sourceKey}...`);
   for (const it of items) console.log(`  ${it.msku}  ×${it.quantity}`);

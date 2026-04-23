@@ -996,6 +996,131 @@ app.post('/api/fba/po-draft/confirm-dims', (req, res) => {
   }
 });
 
+// Fire the Amazon inbound-plan orchestration for a (vendor, bucket) whose
+// lines are in state 'awaiting-labels-ack' (dims confirmed). Walks SP-API
+// steps 1-5: createInboundPlan → packing → placement → transport → labels.
+// Then sends the labels email (#2 of the two-email flow) with FNSKU PDF +
+// carton label PDF attached + Amazon FC ship-to block.
+//
+// POST body: { vendor, bucket, confirm: boolean }
+//   confirm=false → dry-run, no SP-API calls, returns plan of what would run.
+//   confirm=true  → live. IRREVERSIBLE at step 3 (placement locks destination FC).
+//
+// On success, lines transition awaiting-labels-ack → awaiting-pickup. The
+// draft is saved. SSE-style progress is not streamed here (keep endpoint
+// simple); the call can take 2-5 min for Amazon's async operations.
+app.post('/api/fba/po-draft/run-inbound', async (req, res) => {
+  try {
+    const { vendor, bucket, confirm } = req.body || {};
+    if (!vendor) return res.status(400).json({ success: false, error: 'vendor required' });
+    if (!bucket) return res.status(400).json({ success: false, error: 'bucket required' });
+
+    const poSender = require('./lib/fba-po-sender');
+    const orchestrator = require('./lib/fba-inbound-orchestrator');
+
+    const draft = poDrafts.loadCurrent();
+    const targets = poDrafts.linesFor(draft, { vendor, bucket, state: 'awaiting-labels-ack' });
+    if (!targets.length) {
+      return res.status(400).json({ success: false, error: `No lines in state 'awaiting-labels-ack' for ${vendor}/${bucket}. Confirm dims first via /api/fba/po-draft/confirm-dims.` });
+    }
+
+    // Every targeted line in this bucket should share the same cartonDims
+    // (confirm-dims stamps them bucket-wide). Use the first.
+    const cartonDims = targets[0].cartonDims;
+    if (!cartonDims) {
+      return res.status(400).json({ success: false, error: 'cartonDims missing on awaiting-labels-ack line — did confirm-dims run?' });
+    }
+
+    const orchResult = await orchestrator.runForBucket({
+      draftId: draft.draftId,
+      vendor,
+      bucket,
+      cartonDims,
+      confirm: !!confirm,
+      onProgress: () => {}, // streaming can be added later
+    });
+
+    if (orchResult.dryRun) {
+      return res.json({ success: true, dryRun: true, orchestrator: orchResult });
+    }
+    if (!orchResult.ok) {
+      audit.log({ action: 'fba-po-run-inbound', success: false, vendor, bucket, draftId: draft.draftId, failedAt: orchResult.failedAt });
+      return res.status(500).json({ success: false, error: `orchestrator failed at step ${orchResult.failedAt}`, orchestrator: orchResult });
+    }
+
+    // Pull final plan state for the labels email
+    const plans = require('./lib/fba-inbound-plans');
+    const planState = plans.load(orchResult.planKey);
+    const shipment = (planState?.shipmentDetails || [])[0] || {};
+    const fcCode = shipment.destination?.warehouseId || shipment.destination?.address?.city || null;
+    const fcAddress = shipment.destination?.address || null;
+    const fnskuPdfPath = planState?.labels?.itemLabelsPdfPath || null;
+    // Transport/carton labels PDF — v2024-03-20 doesn't return box labels as a
+    // separate endpoint; transport confirmation prints via the shipment's
+    // partner carrier. For now attach only FNSKU PDF; carton labels come
+    // from UPS APC and we'll fetch via getShipment in a later commit.
+    const transportPdfPath = null;
+    const poNumber = targets[0].sfPoNumber || orchResult.planKey;
+
+    const labelResult = await poSender.sendLabelsEmail({
+      vendor,
+      bucket,
+      lines: targets,
+      poNumber,
+      fcCode,
+      fcAddress,
+      shipmentConfirmationId: shipment.shipmentConfirmationId,
+      amazonReferenceId: shipment.amazonReferenceId,
+      cartonDims,
+      fnskuPdfPath,
+      transportPdfPath,
+    });
+
+    // State: awaiting-labels-ack → awaiting-pickup (lines await vendor "ready" reply)
+    const { changed } = poDrafts.transitionLines(
+      draft,
+      targets.map((l) => l.lineId),
+      'awaiting-pickup',
+      {
+        patch: {
+          inboundPlan: {
+            planKey: orchResult.planKey,
+            shipmentConfirmationId: shipment.shipmentConfirmationId || null,
+            amazonReferenceId: shipment.amazonReferenceId || null,
+            fcCode,
+            fcAddress,
+            fnskuPdfPath,
+            transportPdfPath,
+          },
+        },
+      },
+    );
+    poDrafts.saveCurrent(draft);
+
+    audit.log({
+      action: 'fba-po-run-inbound',
+      success: true,
+      vendor, bucket,
+      draftId: draft.draftId,
+      planKey: orchResult.planKey,
+      shipmentConfirmationId: shipment.shipmentConfirmationId || null,
+      fcCode,
+      labelsEmailSentTo: labelResult.to,
+      lineCount: changed.length,
+    });
+
+    res.json({
+      success: true,
+      orchestrator: orchResult,
+      labelsEmail: labelResult,
+      transitionedLines: changed.length,
+    });
+  } catch (e) {
+    audit.log({ action: 'fba-po-run-inbound', success: false, error: e.message, body: req.body });
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Send a vendor group. Optional `bucket` ('ready' | 'backorder' | 'sechelt')
 // filters to that availability bucket so in-stock and backorder POs don't
 // share an email (2026-04-23 redesign). Omit `bucket` for legacy combined
