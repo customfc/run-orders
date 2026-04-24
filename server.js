@@ -1155,6 +1155,16 @@ app.post('/api/fba/quick-po', async (req, res) => {
       preview[key].lineCount++;
       preview[key].totalUnits += line.qty;
       if (line.extCost != null) preview[key].totalCost += line.extCost;
+      // Detect manufacturer-barcode SKUs — Amazon is increasingly blocking
+      // these at shipment-plan time for non-brand-registered sellers. We
+      // surface the flag in the UI so user knows to switch the listing to
+      // Amazon barcode (FNSKU) before committing.
+      // Heuristic: if FNSKU equals ASIN in the restock-recs snapshot, the
+      // listing is on manufacturer barcode. Amazon-barcode listings get
+      // FNSKU values like 'X00ABCDE12'.
+      const rawFnsku = snap.rows?.find((r) => r.asin === line.asin)?.fnsku || snap.rows?.find((r) => r.asin === line.asin)?.FNSKU;
+      const manufacturerBarcode = rawFnsku && rawFnsku === line.asin;
+
       preview[key].lines.push({
         asin: line.asin,
         sku: line.sku,
@@ -1167,6 +1177,8 @@ app.post('/api/fba/quick-po', async (req, res) => {
         alreadyOpenQty: line.alreadyOpenQty || 0,
         originalRecQty: line.originalRecQty || line.qty,
         openPoRefs: line.openPoRefs || [],
+        fnsku: rawFnsku || null,
+        manufacturerBarcode: !!manufacturerBarcode,
       });
     }
     for (const p of Object.values(preview)) {
