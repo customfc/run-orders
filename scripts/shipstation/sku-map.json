@@ -144,11 +144,11 @@
       "verified": true
     },
     "9225": {
-      "api_sku": "ECO570-20",
-      "prosol_sku": "ECO570-20",
-      "product": "Mapei - Ultrabond ECO 570 Premium Universal Rubber-Flooring Adhesive",
+      "api_sku": "95568",
+      "prosol_sku": "95568",
+      "product": "Mapei - Ultrabond ECO 570 Premium Urethane Rubber-Sports-Flooring Adhesive 18.9 L",
       "verified": true,
-      "note": "Shopify SKU 9225 is listed as 'ECO 560' but the physical product is ECO 570 (~$404 MAPEI item) — listing mix-up. Added 2026-04-22 to unblock order #1249."
+      "note": "Shopify SKU 9225 is listed as 'ECO 560' but the physical product is ECO 570. Prosol's SKU is 95568 (numeric, not the ECO570-20 label used in marketing). Fixed 2026-04-24 after Prosol's keyword-search fallback stopped working for SKU lookup."
     },
     "11458": {
       "api_sku": "DHERT102/BW",
