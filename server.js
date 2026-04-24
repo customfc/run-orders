@@ -1875,11 +1875,20 @@ app.post('/api/fba/signals/pull', async (req, res) => {
   try {
     send('status', { message: 'Requesting GET_FBA_INVENTORY_PLANNING_DATA from Amazon...' });
     const { main: pullInventoryPlanning } = require('./scripts/fba/pull-inventory-planning');
-    // Capture stdout-style progress by monkey-patching console.log for this call
     const origLog = console.log;
     console.log = (...args) => { send('progress', { line: args.join(' ') }); origLog(...args); };
     try {
       await pullInventoryPlanning();
+      // Also pull the broader restock-recs report — this is what actually backs
+      // Amazon's Restock page UI and includes SKUs the planning report omits.
+      send('status', { message: 'Now requesting GET_RESTOCK_INVENTORY_RECOMMENDATIONS_REPORT (fuller restock list)...' });
+      try {
+        const { main: pullRestockRecs } = require('./scripts/fba/pull-restock-recs');
+        await pullRestockRecs();
+      } catch (e) {
+        // Don't fail the whole call — planning data is still usable as a fallback.
+        send('progress', { line: `⚠ restock-recs pull failed: ${e.message} — falling back to planning-only` });
+      }
     } finally {
       console.log = origLog;
     }
@@ -2113,10 +2122,12 @@ async function fbaMorningPull(source) {
 
   try {
     const { main: pullIP } = require('./scripts/fba/pull-inventory-planning');
+    const { main: pullRR } = require('./scripts/fba/pull-restock-recs');
     const { main: pullBB } = require('./scripts/fba/pull-buybox');
     const { main: pullPS } = require('./scripts/fba/pull-prosol-stock');
 
     await runStep('inventory-planning', pullIP);
+    await runStep('restock-recs', pullRR);
     await runStep('buy-box', pullBB);
     await runStep('prosol-stock', pullPS);
 
