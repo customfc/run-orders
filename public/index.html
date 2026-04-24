@@ -225,20 +225,53 @@
 
   <!-- ═══ FBA COMMAND ═══ -->
   <div id="tab-fba" class="tab-content">
-    <div class="card">
-      <h2>FBA Command · Today</h2>
-      <div class="actions">
-        <button class="btn btn-primary" id="btnFbaPull" onclick="fbaPullSignals()">Pull Inventory Planning</button>
-        <button class="btn btn-primary" id="btnFbaPullBb" onclick="fbaPullBuyBox()">Pull Buy Box</button>
-        <button class="btn btn-primary" id="btnFbaPullProsol" onclick="fbaPullProsolStock()">Pull Prosol Stock</button>
-        <button class="btn" onclick="fbaLoadToday()">Refresh View</button>
-        <button class="btn" style="background:#7c3aed;color:white" onclick="fbaShowViolatorReport()">🎯 Schluter Violator Report</button>
-        <span id="fbaSnapshotInfo" style="font-size:12px;color:#64748b;margin-left:12px"></span>
+    <!-- Today's Plan — one-purpose flow: build PO proposal → commit to Salesforce -->
+    <div class="card" style="max-width:960px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 style="margin:0">Today's Replenishment</h2>
+        <span id="fbaTopSnap" style="font-size:12px;color:#64748b"></span>
       </div>
-      <div id="fbaProgress" class="progress-log" style="display:none"></div>
-      <div id="fbaSummary" style="margin:12px 0"></div>
-      <div id="fbaPoCart" style="margin:12px 0"></div>
-      <div id="fbaTiers"></div>
+      <p style="color:#64748b;font-size:13px;margin:0 0 20px 0">
+        The system proposes what to order based on Amazon's restock data, your Prosol stock cache, and your budget caps.
+        Review, then commit to Salesforce. Vendor emails stay manual until you say otherwise.
+      </p>
+
+      <div id="fbaBudgetMeter" style="margin-bottom:16px"></div>
+
+      <!-- Step 1: propose -->
+      <div id="fbaPoStep1" style="text-align:center;padding:32px 16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+        <button id="btnBuildPo" onclick="fbaBuildPo()"
+          style="padding:14px 32px;background:#1a1a2e;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">
+          📋 Build today's POs
+        </button>
+        <div style="font-size:12px;color:#64748b;margin-top:10px">Dry-run — shows what I'd buy. You review before any Salesforce write.</div>
+      </div>
+
+      <!-- Step 2: preview + commit (populated after Build) -->
+      <div id="fbaPoPreview" style="display:none;margin-top:16px"></div>
+
+      <!-- Step 3: result (populated after Commit) -->
+      <div id="fbaPoResult" style="display:none;margin-top:16px"></div>
+
+      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0">
+        <details>
+          <summary style="cursor:pointer;font-size:12px;color:#64748b">▸ Diagnostics — snapshot pulls, tier breakdown, manual cart</summary>
+          <div style="margin-top:16px">
+            <div class="actions">
+              <button class="btn btn-primary" id="btnFbaPull" onclick="fbaPullSignals()">Pull Inventory Planning</button>
+              <button class="btn btn-primary" id="btnFbaPullBb" onclick="fbaPullBuyBox()">Pull Buy Box</button>
+              <button class="btn btn-primary" id="btnFbaPullProsol" onclick="fbaPullProsolStock()">Pull Prosol Stock</button>
+              <button class="btn" onclick="fbaLoadToday()">Refresh Tiers</button>
+              <button class="btn" style="background:#7c3aed;color:white" onclick="fbaShowViolatorReport()">🎯 Schluter Violator Report</button>
+              <span id="fbaSnapshotInfo" style="font-size:12px;color:#64748b;margin-left:12px"></span>
+            </div>
+            <div id="fbaProgress" class="progress-log" style="display:none"></div>
+            <div id="fbaSummary" style="margin:12px 0"></div>
+            <div id="fbaPoCart" style="margin:12px 0"></div>
+            <div id="fbaTiers"></div>
+          </div>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -266,7 +299,7 @@ function showTab(name) {
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
   if (name === 'logs') loadLogs();
-  if (name === 'fba') fbaLoadToday();
+  if (name === 'fba') { fbaLoadTopBar(); fbaLoadToday(); }
 }
 
 // ── Health check ─────────────────────────────────────────────────────────────
@@ -1327,6 +1360,218 @@ const FBA_TIERS = [
   { key: 'dormant',               title: 'DORMANT — sitting on stock, no 30d sales',             icon: '💤', color: '#64748b' },
   { key: 'healthy',               title: 'HEALTHY — adequate cover, no action needed',           icon: '✅', color: '#059669' },
 ];
+
+// ── Today's Replenishment — minimal one-purpose flow ─────────────────────
+
+async function fbaLoadTopBar() {
+  // Snapshot age + budget meter, hydrated on FBA tab entry.
+  try {
+    const r = await fetch('/api/fba/today');
+    if (r.ok) {
+      const d = await r.json();
+      const snap = d.snapshot || d.data?.snapshot;
+      const age = snap?.pulledAt ? Math.round((Date.now() - new Date(snap.pulledAt).getTime()) / 60000) : null;
+      document.getElementById('fbaTopSnap').textContent = age != null
+        ? `Snapshot · ${age}m ago · ${(d.rows || d.data?.rows || []).length} SKUs tracked`
+        : 'No snapshot — pull data in Diagnostics';
+    }
+  } catch {}
+  try {
+    const r = await fetch('/api/fba/budget-status');
+    if (r.ok) {
+      const d = await r.json();
+      const { exposure, caps } = d;
+      const pct = (n, cap) => Math.min(100, Math.round((n / cap) * 100));
+      const bar = (n, cap) => {
+        const p = pct(n, cap);
+        const col = p < 60 ? '#059669' : p < 90 ? '#d97706' : '#dc2626';
+        return `<div style="flex:1;min-width:160px"><div style="font-size:11px;color:#64748b;display:flex;justify-content:space-between"><span>${['Today','Week','Open PO exposure'][arguments[2]]}</span><span>$${n.toFixed(0)} / $${cap.toFixed(0)}</span></div><div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-top:4px"><div style="height:100%;background:${col};width:${p}%"></div></div></div>`;
+      };
+      document.getElementById('fbaBudgetMeter').innerHTML =
+        `<div style="display:flex;gap:16px;padding:12px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">` +
+        bar(exposure.today, caps.dailyCap, 0) +
+        bar(exposure.week, caps.weeklyCap, 1) +
+        bar(exposure.openPoEstimate, caps.openPoCap, 2) +
+        `</div>`;
+    }
+  } catch {}
+}
+
+async function fbaBuildPo() {
+  const btn = document.getElementById('btnBuildPo');
+  btn.disabled = true;
+  btn.textContent = '⏳ Building...';
+  const preview = document.getElementById('fbaPoPreview');
+  preview.style.display = 'block';
+  preview.innerHTML = `<div style="text-align:center;padding:32px;color:#64748b">Loading proposal…</div>`;
+  try {
+    const r = await fetch('/api/fba/quick-po', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dryRun: true }),
+    });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error || 'build failed');
+    if (d.message) {
+      preview.innerHTML = `<div style="padding:24px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;color:#92400e;text-align:center">${esc(d.message)}</div>`;
+      btn.disabled = false;
+      btn.textContent = '📋 Build today\'s POs';
+      return;
+    }
+    window._fbaPoProposal = d;
+    preview.innerHTML = fbaRenderPreview(d);
+  } catch (e) {
+    preview.innerHTML = `<div style="padding:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b">❌ ${esc(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📋 Build today\'s POs';
+  }
+}
+
+function fbaRenderPreview(d) {
+  const groups = Object.values(d.preview);
+  if (!groups.length) return `<div style="padding:24px;text-align:center;color:#64748b">Nothing proposed.</div>`;
+  const grandTotal = groups.reduce((s, g) => s + g.totalCost, 0);
+  const grandUnits = groups.reduce((s, g) => s + g.totalUnits, 0);
+  const bucketColor = (b) => b === 'ready' ? { bg: '#ecfdf5', border: '#a7f3d0', accent: '#065f46', label: '🟢 Ready to ship' }
+                          : b === 'backorder' ? { bg: '#fef3c7', border: '#fcd34d', accent: '#92400e', label: '🟡 Backorder (cross-warehouse ~1wk)' }
+                          : { bg: '#f3e8ff', border: '#d8b4fe', accent: '#6b21a8', label: '🟣 Sechelt pack-prep' };
+
+  let html = `<div style="padding:14px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-weight:700;font-size:15px;color:#1e3a8a">${groups.length} PO${groups.length===1?'':'s'} · ${grandUnits} units · $${grandTotal.toFixed(2)}</div>
+      <div style="font-size:12px;color:#1e40af;margin-top:2px">One Salesforce PO per vendor × availability bucket</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="fbaCancelPreview()" style="padding:8px 14px;background:#f1f5f9;border:none;border-radius:6px;cursor:pointer;font-size:13px">Cancel</button>
+      <button onclick="fbaCommitPo(false)" style="padding:10px 20px;background:#059669;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600">✓ Create in Salesforce</button>
+    </div>
+  </div>`;
+
+  for (const g of groups) {
+    const c = bucketColor(g.bucket);
+    html += `<div style="margin-bottom:12px;border:1px solid ${c.border};border-radius:8px;overflow:hidden">
+      <div style="padding:10px 14px;background:${c.bg};display:flex;justify-content:space-between;align-items:center">
+        <div><strong style="color:${c.accent}">${esc(g.vendor)}</strong> · ${esc(c.label)}</div>
+        <div style="font-size:13px;color:${c.accent}">${g.lineCount} SKU${g.lineCount===1?'':'s'} · ${g.totalUnits}u · $${g.totalCost.toFixed(2)}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:#fafafa;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:0.4px">
+          <th style="text-align:left;padding:8px 14px">SKU</th>
+          <th style="text-align:left;padding:8px 4px">Product</th>
+          <th style="text-align:right;padding:8px 4px">Qty</th>
+          <th style="text-align:left;padding:8px 14px">Why</th>
+        </tr></thead><tbody>`;
+    for (const l of g.lines) {
+      const sku = l.prosolSku || l.sku || l.asin;
+      const tier = (l.tier || '').replace(/^auto-/, '');
+      const costBit = l.unitCost ? ` · $${(l.unitCost * l.qty).toFixed(2)}` : '';
+      html += `<tr style="border-top:1px solid #f1f5f9">
+        <td style="padding:8px 14px;font-family:monospace;font-size:12px">${esc(sku)}</td>
+        <td style="padding:8px 4px">${esc((l.product || '').slice(0, 60))}</td>
+        <td style="padding:8px 4px;text-align:right;font-weight:600">${l.qty}${costBit}</td>
+        <td style="padding:8px 14px;font-size:12px;color:#64748b">${esc(tier)}${l.stockNote ? ` · ${esc(l.stockNote)}` : ''}</td>
+      </tr>`;
+    }
+    html += `</tbody></table></div>`;
+  }
+
+  if (d.skipped && (d.skipped.vendor || d.skipped.cap || d.skipped.prosol_oos)) {
+    html += `<div style="font-size:12px;color:#64748b;padding:8px 4px">
+      Skipped: ${d.skipped.vendor || 0} non-enabled vendor · ${d.skipped.cap || 0} over per-vendor cap · ${d.skipped.prosol_oos || 0} Prosol out-of-stock
+    </div>`;
+  }
+  return html;
+}
+
+function fbaCancelPreview() {
+  document.getElementById('fbaPoPreview').style.display = 'none';
+  document.getElementById('fbaPoPreview').innerHTML = '';
+  window._fbaPoProposal = null;
+}
+
+async function fbaCommitPo(force) {
+  if (!window._fbaPoProposal) return;
+  if (!confirm(`Create Salesforce POs for ${window._fbaPoProposal.proposed} line(s)?\n\nNo vendor emails will be sent. You'll send manually from Salesforce.`)) return;
+
+  const preview = document.getElementById('fbaPoPreview');
+  preview.innerHTML = `<div style="text-align:center;padding:32px;color:#64748b">Creating Salesforce POs…</div>`;
+
+  try {
+    const r = await fetch('/api/fba/quick-po', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dryRun: false, force }),
+    });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error || 'create failed');
+
+    preview.style.display = 'none';
+    const result = document.getElementById('fbaPoResult');
+    result.style.display = 'block';
+    result.innerHTML = fbaRenderResult(d);
+    window._fbaPoProposal = null;
+    fbaLoadTopBar(); // refresh budget meter
+  } catch (e) {
+    preview.innerHTML = `<div style="padding:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b">❌ ${esc(e.message)}</div>`;
+  }
+}
+
+function fbaRenderResult(d) {
+  let html = `<div style="padding:16px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;margin-bottom:16px">
+    <div style="font-weight:700;color:#065f46;font-size:16px">✅ Salesforce POs created</div>
+    <div style="font-size:13px;color:#065f46;margin-top:4px">Review in Salesforce, then email the vendor yourself.</div>
+  </div>`;
+
+  if (d.sendResults?.length) {
+    html += `<div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:#f8fafc;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:0.4px">
+          <th style="text-align:left;padding:10px 14px">Vendor</th>
+          <th style="text-align:left;padding:10px 4px">Bucket</th>
+          <th style="text-align:left;padding:10px 14px">SF PO</th>
+          <th style="text-align:right;padding:10px 14px">Lines / Units / Cost</th>
+        </tr></thead><tbody>`;
+    for (const sr of d.sendResults) {
+      for (const b of sr.buckets) {
+        const po = b.sfPo?.poNumber || '—';
+        const cost = b.sfPo?.totalCost ? `$${b.sfPo.totalCost.toFixed(2)}` : '—';
+        const err = b.error || b.sfPo?.error;
+        html += `<tr style="border-top:1px solid #f1f5f9">
+          <td style="padding:10px 14px;font-weight:600">${esc(sr.vendor)}</td>
+          <td style="padding:10px 4px">${esc(b.bucket || '—')}</td>
+          <td style="padding:10px 14px;font-family:monospace">${esc(po)}${err ? ` <span style="color:#dc2626">⚠ ${esc(err)}</span>` : ''}</td>
+          <td style="padding:10px 14px;text-align:right">${b.lineCount || 0} / ${b.totalUnits || 0} / ${cost}</td>
+        </tr>`;
+      }
+    }
+    html += `</tbody></table></div>`;
+  }
+
+  if (d.budgetBlocks?.length) {
+    html += `<div style="margin-top:12px;padding:12px 14px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px">
+      <div style="font-weight:600;color:#92400e">⚠️ Budget-blocked — NOT created:</div>`;
+    for (const bb of d.budgetBlocks) {
+      html += `<div style="font-size:13px;color:#92400e;margin-top:6px">• <strong>${esc(bb.vendor)}</strong> ($${bb.pendingCost}): ${esc(bb.blocks.join('; '))}</div>`;
+    }
+    html += `<div style="margin-top:10px"><button onclick="fbaCommitPo(true)" style="padding:6px 12px;background:#dc2626;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer">Force — override caps</button> or raise caps via <code>/budget set</code> in Telegram.</div>
+    </div>`;
+  }
+
+  html += `<div style="margin-top:16px;text-align:center">
+    <button onclick="fbaResetFlow()" style="padding:8px 14px;background:#1a1a2e;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px">Done — build another</button>
+  </div>`;
+  return html;
+}
+
+function fbaResetFlow() {
+  document.getElementById('fbaPoPreview').style.display = 'none';
+  document.getElementById('fbaPoPreview').innerHTML = '';
+  document.getElementById('fbaPoResult').style.display = 'none';
+  document.getElementById('fbaPoResult').innerHTML = '';
+  window._fbaPoProposal = null;
+  fbaLoadTopBar();
+}
 
 async function fbaLoadToday() {
   const summaryEl = document.getElementById('fbaSummary');
