@@ -1878,13 +1878,21 @@ async function fbaShowReviewModal() {
                     <div style="margin-top:6px">${emailLine}</div>
                     ${p ? `<div style="font-size:12px;color:#64748b;margin-top:4px">subject: ${esc(p.subject)}</div>` : ''}
                   </div>
-                  <div>
+                  <div style="display:flex;gap:6px;flex-direction:column">
                     <button
                       id="btnSend-${esc(v)}"
                       ${canSend ? '' : 'disabled'}
-                      onclick="fbaSendVendor('${esc(v)}')"
+                      onclick="fbaSendVendor('${esc(v)}', false)"
                       style="padding:8px 16px;background:${canSend ? '#059669' : '#94a3b8'};color:white;border:none;border-radius:6px;cursor:${canSend ? 'pointer' : 'not-allowed'};font-size:13px;font-weight:600;white-space:nowrap">
                       Send to ${esc(st.label.split('—')[0].trim())}
+                    </button>
+                    <button
+                      id="btnSfOnly-${esc(v)}"
+                      ${canSend ? '' : 'disabled'}
+                      onclick="fbaSendVendor('${esc(v)}', true)"
+                      title="Create Salesforce PO only — no email sent. Send manually yourself."
+                      style="padding:6px 12px;background:${canSend ? '#475569' : '#94a3b8'};color:white;border:none;border-radius:6px;cursor:${canSend ? 'pointer' : 'not-allowed'};font-size:11px;font-weight:600;white-space:nowrap">
+                      SF PO only (no email)
                     </button>
                   </div>
                 </div>
@@ -1905,27 +1913,33 @@ async function fbaShowReviewModal() {
   document.body.appendChild(modal);
 }
 
-async function fbaSendVendor(vendor) {
+async function fbaSendVendor(vendor, skipEmail = false) {
   const s = window._fbaDraftSummary;
   const g = s?.vendorGroups[vendor];
   if (!g) return alert('Vendor not in draft');
-  if (!confirm(`Send PO to ${vendor} — ${g.lineCount} line${g.lineCount===1?'':'s'}, ${g.totalUnits} units?\n\nThis will actually email the vendor.`)) return;
+  const confirmMsg = skipEmail
+    ? `Create Salesforce PO for ${vendor} — ${g.lineCount} line${g.lineCount===1?'':'s'}, ${g.totalUnits} units?\n\nNo email will be sent. You'll need to email the vendor manually afterwards.`
+    : `Send PO to ${vendor} — ${g.lineCount} line${g.lineCount===1?'':'s'}, ${g.totalUnits} units?\n\nThis will actually email the vendor.`;
+  if (!confirm(confirmMsg)) return;
 
-  const btn = document.getElementById(`btnSend-${vendor}`);
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; btn.style.background = '#64748b'; }
+  const btnId = skipEmail ? `btnSfOnly-${vendor}` : `btnSend-${vendor}`;
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.disabled = true; btn.textContent = skipEmail ? 'Creating SF PO...' : 'Sending...'; btn.style.background = '#64748b'; }
 
   try {
     const r = await fetch('/api/fba/po-draft/send', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ vendor }),
+      body: JSON.stringify({ vendor, skipEmail }),
     });
     const data = await r.json();
     if (!data.success) throw new Error(data.error || 'send failed');
 
-    if (btn) { btn.textContent = '✓ Sent'; btn.style.background = '#059669'; }
-    // Build a status banner: email, then SF PO result
-    let banner = `✓ Sent to ${esc(data.result.to)} at ${new Date(data.result.sentAt).toLocaleTimeString()} · ${data.result.lineCount} line(s), ${data.result.totalUnits} units`;
+    if (btn) { btn.textContent = skipEmail ? '✓ SF PO created' : '✓ Sent'; btn.style.background = '#059669'; }
+    // Build a status banner: email (or skipped), then SF PO result
+    let banner = skipEmail
+      ? `✓ SF PO created at ${new Date(data.result.sentAt).toLocaleTimeString()} · ${data.result.lineCount} line(s), ${data.result.totalUnits} units · <em>email NOT sent — send manually</em>`
+      : `✓ Sent to ${esc(data.result.to)} at ${new Date(data.result.sentAt).toLocaleTimeString()} · ${data.result.lineCount} line(s), ${data.result.totalUnits} units`;
     const sfPo = data.result.sfPo;
     if (sfPo) {
       if (sfPo.created) {

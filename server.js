@@ -1210,7 +1210,7 @@ app.post('/api/fba/po-draft/run-inbound', async (req, res) => {
 // behavior (kept for backward compat with the Telegram auto-restock path).
 app.post('/api/fba/po-draft/send', async (req, res) => {
   try {
-    const { vendor, bucket, force } = req.body || {};
+    const { vendor, bucket, force, skipEmail } = req.body || {};
     if (!vendor) return res.status(400).json({ success: false, error: 'vendor required' });
     const poSender = require('./lib/fba-po-sender');
     const budgetGuards = require('./lib/budget-guards');
@@ -1235,7 +1235,7 @@ app.post('/api/fba/po-draft/send', async (req, res) => {
       } catch {}
     }
 
-    const result = await poSender.sendVendorGroup({ draft, vendor, bucket });
+    const result = await poSender.sendVendorGroup({ draft, vendor, bucket, skipEmail: !!skipEmail });
     poDrafts.saveCurrent(draft); // persist sentAt markers on lines
     const archivedPath = poSender.archiveIfAllSent(draft);
     if (archivedPath) {
@@ -1267,7 +1267,7 @@ app.post('/api/fba/po-draft/send', async (req, res) => {
 // with 60s SMTP gaps. Dashboard's "Approve All for <vendor>" calls this.
 app.post('/api/fba/po-draft/send-all-buckets', async (req, res) => {
   try {
-    const { vendor, force } = req.body || {};
+    const { vendor, force, skipEmail } = req.body || {};
     if (!vendor) return res.status(400).json({ success: false, error: 'vendor required' });
     const poSender = require('./lib/fba-po-sender');
     const budgetGuards = require('./lib/budget-guards');
@@ -1286,7 +1286,7 @@ app.post('/api/fba/po-draft/send-all-buckets', async (req, res) => {
       } catch {}
     }
 
-    const result = await poSender.sendAllBucketsForVendor({ draft, vendor });
+    const result = await poSender.sendAllBucketsForVendor({ draft, vendor, skipEmail: !!skipEmail });
     poDrafts.saveCurrent(draft);
     const archivedPath = poSender.archiveIfAllSent(draft);
     if (archivedPath) poDrafts.clearCurrent();
