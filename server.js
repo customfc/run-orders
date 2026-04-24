@@ -980,6 +980,126 @@ app.post('/api/fba/imap-poll', async (req, res) => {
   }
 });
 
+// One-shot: system builds the proposal from today's snapshot and creates
+// Salesforce POs (one per vendor × availability bucket). No vendor email.
+// User reviews in Salesforce, sends email from their own client.
+//
+// POST body (all optional):
+//   {
+//     vendors: ['prosol', 'treeco'],     // default: all
+//     tiers:   ['bleeding', 'urgent'],    // default: bleeding/urgent/low-cover
+//     maxLinesPerVendor: 25,              // default: 25
+//     dryRun: false,                      // true → propose but don't create SF POs
+//     force: false,                       // override budget blocks (logged loudly)
+//   }
+//
+// Returns summary with SF PO numbers per (vendor, bucket).
+app.post('/api/fba/quick-po', async (req, res) => {
+  try {
+    const autoRestock = require('./lib/auto-restock');
+    const fbaSignals = require('./lib/fba-signals');
+    const poSender = require('./lib/fba-po-sender');
+    const budgetGuards = require('./lib/budget-guards');
+
+    const { vendors, tiers, maxLinesPerVendor, dryRun, force } = req.body || {};
+
+    // Load latest snapshot
+    const snap = fbaSignals.loadLatestSnapshot();
+    if (!snap || !snap.rows?.length) {
+      return res.status(400).json({ success: false, error: 'No snapshot available — hit Refresh / Pull Inventory Planning first.' });
+    }
+
+    // Build proposal with config overrides (ignore the enabled flag — user
+    // is invoking this explicitly). Forces enabled:true so buildProposal
+    // doesn't short-circuit.
+    const configOverride = {
+      enabled: true,
+      enabled_vendors: vendors && vendors.length ? vendors : ['*'],
+      tiers: tiers && tiers.length ? tiers : ['bleeding', 'urgent', 'low-cover'],
+      max_lines_per_vendor: maxLinesPerVendor || 25,
+    };
+    const config = { ...autoRestock.loadConfig(), ...configOverride };
+    const proposal = autoRestock.buildProposal({ config, snap });
+
+    if (!proposal.draft.lines.length) {
+      return res.json({
+        success: true,
+        proposed: 0,
+        skipped: proposal.skipped,
+        message: 'Nothing to replenish right now — no SKUs in the selected tiers above recShipQty=0.',
+      });
+    }
+
+    // Preview the proposal grouped by vendor × bucket
+    const preview = {};
+    for (const line of proposal.draft.lines) {
+      const key = `${line.vendor}::${line.availabilityBucket}`;
+      if (!preview[key]) preview[key] = { vendor: line.vendor, bucket: line.availabilityBucket, lineCount: 0, totalUnits: 0, totalCost: 0, lines: [] };
+      preview[key].lineCount++;
+      preview[key].totalUnits += line.qty;
+      if (line.extCost != null) preview[key].totalCost += line.extCost;
+      preview[key].lines.push({ asin: line.asin, sku: line.sku, prosolSku: line.prosolStock?.prosolSku, product: line.product, qty: line.qty, tier: line.addedFromTier, unitCost: line.unitCost, stockNote: line.prosolStock?.decision?.action });
+    }
+    for (const p of Object.values(preview)) p.totalCost = Number(p.totalCost.toFixed(2));
+
+    if (dryRun) {
+      return res.json({ success: true, dryRun: true, proposed: proposal.draft.lines.length, skipped: proposal.skipped, preview });
+    }
+
+    // Persist proposal as current draft (overwrites any existing — user
+    // asked for this flow, expects fresh). Lines already have
+    // availabilityBucket stamped by addLine.
+    poDrafts.saveCurrent(proposal.draft);
+
+    // Per-vendor guard + send
+    const uniqueVendors = [...new Set(proposal.draft.lines.map((l) => l.vendor))];
+    const sendResults = [];
+    const budgetBlocks = [];
+
+    for (const vendor of uniqueVendors) {
+      const guards = budgetGuards.evaluateGuards({ draft: proposal.draft, vendor });
+      if (guards.blocks.length && !force) {
+        budgetBlocks.push({ vendor, blocks: guards.blocks, pendingCost: guards.pendingCost });
+        continue;
+      }
+      if (guards.blocks.length && force) {
+        audit.log({ action: 'quick-po-budget-override', vendor, pendingCost: guards.pendingCost, blocks: guards.blocks });
+        try {
+          await telegram.notify('attn', `Budget override on /quick-po — ${vendor} $${guards.pendingCost}`, guards.blocks.join('\n'));
+        } catch {}
+      }
+      // sendAllBucketsForVendor with skipEmail:true creates SF POs per bucket,
+      // no email. Fast — no SMTP gaps needed.
+      const r = await poSender.sendAllBucketsForVendor({ draft: proposal.draft, vendor, skipEmail: true });
+      sendResults.push(r);
+    }
+
+    poDrafts.saveCurrent(proposal.draft);
+
+    audit.log({
+      action: 'quick-po',
+      draftId: proposal.draft.draftId,
+      proposed: proposal.draft.lines.length,
+      vendors: uniqueVendors,
+      budgetBlocks,
+      sfPos: sendResults.flatMap((r) => r.buckets.map((b) => ({ vendor: r.vendor, bucket: b.bucket, sfPoNumber: b.sfPo?.poNumber || null, lineCount: b.lineCount || 0, error: b.error || null }))),
+    });
+
+    res.json({
+      success: true,
+      proposed: proposal.draft.lines.length,
+      skipped: proposal.skipped,
+      preview,
+      sendResults,
+      budgetBlocks,
+      draftId: proposal.draft.draftId,
+    });
+  } catch (e) {
+    audit.log({ action: 'quick-po', success: false, error: e.message });
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Budget status — exposure vs. caps. Dashboard top-bar pulls this.
 app.get('/api/fba/budget-status', (req, res) => {
   try {
@@ -2425,6 +2545,9 @@ const COMMAND_HELP = `Commands:
 /pickups — run just the pickup sweep (for tomorrow)
 /stage — run just the stage+buy+POs phases (no email, no pickups)
 /deploy — git pull main + restart server
+/po — preview today's proposed replenishment (dry-run)
+/po create — build the POs in Salesforce (no email sent; you send manually)
+/po create force — same, bypass budget caps (logged loudly)
 /budget [show] — FBA replenishment spend vs. caps
 /budget set <daily|weekly|openPo|perPo> <amount> — tune caps
 /mail [poll|status|login] — one-shot poll of vendor reply inbox (log-only); /mail login for Graph setup
@@ -2611,6 +2734,62 @@ async function handleTelegramCommand(command, args) {
         return `• ${e.warehouseCode || '?'} ${e.carrier || '?'} — ${e.trackingNumber} · $${e.labelCost.toFixed(2)} · void ${voidDate}${overdue}`;
       });
       return `${header}\n${rows.join('\n')}`;
+    }
+
+    case 'po':
+    case 'replen': {
+      // Usage:
+      //   /po           → dry-run: propose + preview, no SF writes
+      //   /po create    → live: create Salesforce POs (no email sent)
+      //   /po create force → same but bypass budget caps
+      try {
+        const sub = (args[0] || 'preview').toLowerCase();
+        const live = sub === 'create' || sub === 'live';
+        const force = args.includes('force');
+        const http = require('http');
+        const body = JSON.stringify({ dryRun: !live, force });
+        const chunks = [];
+        await new Promise((resolve, reject) => {
+          const r = http.request({
+            host: 'localhost', port: PORT, path: '/api/fba/quick-po', method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+          }, (res) => {
+            res.on('data', (c) => chunks.push(c));
+            res.on('end', resolve);
+          });
+          r.on('error', reject);
+          r.write(body);
+          r.end();
+        });
+        const data = JSON.parse(Buffer.concat(chunks).toString());
+        if (!data.success) return `❌ /po failed: ${data.error || 'unknown'}`;
+        if (data.message) return `ℹ️ ${data.message}`;
+        const lines = [];
+        lines.push(live ? `✅ Created POs:` : `📋 Proposal (dry-run — send /po create to commit):`);
+        for (const key of Object.keys(data.preview)) {
+          const p = data.preview[key];
+          lines.push(`  ${p.vendor}/${p.bucket}: ${p.lineCount} SKU${p.lineCount===1?'':'s'} · ${p.totalUnits}u · $${p.totalCost.toFixed(2)}`);
+        }
+        if (live && data.sendResults) {
+          lines.push(''); lines.push('SF POs:');
+          for (const sr of data.sendResults) {
+            for (const b of sr.buckets) {
+              const po = b.sfPo?.poNumber || '(failed)';
+              const err = b.error || b.sfPo?.error;
+              lines.push(`  ${sr.vendor}/${b.bucket}: ${po}${err ? ' ⚠ ' + err : ''}`);
+            }
+          }
+        }
+        if (data.budgetBlocks?.length) {
+          lines.push(''); lines.push('⚠️ Budget-blocked (use /po create force to override):');
+          for (const bb of data.budgetBlocks) {
+            lines.push(`  ${bb.vendor}: $${bb.pendingCost} — ${bb.blocks[0]}`);
+          }
+        }
+        return lines.join('\n');
+      } catch (e) {
+        return `❌ /po error: ${e.message.slice(0, 400)}`;
+      }
     }
 
     case 'mail':
