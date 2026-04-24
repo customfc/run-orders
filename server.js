@@ -1030,6 +1030,70 @@ app.post('/api/fba/quick-po', async (req, res) => {
       });
     }
 
+    // Pipeline subtract: query SF for all OPEN PO lines, build a per-vendor-
+    // item-id map of still-outstanding qty (ordered minus received), and
+    // deduct from each proposed line BEFORE budget guards + cost hydration
+    // run. Prevents double-ordering items already sitting on an open SF PO.
+    // Per the 2026-04-23 walkthrough, this is the 'subtract pipeline' step.
+    // Drops lines that are fully covered; adjusts qty on partially-covered.
+    try {
+      const sf = require('./lib/salesforce');
+      const skuMap = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'scripts', 'shipstation', 'sku-map.json'), 'utf8')).mappings;
+      const conn = await sf.connect();
+
+      const openLines = await sf.query(conn, `
+        SELECT PBSI__Item__r.Name, PBSI__Quantity_Ordered__c, PBSI__Quantity_Received__c, PBSI__Purchase_Order__r.Name
+        FROM PBSI__PBSI_Purchase_Order_Line__c
+        WHERE PBSI__Purchase_Order__r.PBSI__Status__c = 'Open'
+      `);
+      const openByVendorItemId = {};
+      const openPoRefsByVendorItemId = {};
+      for (const row of (openLines || [])) {
+        const vendorItemId = row.PBSI__Item__r?.Name;
+        if (!vendorItemId) continue;
+        const outstanding = Math.max(0, (row.PBSI__Quantity_Ordered__c || 0) - (row.PBSI__Quantity_Received__c || 0));
+        if (outstanding <= 0) continue;
+        openByVendorItemId[vendorItemId] = (openByVendorItemId[vendorItemId] || 0) + outstanding;
+        const poName = row.PBSI__Purchase_Order__r?.Name;
+        if (poName) {
+          if (!openPoRefsByVendorItemId[vendorItemId]) openPoRefsByVendorItemId[vendorItemId] = [];
+          if (!openPoRefsByVendorItemId[vendorItemId].includes(poName)) openPoRefsByVendorItemId[vendorItemId].push(poName);
+        }
+      }
+
+      const subtracted = [];
+      const keptLines = [];
+      for (const line of proposal.draft.lines) {
+        const mapEntry = skuMap[line.asin] || skuMap[line.sku];
+        let vendorItemId = null;
+        if (line.vendor === 'prosol') vendorItemId = line.prosolStock?.prosolSku || mapEntry?.prosol_sku;
+        else if (line.vendor === 'treeco') vendorItemId = mapEntry?.treeco_sku;
+        const alreadyOpen = vendorItemId ? (openByVendorItemId[vendorItemId] || 0) : 0;
+        if (alreadyOpen >= line.qty) {
+          subtracted.push({ asin: line.asin, vendorItemId, originalQty: line.qty, alreadyOpen, droppedEntirely: true, openPoRefs: openPoRefsByVendorItemId[vendorItemId] || [] });
+          continue; // drop entirely — already fully covered
+        }
+        if (alreadyOpen > 0) {
+          const origQty = line.qty;
+          line.qty -= alreadyOpen;
+          line.alreadyOpenQty = alreadyOpen;
+          line.originalRecQty = origQty;
+          line.openPoRefs = openPoRefsByVendorItemId[vendorItemId] || [];
+          if (line.unitCost) line.extCost = Number((line.unitCost * line.qty).toFixed(2));
+          subtracted.push({ asin: line.asin, vendorItemId, originalQty: origQty, alreadyOpen, adjustedTo: line.qty, openPoRefs: line.openPoRefs });
+        }
+        keptLines.push(line);
+      }
+      proposal.draft.lines = keptLines;
+      if (subtracted.length) {
+        audit.log({ action: 'quick-po-pipeline-subtract', count: subtracted.length, details: subtracted.slice(0, 20) });
+      }
+      proposal._pipelineSubtract = { openLineCount: openLines?.length || 0, subtracted };
+    } catch (e) {
+      console.error('quick-po: pipeline subtract failed:', e.message);
+      audit.log({ action: 'quick-po-pipeline-subtract-failed', error: e.message });
+    }
+
     // Hydrate unit costs from Salesforce PBSI so preview + budget guards see
     // real numbers (not the $0 fallback we had before). We connect to SF once,
     // batch-lookup the PBSI__Cost__c for each line's vendor item id, and stamp
@@ -1091,7 +1155,19 @@ app.post('/api/fba/quick-po', async (req, res) => {
       preview[key].lineCount++;
       preview[key].totalUnits += line.qty;
       if (line.extCost != null) preview[key].totalCost += line.extCost;
-      preview[key].lines.push({ asin: line.asin, sku: line.sku, prosolSku: line.prosolStock?.prosolSku, product: line.product, qty: line.qty, tier: line.addedFromTier, unitCost: line.unitCost, stockNote: line.prosolStock?.decision?.action || 'unknown' });
+      preview[key].lines.push({
+        asin: line.asin,
+        sku: line.sku,
+        prosolSku: line.prosolStock?.prosolSku,
+        product: line.product,
+        qty: line.qty,
+        tier: line.addedFromTier,
+        unitCost: line.unitCost,
+        stockNote: line.prosolStock?.decision?.action || 'unknown',
+        alreadyOpenQty: line.alreadyOpenQty || 0,
+        originalRecQty: line.originalRecQty || line.qty,
+        openPoRefs: line.openPoRefs || [],
+      });
     }
     for (const p of Object.values(preview)) {
       p.totalCost = Number(p.totalCost.toFixed(2));
@@ -1099,7 +1175,14 @@ app.post('/api/fba/quick-po', async (req, res) => {
     }
 
     if (dryRun) {
-      return res.json({ success: true, dryRun: true, proposed: proposal.draft.lines.length, skipped: proposal.skipped, preview });
+      return res.json({
+        success: true,
+        dryRun: true,
+        proposed: proposal.draft.lines.length,
+        skipped: proposal.skipped,
+        preview,
+        pipelineSubtract: proposal._pipelineSubtract || null,
+      });
     }
 
     // Persist proposal as current draft (overwrites any existing — user
@@ -1161,6 +1244,7 @@ app.post('/api/fba/quick-po', async (req, res) => {
       preview,
       sendResults,
       budgetBlocks,
+      pipelineSubtract: proposal._pipelineSubtract || null,
       draftId: proposal.draft.draftId,
     });
   } catch (e) {

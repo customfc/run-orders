@@ -1476,9 +1476,12 @@ function fbaRenderPreview(d) {
       const costBit = l.unitCost != null
         ? ` · $${(l.unitCost * l.qty).toFixed(2)}`
         : ` · <span style="color:#b45309" title="no PBSI cost — populate Salesforce PBSI__Cost__c">⚠ no cost</span>`;
+      const subtractBit = l.alreadyOpenQty
+        ? `<div style="font-size:11px;color:#b45309;margin-top:2px">Amazon wants ${l.originalRecQty}; ${l.alreadyOpenQty} already on ${(l.openPoRefs || []).join(', ') || 'open PO'} → ordering ${l.qty} more</div>`
+        : '';
       html += `<tr style="border-top:1px solid #f1f5f9">
         <td style="padding:8px 14px;font-family:monospace;font-size:12px">${esc(sku)}</td>
-        <td style="padding:8px 4px">${esc((l.product || '').slice(0, 60))}</td>
+        <td style="padding:8px 4px">${esc((l.product || '').slice(0, 60))}${subtractBit}</td>
         <td style="padding:8px 4px;text-align:right;font-weight:600">${l.qty}${costBit}</td>
         <td style="padding:8px 14px;font-size:12px;color:#64748b">${esc(tier)}${l.stockNote ? ` · ${esc(l.stockNote)}` : ''}</td>
       </tr>`;
@@ -1490,6 +1493,19 @@ function fbaRenderPreview(d) {
     html += `<div style="font-size:12px;color:#64748b;padding:8px 4px">
       Skipped: ${d.skipped.vendor || 0} non-enabled vendor · ${d.skipped.cap || 0} over per-vendor cap · ${d.skipped.prosol_oos || 0} Prosol out-of-stock
     </div>`;
+  }
+  if (d.pipelineSubtract?.subtracted?.length) {
+    const dropped = d.pipelineSubtract.subtracted.filter((s) => s.droppedEntirely);
+    const adjusted = d.pipelineSubtract.subtracted.filter((s) => !s.droppedEntirely);
+    html += `<div style="margin-top:8px;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-size:12px;color:#1e3a8a">
+      <strong>Pipeline-subtract:</strong> already on open Salesforce POs, excluded from this proposal.`;
+    if (dropped.length) {
+      html += `<div style="margin-top:4px">Dropped entirely (${dropped.length}): ${dropped.slice(0, 5).map((s) => `${esc(s.vendorItemId || s.asin)} (${s.alreadyOpen}u on ${(s.openPoRefs || []).join(',')})`).join(' · ')}${dropped.length > 5 ? ` · +${dropped.length - 5} more` : ''}</div>`;
+    }
+    if (adjusted.length) {
+      html += `<div style="margin-top:4px">Qty adjusted (${adjusted.length}): ${adjusted.slice(0, 5).map((s) => `${esc(s.vendorItemId || s.asin)} (${s.originalQty}→${s.adjustedTo})`).join(' · ')}</div>`;
+    }
+    html += `</div>`;
   }
   return html;
 }
