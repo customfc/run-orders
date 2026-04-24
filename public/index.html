@@ -1433,14 +1433,19 @@ function fbaRenderPreview(d) {
   if (!groups.length) return `<div style="padding:24px;text-align:center;color:#64748b">Nothing proposed.</div>`;
   const grandTotal = groups.reduce((s, g) => s + g.totalCost, 0);
   const grandUnits = groups.reduce((s, g) => s + g.totalUnits, 0);
+  const unknownCostCount = groups.reduce((s, g) => s + g.lines.filter((l) => l.unitCost == null).length, 0);
+  const totalLines = groups.reduce((s, g) => s + g.lines.length, 0);
+  const costLabel = unknownCostCount === 0 ? `$${grandTotal.toFixed(2)}`
+                  : unknownCostCount === totalLines ? `cost unknown`
+                  : `$${grandTotal.toFixed(2)}+ (${unknownCostCount} line${unknownCostCount===1?'':'s'} w/o cost)`;
   const bucketColor = (b) => b === 'ready' ? { bg: '#ecfdf5', border: '#a7f3d0', accent: '#065f46', label: '🟢 Ready to ship' }
                           : b === 'backorder' ? { bg: '#fef3c7', border: '#fcd34d', accent: '#92400e', label: '🟡 Backorder (cross-warehouse ~1wk)' }
                           : { bg: '#f3e8ff', border: '#d8b4fe', accent: '#6b21a8', label: '🟣 Sechelt pack-prep' };
 
   let html = `<div style="padding:14px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
     <div>
-      <div style="font-weight:700;font-size:15px;color:#1e3a8a">${groups.length} PO${groups.length===1?'':'s'} · ${grandUnits} units · $${grandTotal.toFixed(2)}</div>
-      <div style="font-size:12px;color:#1e40af;margin-top:2px">One Salesforce PO per vendor × availability bucket</div>
+      <div style="font-weight:700;font-size:15px;color:#1e3a8a">${groups.length} PO${groups.length===1?'':'s'} · ${grandUnits} units · ${costLabel}</div>
+      <div style="font-size:12px;color:#1e40af;margin-top:2px">One Salesforce PO per vendor × availability bucket${unknownCostCount ? ` · <span style="color:#b45309">⚠ ${unknownCostCount} SKU${unknownCostCount===1?'':'s'} without a PBSI cost</span>` : ''}</div>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="fbaCancelPreview()" style="padding:8px 14px;background:#f1f5f9;border:none;border-radius:6px;cursor:pointer;font-size:13px">Cancel</button>
@@ -1465,7 +1470,9 @@ function fbaRenderPreview(d) {
     for (const l of g.lines) {
       const sku = l.prosolSku || l.sku || l.asin;
       const tier = (l.tier || '').replace(/^auto-/, '');
-      const costBit = l.unitCost ? ` · $${(l.unitCost * l.qty).toFixed(2)}` : '';
+      const costBit = l.unitCost != null
+        ? ` · $${(l.unitCost * l.qty).toFixed(2)}`
+        : ` · <span style="color:#b45309" title="no PBSI cost — populate Salesforce PBSI__Cost__c">⚠ no cost</span>`;
       html += `<tr style="border-top:1px solid #f1f5f9">
         <td style="padding:8px 14px;font-family:monospace;font-size:12px">${esc(sku)}</td>
         <td style="padding:8px 4px">${esc((l.product || '').slice(0, 60))}</td>

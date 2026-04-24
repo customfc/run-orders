@@ -1030,6 +1030,44 @@ app.post('/api/fba/quick-po', async (req, res) => {
       });
     }
 
+    // Hydrate unit costs from Salesforce PBSI so preview + budget guards see
+    // real numbers (not the $0 fallback we had before). We connect to SF once,
+    // batch-lookup the PBSI__Cost__c for each line's vendor item id, and stamp
+    // line.unitCost + line.extCost. Lines we can't resolve keep cost=null so
+    // the UI can render 'cost unknown' instead of a fake $0.
+    try {
+      const sf = require('./lib/salesforce');
+      const { findPbsiItem } = require('./lib/amazon-po');
+      const skuMap = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'scripts', 'shipstation', 'sku-map.json'), 'utf8')).mappings;
+      const conn = await sf.connect();
+      const costsMissing = [];
+      for (const line of proposal.draft.lines) {
+        if (line.unitCost != null) continue; // already known from sku-map
+        const mapEntry = skuMap[line.asin] || skuMap[line.sku];
+        let vendorItemId = null;
+        if (line.vendor === 'prosol') vendorItemId = line.prosolStock?.prosolSku || mapEntry?.prosol_sku;
+        else if (line.vendor === 'treeco') vendorItemId = mapEntry?.treeco_sku;
+        if (!vendorItemId) { costsMissing.push({ asin: line.asin, reason: 'no vendor SKU mapping' }); continue; }
+        try {
+          const pbsi = await findPbsiItem(conn, vendorItemId);
+          if (pbsi?.PBSI__Cost__c != null) {
+            line.unitCost = Number(pbsi.PBSI__Cost__c);
+            line.extCost = Number((line.unitCost * line.qty).toFixed(2));
+          } else {
+            costsMissing.push({ asin: line.asin, vendorItemId, reason: pbsi ? 'PBSI__Cost__c null' : 'item not found' });
+          }
+        } catch (e) {
+          costsMissing.push({ asin: line.asin, vendorItemId, reason: e.message });
+        }
+      }
+      if (costsMissing.length) audit.log({ action: 'quick-po-costs-missing', count: costsMissing.length, details: costsMissing.slice(0, 10) });
+    } catch (e) {
+      // Cost hydration is best-effort. If SF is down, we still produce a preview
+      // with whatever costs were available from sku-map.
+      console.error('quick-po: cost hydration failed:', e.message);
+      audit.log({ action: 'quick-po-cost-hydration-failed', error: e.message });
+    }
+
     // Preview the proposal grouped by vendor × bucket
     const preview = {};
     for (const line of proposal.draft.lines) {
