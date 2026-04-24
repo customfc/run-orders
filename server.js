@@ -1068,17 +1068,35 @@ app.post('/api/fba/quick-po', async (req, res) => {
       audit.log({ action: 'quick-po-cost-hydration-failed', error: e.message });
     }
 
+    // Minimum-viable-PO threshold per vendor. Protects against economically
+    // nonsensical orders (e.g. $19 Treeco PO for 3 units where shipping
+    // exceeds product value). Configurable via data/quick-po-config.json;
+    // defaults are conservative (Treeco cases ship 12/box; Prosol hardware
+    // is lighter so a lower min is fine).
+    const minUnitsCfg = (() => {
+      try {
+        const p = require('path').join(__dirname, 'data', 'quick-po-config.json');
+        const c = JSON.parse(require('fs').readFileSync(p, 'utf8'));
+        return c.vendor_min_units || {};
+      } catch { return {}; }
+    })();
+    const defaults = { prosol: 6, treeco: 12, perfectlevel: 6 };
+    const minUnitsFor = (v) => Number(minUnitsCfg[v] ?? defaults[v] ?? 1);
+
     // Preview the proposal grouped by vendor × bucket
     const preview = {};
     for (const line of proposal.draft.lines) {
       const key = `${line.vendor}::${line.availabilityBucket}`;
-      if (!preview[key]) preview[key] = { vendor: line.vendor, bucket: line.availabilityBucket, lineCount: 0, totalUnits: 0, totalCost: 0, lines: [] };
+      if (!preview[key]) preview[key] = { vendor: line.vendor, bucket: line.availabilityBucket, lineCount: 0, totalUnits: 0, totalCost: 0, lines: [], belowMinUnits: false, minUnits: minUnitsFor(line.vendor) };
       preview[key].lineCount++;
       preview[key].totalUnits += line.qty;
       if (line.extCost != null) preview[key].totalCost += line.extCost;
-      preview[key].lines.push({ asin: line.asin, sku: line.sku, prosolSku: line.prosolStock?.prosolSku, product: line.product, qty: line.qty, tier: line.addedFromTier, unitCost: line.unitCost, stockNote: line.prosolStock?.decision?.action });
+      preview[key].lines.push({ asin: line.asin, sku: line.sku, prosolSku: line.prosolStock?.prosolSku, product: line.product, qty: line.qty, tier: line.addedFromTier, unitCost: line.unitCost, stockNote: line.prosolStock?.decision?.action || 'unknown' });
     }
-    for (const p of Object.values(preview)) p.totalCost = Number(p.totalCost.toFixed(2));
+    for (const p of Object.values(preview)) {
+      p.totalCost = Number(p.totalCost.toFixed(2));
+      p.belowMinUnits = p.totalUnits < p.minUnits;
+    }
 
     if (dryRun) {
       return res.json({ success: true, dryRun: true, proposed: proposal.draft.lines.length, skipped: proposal.skipped, preview });
@@ -1088,6 +1106,18 @@ app.post('/api/fba/quick-po', async (req, res) => {
     // asked for this flow, expects fresh). Lines already have
     // availabilityBucket stamped by addLine.
     poDrafts.saveCurrent(proposal.draft);
+
+    // Mark lines in below-min-units buckets so sendVendorGroup skips them.
+    // We implement as per-line sentAt-like flag so existing bucket filter
+    // doesn't need a new mode.
+    const skippedBuckets = [];
+    for (const p of Object.values(preview)) {
+      if (!p.belowMinUnits) continue;
+      skippedBuckets.push({ vendor: p.vendor, bucket: p.bucket, totalUnits: p.totalUnits, minUnits: p.minUnits });
+      // Remove those lines from the draft so sendAllBucketsForVendor doesn't touch them
+      proposal.draft.lines = proposal.draft.lines.filter((l) =>
+        !(l.vendor === p.vendor && l.availabilityBucket === p.bucket));
+    }
 
     // Per-vendor guard + send
     const uniqueVendors = [...new Set(proposal.draft.lines.map((l) => l.vendor))];
@@ -1125,8 +1155,9 @@ app.post('/api/fba/quick-po', async (req, res) => {
 
     res.json({
       success: true,
-      proposed: proposal.draft.lines.length,
+      proposed: proposal.draft.lines.length + skippedBuckets.reduce((s, b) => s + b.totalUnits, 0),
       skipped: proposal.skipped,
+      skippedBuckets,  // buckets excluded by vendor_min_units threshold
       preview,
       sendResults,
       budgetBlocks,

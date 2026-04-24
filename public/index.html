@@ -1455,9 +1455,12 @@ function fbaRenderPreview(d) {
 
   for (const g of groups) {
     const c = bucketColor(g.bucket);
-    html += `<div style="margin-bottom:12px;border:1px solid ${c.border};border-radius:8px;overflow:hidden">
+    const skipBadge = g.belowMinUnits
+      ? ` <span style="font-size:11px;background:#dc2626;color:white;padding:2px 8px;border-radius:10px;font-weight:600">⊘ SKIPPED · min ${g.minUnits}u</span>`
+      : '';
+    html += `<div style="margin-bottom:12px;border:1px solid ${c.border};border-radius:8px;overflow:hidden;${g.belowMinUnits ? 'opacity:0.55;' : ''}">
       <div style="padding:10px 14px;background:${c.bg};display:flex;justify-content:space-between;align-items:center">
-        <div><strong style="color:${c.accent}">${esc(g.vendor)}</strong> · ${esc(c.label)}</div>
+        <div><strong style="color:${c.accent}">${esc(g.vendor)}</strong> · ${esc(c.label)}${skipBadge}</div>
         <div style="font-size:13px;color:${c.accent}">${g.lineCount} SKU${g.lineCount===1?'':'s'} · ${g.totalUnits}u · $${g.totalCost.toFixed(2)}</div>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:13px">
