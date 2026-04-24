@@ -28,44 +28,62 @@ const SNAP_DIR = path.join(__dirname, '..', '..', 'data', 'fba', 'snapshots');
 // Restock report headers are typically Title Case with spaces; planning's
 // normalizer keys are lowercase-hyphen. Left field is the header Amazon
 // gives us; right is the planning key fba-signals expects.
-// Column mapping from the actual headers Amazon's CA restock-recs TSV uses
-// (verified against a real 2026-04-24 pull). Left = source, right = planning-
-// canonical key fba-signals.normalizeRow expects.
+// Column mapping for Amazon CA's restock-recs TSV. Left = source header,
+// right = planning-canonical key fba-signals.normalizeRow expects.
+// Amazon appears to send Title Case headers (e.g. 'Product Name', 'FNSKU',
+// 'Merchant SKU') — covering all casings we've seen in the wild.
 const COLUMN_MAP = {
-  // passthrough — already matches planning
+  // Identifiers — Amazon sends Title Case; fba-signals reads lowercase.
+  'Product Name': 'product-name',
   'product-name': 'product-name',
+  'FNSKU': 'fnsku',
   'fnsku': 'fnsku',
+  'Merchant SKU': 'sku',
   'sku': 'sku',
+  'ASIN': 'asin',
   'asin': 'asin',
+  'Condition': 'condition',
   'condition': 'condition',
-  'alert': 'alert',
-  'available': 'available',
+  'Supplier': 'supplier',
+  'Supplier part no.': 'supplier-part-no',
+  // Inventory counts — Amazon sometimes gives 'Inbound' or 'inbound-quantity'
+  'Inbound': 'inbound-quantity',
   'inbound-quantity': 'inbound-quantity',
+  'Available': 'available',
+  'available': 'available',
   'Total Units': 'Total Units',
+  'Alert': 'alert',
+  'alert': 'alert',
+  // Rec ship — handle both variants
+  'Recommended replenishment qty': 'Recommended ship-in quantity',
   'Recommended ship-in quantity': 'Recommended ship-in quantity',
-  // supplier + misc (not used by signals but preserved)
-  'supplier': 'supplier',
+  // Country / currency
   'Country': 'country',
   'Currency code': 'currency',
-  // sales — restock-recs uses 'Units Sold Last 30 Days' (a count) vs planning's
-  // 'units-shipped-t30'. Plus 'Sales last 30 days' which is the dollar amount.
-  'Units Sold Last 30 Days': 'units-shipped-t30',
+  // Sales (units) — restock-recs uses 'Units Sold Last N Days'; planning
+  // uses 'units-shipped-tN'. fba-signals reads planning's form.
   'Units Sold Last 7 Days': 'units-shipped-t7',
+  'Units Sold Last 30 Days': 'units-shipped-t30',
   'Units Sold Last 60 Days': 'units-shipped-t60',
   'Units Sold Last 90 Days': 'units-shipped-t90',
   'Sales last 30 days': 'sales-shipped-last-30-days',
-  // date — restock-recs uses 'Recommended ship date' (MM/DD/YYYY); planning
-  // uses 'Recommended ship-in date' (ISO). fba-signals reads the latter, so
-  // we map into that key.
+  // Ship date — restock-recs 'Recommended ship date' (MM/DD/YYYY) →
+  // planning's 'Recommended ship-in date' (what fba-signals reads)
   'Recommended ship date': 'Recommended ship-in date',
+  'Recommended ship-in date': 'Recommended ship-in date',
   'Recommended action': 'recommended-action',
-  // days of supply
+  'recommended-action': 'recommended-action',
+  // Days of supply
   'Total Days of Supply (including units from open shipments)': 'Total Days of Supply (including units from open shipments)',
   'Days of Supply at Amazon Fulfillment Network': 'days-of-supply',
-  // pricing
+  'Days of Supply': 'days-of-supply',
+  'days-of-supply': 'days-of-supply',
+  // Pricing
   'Price': 'your-price',
+  'Your Price': 'your-price',
+  'your-price': 'your-price',
   'Sales Price': 'sales-price',
-  // inbound pipeline (restock-recs breaks these out by state)
+  // Inbound pipeline breakouts
   'Working': 'inbound-working',
   'Shipped': 'inbound-shipped',
   'Receiving': 'inbound-received',
@@ -73,9 +91,13 @@ const COLUMN_MAP = {
   'FC Processing': 'fc-processing',
   'Customer Order': 'reserved-customer-order',
   'Unfulfillable': 'unfulfillable-quantity',
-  // storage
+  // Storage
   'Unit storage size': 'storage-volume',
   'Fulfilled by': 'fulfilled-by',
+  'Product Group': 'product-group',
+  'product-group': 'product-group',
+  'Sales Rank': 'sales-rank',
+  'sales-rank': 'sales-rank',
 };
 
 function normalizeRow(raw) {
