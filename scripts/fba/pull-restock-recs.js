@@ -28,42 +28,54 @@ const SNAP_DIR = path.join(__dirname, '..', '..', 'data', 'fba', 'snapshots');
 // Restock report headers are typically Title Case with spaces; planning's
 // normalizer keys are lowercase-hyphen. Left field is the header Amazon
 // gives us; right is the planning key fba-signals expects.
+// Column mapping from the actual headers Amazon's CA restock-recs TSV uses
+// (verified against a real 2026-04-24 pull). Left = source, right = planning-
+// canonical key fba-signals.normalizeRow expects.
 const COLUMN_MAP = {
-  'Product Name': 'product-name',
-  'FNSKU': 'fnsku',
-  'Merchant SKU': 'sku',
-  'ASIN': 'asin',
-  'Condition': 'condition',
-  'Supplier': 'supplier',
-  'Supplier part no.': 'supplier-part-no',
-  'Country/Region of Origin': 'country-of-origin',
-  'Product Group': 'product-group',
-  'product-group': 'product-group',
-  'Sales Rank': 'sales-rank',
-  'sales-rank': 'sales-rank',
-  'Total Units': 'Total Units',
-  'Inbound': 'inbound-quantity',
-  'Available': 'available',
-  'available': 'available',
-  'Sales shipped last 7 days': 'units-shipped-t7',
-  'Sales shipped last 30 days': 'units-shipped-t30',
-  'Sales shipped last 60 days': 'units-shipped-t60',
-  'Sales shipped last 90 days': 'units-shipped-t90',
-  'units-shipped-last-7-days': 'units-shipped-t7',
-  'units-shipped-last-30-days': 'units-shipped-t30',
-  'units-shipped-last-60-days': 'units-shipped-t60',
-  'units-shipped-last-90-days': 'units-shipped-t90',
-  'Days of Supply': 'days-of-supply',
-  'days-of-supply': 'days-of-supply',
-  'Alert': 'alert',
+  // passthrough — already matches planning
+  'product-name': 'product-name',
+  'fnsku': 'fnsku',
+  'sku': 'sku',
+  'asin': 'asin',
+  'condition': 'condition',
   'alert': 'alert',
-  'Recommended replenishment qty': 'Recommended ship-in quantity',
-  'Recommended ship-in date': 'Recommended ship-in date',
+  'available': 'available',
+  'inbound-quantity': 'inbound-quantity',
+  'Total Units': 'Total Units',
+  'Recommended ship-in quantity': 'Recommended ship-in quantity',
+  // supplier + misc (not used by signals but preserved)
+  'supplier': 'supplier',
+  'Country': 'country',
+  'Currency code': 'currency',
+  // sales — restock-recs uses 'Units Sold Last 30 Days' (a count) vs planning's
+  // 'units-shipped-t30'. Plus 'Sales last 30 days' which is the dollar amount.
+  'Units Sold Last 30 Days': 'units-shipped-t30',
+  'Units Sold Last 7 Days': 'units-shipped-t7',
+  'Units Sold Last 60 Days': 'units-shipped-t60',
+  'Units Sold Last 90 Days': 'units-shipped-t90',
+  'Sales last 30 days': 'sales-shipped-last-30-days',
+  // date — restock-recs uses 'Recommended ship date' (MM/DD/YYYY); planning
+  // uses 'Recommended ship-in date' (ISO). fba-signals reads the latter, so
+  // we map into that key.
+  'Recommended ship date': 'Recommended ship-in date',
   'Recommended action': 'recommended-action',
-  'recommended-action': 'recommended-action',
-  'Your Price': 'your-price',
+  // days of supply
+  'Total Days of Supply (including units from open shipments)': 'Total Days of Supply (including units from open shipments)',
+  'Days of Supply at Amazon Fulfillment Network': 'days-of-supply',
+  // pricing
+  'Price': 'your-price',
   'Sales Price': 'sales-price',
-  'your-price': 'your-price',
+  // inbound pipeline (restock-recs breaks these out by state)
+  'Working': 'inbound-working',
+  'Shipped': 'inbound-shipped',
+  'Receiving': 'inbound-received',
+  'FC transfer': 'fc-transfer',
+  'FC Processing': 'fc-processing',
+  'Customer Order': 'reserved-customer-order',
+  'Unfulfillable': 'unfulfillable-quantity',
+  // storage
+  'Unit storage size': 'storage-volume',
+  'Fulfilled by': 'fulfilled-by',
 };
 
 function normalizeRow(raw) {
