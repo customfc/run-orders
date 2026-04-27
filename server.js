@@ -2760,8 +2760,8 @@ function runClaude(prompt) {
 
   return new Promise((resolve) => {
     const args = shouldContinue
-      ? ['--continue', '-p', '--output-format', 'text', '--model', 'sonnet', prompt]
-      : ['-p', '--output-format', 'text', '--model', 'sonnet', prompt];
+      ? ['--continue', '-p', '--dangerously-skip-permissions', '--output-format', 'text', '--model', 'sonnet', prompt]
+      : ['-p', '--dangerously-skip-permissions', '--output-format', 'text', '--model', 'sonnet', prompt];
     execFile(claudeBin, args, {
       cwd: __dirname,
       timeout: 180000, // 3 min max
