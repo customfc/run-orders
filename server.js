@@ -1030,16 +1030,24 @@ app.post('/api/fba/quick-po', async (req, res) => {
       });
     }
 
+    const sf = require('./lib/salesforce');
+    let sfConn = null;
+    try {
+      sfConn = await sf.connect();
+    } catch (e) {
+      console.error('quick-po: sf.connect failed, skipping SF-dependent steps:', e.message);
+      audit.log({ action: 'quick-po-sf-connect-failed', error: e.message });
+    }
+
     // Pipeline subtract: query SF for all OPEN PO lines, build a per-vendor-
     // item-id map of still-outstanding qty (ordered minus received), and
     // deduct from each proposed line BEFORE budget guards + cost hydration
     // run. Prevents double-ordering items already sitting on an open SF PO.
     // Per the 2026-04-23 walkthrough, this is the 'subtract pipeline' step.
     // Drops lines that are fully covered; adjusts qty on partially-covered.
-    try {
-      const sf = require('./lib/salesforce');
+    if (sfConn) try {
       const skuMap = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'scripts', 'shipstation', 'sku-map.json'), 'utf8')).mappings;
-      const conn = await sf.connect();
+      const conn = sfConn;
 
       const openLines = await sf.query(conn, `
         SELECT PBSI__Item__r.Name, PBSI__Quantity_Ordered__c, PBSI__Quantity_Received__c, PBSI__Purchase_Order__r.Name
@@ -1099,11 +1107,10 @@ app.post('/api/fba/quick-po', async (req, res) => {
     // batch-lookup the PBSI__Cost__c for each line's vendor item id, and stamp
     // line.unitCost + line.extCost. Lines we can't resolve keep cost=null so
     // the UI can render 'cost unknown' instead of a fake $0.
-    try {
-      const sf = require('./lib/salesforce');
+    if (sfConn) try {
       const { findPbsiItem } = require('./lib/amazon-po');
       const skuMap = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'scripts', 'shipstation', 'sku-map.json'), 'utf8')).mappings;
-      const conn = await sf.connect();
+      const conn = sfConn;
       const costsMissing = [];
       for (const line of proposal.draft.lines) {
         if (line.unitCost != null) continue; // already known from sku-map
