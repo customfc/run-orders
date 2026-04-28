@@ -114,6 +114,12 @@ function normalizeProvince(raw) {
   return map[value] || null;
 }
 
+function normalizeShipTo(shipTo) {
+  if (!shipTo) return shipTo;
+  const normalized = normalizeProvince(shipTo.state);
+  return normalized ? { ...shipTo, state: normalized } : shipTo;
+}
+
 function toLb(weight) {
   if (!weight || !Number.isFinite(Number(weight.value))) return 1;
   const value = Number(weight.value);
@@ -443,7 +449,7 @@ function buildUpdatePayload(order, assignment) {
     orderDate: order.orderDate,
     orderStatus: order.orderStatus,
     billTo: order.billTo,
-    shipTo: order.shipTo,
+    shipTo: normalizeShipTo(order.shipTo),
     items: order.items,
     advancedOptions,
     carrierCode: assignment.carrierCode,
@@ -728,4 +734,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders };
+module.exports = { runOrders, normalizeProvince, normalizeShipTo };

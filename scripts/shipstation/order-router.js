@@ -23,6 +23,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { ProsolClientV2 } = require('./prosol-client-v2');
+const { normalizeShipTo } = require('./run-orders');
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -379,7 +380,7 @@ async function updateOrderWarehouse(orderId, orderNumber, warehouseId) {
     orderDate: order.orderDate,
     orderStatus: order.orderStatus,
     billTo: order.billTo,
-    shipTo: order.shipTo,
+    shipTo: normalizeShipTo(order.shipTo),
     items: order.items,
     advancedOptions: order.advancedOptions,
     ...(carrierCode && { carrierCode, serviceCode }),
