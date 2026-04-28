@@ -2056,12 +2056,30 @@ schedule('0 15 * * 1-5', async () => {
 }, TZ);
 
 // Morning stale-tracker scan — alerts if anything stuck overnight
+const SERIOUS_HANGING_DAYS = 5;
 async function morningStaleScan(source) {
   try {
     const { scanStaleShipments } = require('./lib/stale-tracker');
     const scan = await scanStaleShipments({ days: 14 });
     const needAction = scan.shipments.filter(s => s.movement === 'hanging' && (s.suggestedAction === 'book' || s.suggestedAction === 'rebook'));
     const stuck = scan.shipments.filter(s => s.movement === 'stuck-in-transit');
+    // Hanging labels >= SERIOUS_HANGING_DAYS old, including 'monitor' so phantom
+    // pickup bindings (carrier says scheduled but never picks up) surface here.
+    const serious = scan.shipments
+      .filter(s => s.movement === 'hanging' && (s.age || 0) >= SERIOUS_HANGING_DAYS)
+      .filter(s => ['book', 'rebook', 'monitor'].includes(s.suggestedAction))
+      .sort((a, b) => (b.age || 0) - (a.age || 0));
+
+    // Per-shipment escalation — names every laggard so age and warehouse don't
+    // get rolled into a count. Fires above the grouped 'needAction' alert.
+    if (serious.length) {
+      const body = serious.slice(0, 15).map(s => {
+        const tag = s.suggestedAction === 'monitor' ? ' [phantom pickup]' : ` [${s.suggestedAction}]`;
+        return `• ${s.age}d — ${s.orderNumber || s.trackingNumber} @ ${s.warehouseName || '?'} (${s.carrier})${tag}`;
+      }).join('\n');
+      const extra = serious.length > 15 ? `\n…and ${serious.length - 15} more` : '';
+      await telegram.notify('attn', `🚨 ${serious.length} shipment${serious.length === 1 ? '' : 's'} hanging ${SERIOUS_HANGING_DAYS}+ days`, body + extra + '\n\nTake action: rebook, contact warehouse, or void & reship.\nhttp://localhost:3456#tab-tracking');
+    }
 
     // Stuck-in-transit alert — A-to-Z "item not received" risk zone.
     // Fires even if nothing else needs booking; these are the most urgent items.
