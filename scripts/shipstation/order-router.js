@@ -45,8 +45,12 @@ if (!PROSOL_EMAIL || !PROSOL_PASSWORD) {
 //   1. Compare UPS vs Purolator — pick the cheapest of the two
 //   2. Canada Post: only use if >$4 cheaper than both UPS AND Purolator
 //   3. Canada Post ALWAYS for PO Boxes
+//   4. Montreal (St. Laurent) override: prefer Purolator unless another carrier
+//      beats it by $5 or more.
 // UPS pickups are free; Purolator pickups bookable via ShipStation V2 API.
 const CP_THRESHOLD = 4.00; // CP must beat both UPS & Puro by this much to win
+const MONTREAL_PURO_THRESHOLD = 5.00; // From St. Laurent, others must beat Puro by this much
+const MONTREAL_POSTAL = 'H4T2A2';
 
 const WAREHOUSE_POSTCODES = {
   147654:  'V0N3A3', // Sechelt
@@ -123,6 +127,17 @@ async function getBestCarrier(order, fromPostalCode) {
     fetchRates('ups_walleted'),
     fetchRates('purolator_walleted'),
   ]);
+
+  // Montreal (St. Laurent) override: prefer Purolator unless beaten by $5+
+  if (fromPostalCode === MONTREAL_POSTAL && puro) {
+    let best = puro;
+    for (const r of [ups, cp]) {
+      if (r && puro.shipmentCost - r.shipmentCost >= MONTREAL_PURO_THRESHOLD && r.shipmentCost < best.shipmentCost) {
+        best = r;
+      }
+    }
+    return best;
+  }
 
   // Step 1: best of UPS vs Purolator
   let bestNonCP = null;
@@ -365,7 +380,9 @@ async function updateOrderWarehouse(orderId, orderNumber, warehouseId) {
     if (best) {
       carrierCode = best.carrierCode;
       serviceCode = best.serviceCode;
-      const label = best.carrierCode === 'ups_walleted' ? 'UPS' : 'CP';
+      const label = best.carrierCode === 'ups_walleted' ? 'UPS'
+        : best.carrierCode === 'purolator_walleted' ? 'Puro'
+        : 'CP';
       log(`  💰 Carrier: ${label} ${best.serviceName} $${best.shipmentCost.toFixed(2)}`);
     }
   }
