@@ -1,14 +1,14 @@
 {
-  "_comment": "ShipStation SKU → Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-04-28T14:39:56.838Z",
+  "_comment": "ShipStation SKU \u2192 Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
+  "_updated": "2026-04-30T14:35:00.000Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
     "bundles": "Array of {api_sku, prosol_sku} objects for multi-product bundles",
-    "NON_PROSOL": "Products not available through Prosol — source elsewhere",
-    "UNMAPPED": "Could not find in Prosol API — needs manual verification",
+    "NON_PROSOL": "Products not available through Prosol \u2014 source elsewhere",
+    "UNMAPPED": "Could not find in Prosol API \u2014 needs manual verification",
     "SKIP": "Not real products (discount codes, custom items)",
-    "package_shape": "Shipping package classification. 'solo' = ships alone (qty N → N packages). 'roll_kerdi' = KERDI waterproofing membrane rolls, tape together up to max_per_pkg (5). 'heat_sheet' = DITRA-HEAT/DUO/PS sheets, combine up to max_pkg_weight_lb (50 lb). Absence = default (combine with other default items in one box).",
+    "package_shape": "Shipping package classification. 'solo' = ships alone (qty N \u2192 N packages). 'roll_kerdi' = KERDI waterproofing membrane rolls, tape together up to max_per_pkg (5). 'heat_sheet' = DITRA-HEAT/DUO/PS sheets, combine up to max_pkg_weight_lb (50 lb). Absence = default (combine with other default items in one box).",
     "max_per_pkg": "Max units of this SKU per package (used with roll_kerdi)",
     "max_pkg_weight_lb": "Max package weight in lb when combining (used with heat_sheet)"
   },
@@ -97,7 +97,7 @@
       "product": "Perfect Level Master - T-Lock M Clips 1mm 100pcs",
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
-      "note": "Ships from CFC Sechelt — no Prosol PO needed"
+      "note": "Ships from CFC Sechelt \u2014 no Prosol PO needed"
     },
     "8998": {
       "api_sku": "NON_PROSOL",
@@ -105,7 +105,7 @@
       "product": "Perfect Level Master - T-Lock M Clips 3mm 100pcs",
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
-      "note": "Ships from CFC Sechelt — no Prosol PO needed"
+      "note": "Ships from CFC Sechelt \u2014 no Prosol PO needed"
     },
     "9000": {
       "api_sku": "NON_PROSOL",
@@ -113,7 +113,7 @@
       "product": "Perfect Level Master - T-Lock Wedges 100pcs",
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
-      "note": "Ships from CFC Sechelt — no Prosol PO needed"
+      "note": "Ships from CFC Sechelt \u2014 no Prosol PO needed"
     },
     "9067": {
       "api_sku": "NON_PROSOL",
@@ -121,7 +121,7 @@
       "product": "Perfect Level Master - T-Lock Pliers",
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
-      "note": "Ships from CFC Sechelt — no Prosol PO needed"
+      "note": "Ships from CFC Sechelt \u2014 no Prosol PO needed"
     },
     "9225": {
       "api_sku": "95568",
@@ -171,7 +171,7 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv",
       "map_override_allowed": true,
-      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
+      "map_override_reason": "thermostats \u2014 user policy: biggest-value products, occasional MAP breaks"
     },
     "11461": {
       "api_sku": "UNMAPPED_CABLE",
@@ -603,14 +603,14 @@
     "B071DWN788": {
       "api_sku": "UNMAPPED_CABLE",
       "prosol_sku": "UNMAPPED_CABLE",
-      "product": "Schluter DHEHK Cable — delisted on Amazon, SKU unknown",
+      "product": "Schluter DHEHK Cable \u2014 delisted on Amazon, SKU unknown",
       "verified": false,
       "needs_order_lookup": true
     },
     "B071L2YMNZ": {
       "api_sku": "UNMAPPED_CABLE",
       "prosol_sku": "UNMAPPED_CABLE",
-      "product": "Schluter DHEHK Cable — delisted on Amazon, SKU unknown",
+      "product": "Schluter DHEHK Cable \u2014 delisted on Amazon, SKU unknown",
       "verified": false,
       "needs_order_lookup": true
     },
@@ -723,7 +723,7 @@
       "api_sku": "UNMAPPED_CABLE",
       "prosol_sku": "UNMAPPED_CABLE",
       "product": "Schluter DITRA-HEAT-E-HK Cable (model varies by order)",
-      "note": "Cable-only listing — no thermostat in kit. Title ends with DHEHK{voltage}{code}; extractCableSku pulls it at stage time.",
+      "note": "Cable-only listing \u2014 no thermostat in kit. Title ends with DHEHK{voltage}{code}; extractCableSku pulls it at stage time.",
       "verified": false,
       "needs_order_lookup": true
     },
@@ -731,7 +731,7 @@
       "api_sku": "UNMAPPED_CABLE",
       "prosol_sku": "UNMAPPED_CABLE",
       "product": "Schluter DITRA-HEAT-E-HK Cable (model varies by order)",
-      "note": "Cable-only listing — no thermostat in kit. Title ends with DHEHK{voltage}{code}; extractCableSku pulls it at stage time.",
+      "note": "Cable-only listing \u2014 no thermostat in kit. Title ends with DHEHK{voltage}{code}; extractCableSku pulls it at stage time.",
       "verified": false,
       "needs_order_lookup": true
     },
@@ -787,7 +787,7 @@
       "product": "Schluter DITRA-HEAT Uncoupling Membrane 134.5 sqft Roll",
       "package_shape": "solo",
       "verified": true,
-      "note": "Fixed 2026-04-01 — was incorrectly mapped to DH5MA (8.4 sqft sheet). DH512M is the 134.5 sqft roll.",
+      "note": "Fixed 2026-04-01 \u2014 was incorrectly mapped to DH5MA (8.4 sqft sheet). DH512M is the 134.5 sqft roll.",
       "brand": "schluter",
       "schluter_item": "DH512M",
       "map_cad": 412.44,
@@ -808,7 +808,7 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv",
       "map_override_allowed": true,
-      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
+      "map_override_reason": "thermostats \u2014 user policy: biggest-value products, occasional MAP breaks"
     },
     "B01EB8K754": {
       "api_sku": "DHERT102/BW",
@@ -822,7 +822,7 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv",
       "map_override_allowed": true,
-      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
+      "map_override_reason": "thermostats \u2014 user policy: biggest-value products, occasional MAP breaks"
     },
     "DHERT104bw": {
       "api_sku": "DHERT104/BW",
@@ -836,7 +836,7 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv",
       "map_override_allowed": true,
-      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
+      "map_override_reason": "thermostats \u2014 user policy: biggest-value products, occasional MAP breaks"
     },
     "_section_schluter_kerdi_trowel": "=== SCHLUTER - KERDI TROWEL ===",
     "B087HM7R5F": {
@@ -895,7 +895,7 @@
       "api_sku": "KB12SN305152AF",
       "prosol_sku": "KB12SN305152AF",
       "product": "Schluter KERDI-BOARD-SN Shower Niche 12\"x6\"",
-      "note": "Fixed 2026-04-01 — was incorrectly mapped to 305305A (12x12). Amazon title says 12\" Width 6\" Height = KB12SN305152A. SF item 02509.",
+      "note": "Fixed 2026-04-01 \u2014 was incorrectly mapped to 305305A (12x12). Amazon title says 12\" Width 6\" Height = KB12SN305152A. SF item 02509.",
       "verified": true,
       "brand": "schluter",
       "schluter_item": "KB12SN305152AF",
@@ -906,10 +906,10 @@
     },
     "_section_schluter_kerdi_band": "=== SCHLUTER - KERDI-BAND ===",
     "B003C69J1K": {
-      "api_sku": "KEBA10012510M",
-      "prosol_sku": "KEBA10012510M",
+      "api_sku": "KEBA100/125/10M",
+      "prosol_sku": "KEBA100/125/10M",
       "product": "Schluter KERDI-BAND Waterproofing Strip 4\" x 32'10\"",
-      "note": "KERDI-BAND 10\" x 32ft10in roll = 33 LF in Salesforce. UOM is Linear Feet — always use qty 33, NOT 1. Confirmed 2026-03-27.",
+      "note": "KERDI-BAND 10\" x 32ft10in roll = 33 LF in Salesforce. UOM is Linear Feet \u2014 always use qty 33, NOT 1. Confirmed 2026-03-27.",
       "verified": true,
       "uom": "LF",
       "qty_per_unit": 33,
@@ -1077,7 +1077,7 @@
       "product": "Perfect Level Master - T-Lock Pliers",
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
-      "note": "Ships from CFC Sechelt — no Prosol PO needed",
+      "note": "Ships from CFC Sechelt \u2014 no Prosol PO needed",
       "sf_item_name": "9067"
     },
     "B01LYHSHF7": {
@@ -1086,7 +1086,7 @@
       "product": "Perfect Level Master - T-Lock Wedges 100pcs",
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
-      "note": "Ships from CFC Sechelt — no Prosol PO needed",
+      "note": "Ships from CFC Sechelt \u2014 no Prosol PO needed",
       "sf_item_name": "9000"
     },
     "B00QGC41HY": {
@@ -1095,7 +1095,7 @@
       "product": "Perfect Level Master - T-Lock M Clips 3mm 100pcs",
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
-      "note": "Ships from CFC Sechelt — no Prosol PO needed",
+      "note": "Ships from CFC Sechelt \u2014 no Prosol PO needed",
       "sf_item_name": "8998"
     },
     "B00QGA9RO8": {
@@ -1104,7 +1104,7 @@
       "product": "Perfect Level Master - T-Lock M Clips 1mm 100pcs",
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
-      "note": "Ships from CFC Sechelt — no Prosol PO needed",
+      "note": "Ships from CFC Sechelt \u2014 no Prosol PO needed",
       "sf_item_name": "8997"
     },
     "B00X6T9H4W": {
@@ -1113,10 +1113,10 @@
       "product": "Perfect Level Master - T-Lock M Clips 2mm 100pcs",
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
-      "note": "Ships from CFC Sechelt — no Prosol PO needed",
+      "note": "Ships from CFC Sechelt \u2014 no Prosol PO needed",
       "sf_item_name": "9154"
     },
-    "_section_polyblend": "=== POLYBLEND PLUS NON-SANDED GROUT (10lb) — all 22 Amazon CA variants ===",
+    "_section_polyblend": "=== POLYBLEND PLUS NON-SANDED GROUT (10lb) \u2014 all 22 Amazon CA variants ===",
     "B097CSJ1XM": {
       "api_sku": "CPBPG33310N",
       "prosol_sku": "CPBPG33310N",
@@ -1168,7 +1168,7 @@
     "B097FG1FJC": {
       "api_sku": "UNMAPPED_GROUT",
       "prosol_sku": "UNMAPPED_GROUT",
-      "product": "Polyblend Plus NS Grout Fawn 10lb — not in color chart, may be sanded grout",
+      "product": "Polyblend Plus NS Grout Fawn 10lb \u2014 not in color chart, may be sanded grout",
       "verified": false,
       "needs_order_lookup": true
     },
@@ -1223,7 +1223,7 @@
     "B097FG9B44": {
       "api_sku": "UNMAPPED_GROUT",
       "prosol_sku": "UNMAPPED_GROUT",
-      "product": "Polyblend Plus NS Grout Quartz 10lb — color # unknown",
+      "product": "Polyblend Plus NS Grout Quartz 10lb \u2014 color # unknown",
       "verified": false,
       "needs_order_lookup": true
     },
@@ -1236,7 +1236,7 @@
     "B097FG8MMB": {
       "api_sku": "UNMAPPED_GROUT",
       "prosol_sku": "UNMAPPED_GROUT",
-      "product": "Polyblend Plus NS Grout Sandstone 10lb — color # unknown",
+      "product": "Polyblend Plus NS Grout Sandstone 10lb \u2014 color # unknown",
       "verified": false,
       "needs_order_lookup": true
     },
@@ -1317,7 +1317,7 @@
       "shipstation_warehouse_id": 147654,
       "treeco_sku": "WT155618003",
       "brand": "bona",
-      "verified_source": "inferred from Mega sheen-slot pattern (…6… = Satin) — needs user confirm"
+      "verified_source": "inferred from Mega sheen-slot pattern (\u20266\u2026 = Satin) \u2014 needs user confirm"
     },
     "_section_tibet_almond": "=== TIBET ALMOND STICK ===",
     "00488": {
@@ -1388,8 +1388,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B01BMZOE6W": {
-      "api_sku": "DHERT102BW",
-      "prosol_sku": "DHERT102BW",
+      "api_sku": "DHERT102/BW",
+      "prosol_sku": "DHERT102/BW",
       "product": "DITRA-HEAT-E-RT TOUCH PROGRAM THERMOSTAT WHITE",
       "category": "DITRA",
       "barcode": "4011832149849",
@@ -1402,7 +1402,7 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv",
       "map_override_allowed": true,
-      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
+      "map_override_reason": "thermostats \u2014 user policy: biggest-value products, occasional MAP breaks"
     },
     "KD-STR": {
       "api_sku": "13572",
@@ -1446,8 +1446,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07K7VVB75": {
-      "api_sku": "KST9651525",
-      "prosol_sku": "KST9651525",
+      "api_sku": "KST965/1525",
+      "prosol_sku": "KST965/1525",
       "product": "KERDI-SHOWER-TRAY 38\" X 60\" CEN",
       "package_shape": "solo",
       "category": "KERDI",
@@ -1477,8 +1477,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0BN6TKGZ1": {
-      "api_sku": "DHERT105BW",
-      "prosol_sku": "DHERT105BW",
+      "api_sku": "DHERT105/BW",
+      "prosol_sku": "DHERT105/BW",
       "product": "DITRA-HEAT-E-RS1 SMART THERMOSTAT",
       "category": "DITRA",
       "barcode": "4011832202599",
@@ -1491,11 +1491,11 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv",
       "map_override_allowed": true,
-      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
+      "map_override_reason": "thermostats \u2014 user policy: biggest-value products, occasional MAP breaks"
     },
     "B003K1NVY8": {
-      "api_sku": "KERDIFIXBW",
-      "prosol_sku": "KERDIFIXBW",
+      "api_sku": "KERDIFIX/BW",
+      "prosol_sku": "KERDIFIX/BW",
       "product": "KERDI-FIX SEALING/BONDING 290ML BRT WHT",
       "category": "KERDI",
       "barcode": "4011832078385",
@@ -1645,8 +1645,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003C6EQPE": {
-      "api_sku": "KERDI20010M",
-      "prosol_sku": "KERDI20010M",
+      "api_sku": "KERDI200/10M",
+      "prosol_sku": "KERDI200/10M",
       "product": "KERDI WATERPROOFING MEMBRANE 3'3\" X 33' = 108 SF",
       "package_shape": "roll_kerdi",
       "max_per_pkg": 5,
@@ -1662,9 +1662,9 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00FJ9LJ16": {
-      "api_sku": "KERECKFI2",
-      "prosol_sku": "KERECKFI2",
-      "product": "KERDI-KERECK INSIDE CORNER 90° (2)",
+      "api_sku": "KERECK/FI2",
+      "prosol_sku": "KERECK/FI2",
+      "product": "KERDI-KERECK INSIDE CORNER 90\u00b0 (2)",
       "category": "KERDI",
       "barcode": "4011832078361",
       "verified": true,
@@ -1692,8 +1692,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0057GJ99A": {
-      "api_sku": "KERDIFIXG",
-      "prosol_sku": "KERDIFIXG",
+      "api_sku": "KERDIFIX/G",
+      "prosol_sku": "KERDIFIX/G",
       "product": "KERDI-FIX SEALING/BONDING 290ML GREY",
       "category": "KERDI",
       "barcode": "4011832056222",
@@ -1768,8 +1768,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003K1LWGM": {
-      "api_sku": "KMSMV235114",
-      "prosol_sku": "KMSMV235114",
+      "api_sku": "KMSMV235/114",
+      "prosol_sku": "KMSMV235/114",
       "product": "KERDI-SEAL MIXING VALVE SEAL 4-1/2\"",
       "category": "KERDI",
       "barcode": "4011832115431",
@@ -1798,9 +1798,9 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003FJ6G1U": {
-      "api_sku": "KERECKFA2",
-      "prosol_sku": "KERECKFA2",
-      "product": "KERDI-KERECK OUTSIDE CORNER 90° (2)",
+      "api_sku": "KERECK/FA2",
+      "prosol_sku": "KERECK/FA2",
+      "product": "KERDI-KERECK OUTSIDE CORNER 90\u00b0 (2)",
       "category": "KERDI",
       "barcode": "4011832078347",
       "verified": true,
@@ -1813,8 +1813,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07BKST1ZY": {
-      "api_sku": "DHERT104BW",
-      "prosol_sku": "DHERT104BW",
+      "api_sku": "DHERT104/BW",
+      "prosol_sku": "DHERT104/BW",
       "product": "DITRA-HEAT-E-WIFI THERMOSTAT WIRELESS PROGRAMMABLE",
       "category": "DITRA",
       "barcode": "4011832163906",
@@ -1827,11 +1827,11 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv",
       "map_override_allowed": true,
-      "map_override_reason": "thermostats — user policy: biggest-value products, occasional MAP breaks"
+      "map_override_reason": "thermostats \u2014 user policy: biggest-value products, occasional MAP breaks"
     },
     "B07Q2J4BJJ": {
-      "api_sku": "KST12201525",
-      "prosol_sku": "KST12201525",
+      "api_sku": "KST1220/1525",
+      "prosol_sku": "KST1220/1525",
       "product": "KERDI-SHOWER-TRAY 48\" X 60\" CEN",
       "package_shape": "solo",
       "category": "KERDI",
@@ -1846,8 +1846,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003C6AMCA": {
-      "api_sku": "KERDI2005M",
-      "prosol_sku": "KERDI2005M",
+      "api_sku": "KERDI200/5M",
+      "prosol_sku": "KERDI200/5M",
       "product": "KERDI WATERPROOFING MEMBRANE 3'3\" X 16'5\" = 54 SF",
       "package_shape": "roll_kerdi",
       "max_per_pkg": 5,
@@ -1863,8 +1863,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PZFBH4T": {
-      "api_sku": "KST9151220BF",
-      "prosol_sku": "KST9151220BF",
+      "api_sku": "KST915/1220BF",
+      "prosol_sku": "KST915/1220BF",
       "product": "KERDI-SHOWER-TRAY-THIN 36\" X 48\" CEN",
       "package_shape": "solo",
       "category": "KERDI",
@@ -1926,9 +1926,9 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B003K1LB8Q": {
-      "api_sku": "KERECKFI10",
-      "prosol_sku": "KERECKFI10",
-      "product": "KERDI-KERECK INSIDE CORNER 90° (10)",
+      "api_sku": "KERECK/FI10",
+      "prosol_sku": "KERECK/FI10",
+      "product": "KERDI-KERECK INSIDE CORNER 90\u00b0 (10)",
       "category": "KERDI",
       "barcode": "4011832078354",
       "verified": true,
@@ -2082,8 +2082,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07KB651KP": {
-      "api_sku": "KSLT9651930S",
-      "prosol_sku": "KSLT9651930S",
+      "api_sku": "KSLT965/1930S",
+      "prosol_sku": "KSLT965/1930S",
       "product": "KERDI-SHOWER-LINEAR-TRAY 38\" X 76\" SIDE",
       "package_shape": "solo",
       "category": "KERDI",
@@ -2131,7 +2131,7 @@
     "B0057GJ0IA": {
       "api_sku": "KERECKFA10",
       "prosol_sku": "KERECKFA10",
-      "product": "KERDI-KERECK OUTSIDE CORNER 90° (10)",
+      "product": "KERDI-KERECK OUTSIDE CORNER 90\u00b0 (10)",
       "category": "KERDI",
       "barcode": "4011832078378",
       "verified": true,
@@ -2160,8 +2160,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B007NMQ2VE": {
-      "api_sku": "KEBA1001255M",
-      "prosol_sku": "KEBA1001255M",
+      "api_sku": "KEBA100/125/5M",
+      "prosol_sku": "KEBA100/125/5M",
       "product": "KERDI-BAND 5\" WATERPROOFING STRIP 16' 5\"",
       "category": "KERDI",
       "barcode": "4011832038402",
@@ -2260,8 +2260,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07K7TH321": {
-      "api_sku": "KST9651525S",
-      "prosol_sku": "KST9651525S",
+      "api_sku": "KST965/1525S",
+      "prosol_sku": "KST965/1525S",
       "product": "KERDI-SHOWER-TRAY 38\" X 60\" SIDE",
       "package_shape": "solo",
       "category": "KERDI",
@@ -2337,8 +2337,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B077GGYHJ4": {
-      "api_sku": "KERDI2007M",
-      "prosol_sku": "KERDI2007M",
+      "api_sku": "KERDI200/7M",
+      "prosol_sku": "KERDI200/7M",
       "product": "KERDI WATERPROOFING MEMBRANE 3' 3\" x 23' = 75 SF",
       "package_shape": "roll_kerdi",
       "max_per_pkg": 5,
@@ -2370,8 +2370,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B006XXK92W": {
-      "api_sku": "KD2PVCFL",
-      "prosol_sku": "KD2PVCFL",
+      "api_sku": "KD2/PVC/FL",
+      "prosol_sku": "KD2/PVC/FL",
       "product": "KERDI-DRAIN FLANGE KIT PVC 2\" OUTLET",
       "category": "KERDI",
       "barcode": "4011832135750",
@@ -2400,8 +2400,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B0057GIXB0": {
-      "api_sku": "KEBA1001855M",
-      "prosol_sku": "KEBA1001855M",
+      "api_sku": "KEBA100/185/5M",
+      "prosol_sku": "KEBA100/185/5M",
       "product": "KERDI-BAND 7-1/4\" WATERPROOFING STRIP 16' 5\"",
       "category": "KERDI",
       "barcode": "4011832038426",
@@ -2434,8 +2434,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00BUAXH6S": {
-      "api_sku": "KD2ABSE",
-      "prosol_sku": "KD2ABSE",
+      "api_sku": "KD2/ABS/E",
+      "prosol_sku": "KD2/ABS/E",
       "product": "KERDI-DRAIN ABS 2\" FLANGE / 4\" GRATE STN STEEL",
       "category": "KERDI",
       "barcode": "4011832054716",
@@ -2559,8 +2559,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B018A2WO1W": {
-      "api_sku": "DITRA-XL175",
-      "prosol_sku": "DITRA-XL175",
+      "api_sku": "DITRA-XL/175",
+      "prosol_sku": "DITRA-XL/175",
       "product": "DITRA-XL UNCOUPLING MEMBRANE 3'3\" X 53'3\" = 175 SF",
       "package_shape": "solo",
       "category": "DITRA",
@@ -2637,8 +2637,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07Q1K9B2Z": {
-      "api_sku": "KSLT9151395S",
-      "prosol_sku": "KSLT9151395S",
+      "api_sku": "KSLT915/1395S",
+      "prosol_sku": "KSLT915/1395S",
       "product": "KERDI-SHOWER-LINEAR-TRAY 36\" X 55\" SIDE",
       "package_shape": "solo",
       "category": "KERDI",
@@ -2746,8 +2746,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B00EUEVHS6": {
-      "api_sku": "KERDI20020M",
-      "prosol_sku": "KERDI20020M",
+      "api_sku": "KERDI200/20M",
+      "prosol_sku": "KERDI200/20M",
       "product": "KERDI WATERPROOFING MEMBRANE 3'3\" X 66' = 215 SF",
       "package_shape": "roll_kerdi",
       "max_per_pkg": 5,
@@ -2865,8 +2865,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07KB1STVW": {
-      "api_sku": "KSLT9151830S",
-      "prosol_sku": "KSLT9151830S",
+      "api_sku": "KSLT915/1830S",
+      "prosol_sku": "KSLT915/1830S",
       "product": "KERDI-SHOWER-LINEAR-TRAY 36\" X 72\" SIDE",
       "package_shape": "solo",
       "category": "KERDI",
@@ -2973,8 +2973,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B006XXK8NM": {
-      "api_sku": "KD2ABSFL",
-      "prosol_sku": "KD2ABSFL",
+      "api_sku": "KD2/ABS/FL",
+      "prosol_sku": "KD2/ABS/FL",
       "product": "KERDI-DRAIN FLANGE KIT ABS 2\" OUTLET",
       "category": "KERDI",
       "barcode": "4011832135774",
@@ -3050,8 +3050,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B071NL3XJF": {
-      "api_sku": "DHERR1BW",
-      "prosol_sku": "DHERR1BW",
+      "api_sku": "DHERR1/BW",
+      "prosol_sku": "DHERR1/BW",
       "product": "DITRA-HEAT-E-RR POWER MODULE WHITE",
       "category": "DITRA",
       "barcode": "4011832149856",
@@ -3111,8 +3111,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B006XXO0VI": {
-      "api_sku": "KBZT32ZL",
-      "prosol_sku": "KBZT32ZL",
+      "api_sku": "KBZT32Z/L",
+      "prosol_sku": "KBZT32Z/L",
       "product": "KERDI-BOARD-ZT TAB WASHER GALV STEEL 1-1/4\" (1000)",
       "category": "KERDI",
       "barcode": "4011832137532",
@@ -3428,8 +3428,8 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B079G7NFRQ": {
-      "api_sku": "KD2ABSFL",
-      "prosol_sku": "KD2ABSFL",
+      "api_sku": "KD2/ABS/FL",
+      "prosol_sku": "KD2/ABS/FL",
       "product": "Schluter KERDI-DRAIN Flange Drain Outlet 2\"",
       "category": "DRAIN",
       "sf_item": "02538",

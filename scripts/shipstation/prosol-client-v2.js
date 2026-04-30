@@ -133,21 +133,11 @@ class ProsolClientV2 {
       }
     }
 
-    // Try manufacturer SKU (prosol_sku field)
-    const res2 = await this.apiGet(
-      `/api/storefront/products?filter[manufacturer_sku]=${encodeURIComponent(prosolSku)}&append=prosol_sku&limit=5`
-    );
-    if (res2.status === 200) {
-      const data2 = JSON.parse(res2.body);
-      const products2 = data2.data || data2;
-      if (Array.isArray(products2) && products2.length > 0) {
-        // Find the one matching our SKU
-        const match = products2.find(p => p.sku === prosolSku || p.name === prosolSku);
-        const id = match ? match.id : products2[0].id;
-        this.skuToIdCache[prosolSku] = id;
-        return id;
-      }
-    }
+    // Note: filter[manufacturer_sku] is NOT in Prosol's allowed filters
+    // (allowed: id, uuid, name, slug, sku, active, stock_status, ...). It always
+    // returns HTTP 400. Removed 2026-04-30. The slashed-SKU lookup miss it tried
+    // to paper over was a sku-map data bug — slashes had been stripped from
+    // api_sku for ~30 Schluter entries; fixed in the same commit.
 
     // Last-resort full-text search. `keyword=` was deprecated/silently-ignored
     // by Prosol's API sometime before 2026-04-24 — it returns the same top 5
