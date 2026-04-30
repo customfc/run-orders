@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU → Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-04-17T18:27:22.376Z",
+  "_updated": "2026-04-28T14:39:56.838Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -64,6 +64,14 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
     },
+    "458": {
+      "api_sku": "CP1",
+      "prosol_sku": "CP1",
+      "product": "Custom Building Products - LevelQuik Acrylic Primer 3.8L (1 gal)",
+      "verified": true,
+      "brand": "custom_building_products",
+      "note": "Shopify SKU 458; Prosol/manufacturer SKU CP1"
+    },
     "8776": {
       "api_sku": "CPMBP1",
       "prosol_sku": "CCPMBP1",
@@ -115,6 +123,13 @@
       "shipstation_warehouse_id": 147654,
       "note": "Ships from CFC Sechelt — no Prosol PO needed"
     },
+    "9225": {
+      "api_sku": "95568",
+      "prosol_sku": "95568",
+      "product": "Mapei - Ultrabond ECO 570 Premium Urethane Rubber-Sports-Flooring Adhesive 18.9 L",
+      "verified": true,
+      "note": "Shopify SKU 9225 is listed as 'ECO 560' but the physical product is ECO 570. Prosol's SKU is 95568 (numeric, not the ECO570-20 label used in marketing). Fixed 2026-04-24 after Prosol's keyword-search fallback stopped working for SKU lookup."
+    },
     "9672": {
       "api_sku": "KMSMV235/114",
       "prosol_sku": "KMSMV235114",
@@ -142,13 +157,6 @@
       "prosol_sku": "ECO975-15",
       "product": "Mapei - Ultrabond ECO 975 Hardwood Adhesive 5 gal",
       "verified": true
-    },
-    "9225": {
-      "api_sku": "95568",
-      "prosol_sku": "95568",
-      "product": "Mapei - Ultrabond ECO 570 Premium Urethane Rubber-Sports-Flooring Adhesive 18.9 L",
-      "verified": true,
-      "note": "Shopify SKU 9225 is listed as 'ECO 560' but the physical product is ECO 570. Prosol's SKU is 95568 (numeric, not the ECO570-20 label used in marketing). Fixed 2026-04-24 after Prosol's keyword-search fallback stopped working for SKU lookup."
     },
     "11458": {
       "api_sku": "DHERT102/BW",
@@ -200,6 +208,13 @@
       "note": "Shopify SKU - same product as B000CCXB2U",
       "verified": true
     },
+    "11555": {
+      "api_sku": "C010861",
+      "prosol_sku": "C010861-01",
+      "product": "Aqua Mix - Poultice Stain Remover 3/4 lb",
+      "verified": true,
+      "note": "Shopify SKU for the same physical product as B000CD1L58. Added 2026-04-21 to unblock order #1248."
+    },
     "11556": {
       "api_sku": "C020552-4",
       "prosol_sku": "C020552-01",
@@ -243,19 +258,22 @@
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654
     },
+    "13572": {
+      "api_sku": "13572",
+      "prosol_sku": "KDSTR",
+      "product": "Schluter KERDI-DRAIN STRAINER",
+      "category": "KERDI",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KD-STR",
+      "note": "Mirror of KD-STR keyed by SF item number (what Sechelt uses manually). Added 2026-04-22."
+    },
     "_section_aqua_mix_poultice": "=== AQUA MIX - POULTICE STAIN REMOVER ===",
     "B000CD1L58": {
       "api_sku": "C010861",
       "prosol_sku": "C010861-01",
       "product": "Aqua Mix - Poultice Stain Remover 3/4 lb",
       "verified": true
-    },
-    "11555": {
-      "api_sku": "C010861",
-      "prosol_sku": "C010861-01",
-      "product": "Aqua Mix - Poultice Stain Remover 3/4 lb",
-      "verified": true,
-      "note": "Shopify SKU for the same physical product as B000CD1L58. Added 2026-04-21 to unblock order #1248."
     },
     "_section_aqua_mix_enrich_n_seal": "=== AQUA MIX - ENRICH 'N' SEAL ===",
     "B08HFY5BK4": {
@@ -961,12 +979,12 @@
       "map_source": "schluter-map-2025-10-01.csv"
     },
     "B07PLLDCP6": {
-      "api_sku": "UNMAPPED",
-      "prosol_sku": "UNMAPPED",
-      "product": "Schluter KERDI-LINE Frameless Grate",
-      "note": "Grate-only accessory. Need exact size from order to match KL1 grate SKU.",
-      "verified": false,
-      "needs_order_lookup": true
+      "api_sku": "KL1DRE90",
+      "prosol_sku": "KL1DRE90",
+      "product": "Schluter KERDI-LINE Linear Floor Drain w/ Frameless Tileable Grate (Brushed SS, V4) 1-1/8\" x 35-7/16\"",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KL1DRE90"
     },
     "_section_schluter_kerdi_seal": "=== SCHLUTER - KERDI-SEAL ===",
     "B071LJTCVH": {
@@ -1396,16 +1414,6 @@
       "brand": "schluter",
       "schluter_item": "KD-STR",
       "note": "Shopify sends sku='KD-STR'. Prosol catalog uses KD-STR (productId 10256, 27 locations). SF PBSI Item Name='13572' with Manufacturer Code='KDSTR' (per Mac's 2026-04-22 screenshot). api_sku points to the SF Name so createShopifySoPo's findItemBySku lookup resolves; prosol_sku kept as manufacturer code. Backfill for orders #1246 #1247 pending."
-    },
-    "13572": {
-      "api_sku": "13572",
-      "prosol_sku": "KDSTR",
-      "product": "Schluter KERDI-DRAIN STRAINER",
-      "category": "KERDI",
-      "verified": true,
-      "brand": "schluter",
-      "schluter_item": "KD-STR",
-      "note": "Mirror of KD-STR keyed by SF item number (what Sechelt uses manually). Added 2026-04-22."
     },
     "B07PV4JQ13": {
       "api_sku": "KD2FLKPVC",
