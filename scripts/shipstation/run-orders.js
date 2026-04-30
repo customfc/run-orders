@@ -334,6 +334,19 @@ function determineWarehouse(province, inventoryBySku) {
     .map(([id, loc]) => ({ id: Number(id), ...loc }))
     .filter((loc) => loc.shipstation_warehouse_id);
 
+  // Distance-sort utility: order ids by haversine km from province centroid.
+  const sortByDistance = (ids) => ids
+    .map((id) => {
+      const loc = LOCATION_MAP[String(id)];
+      const km = haversineKm(provLat, provLng, loc?.lat || 0, loc?.lng || 0);
+      return { id, km };
+    })
+    .sort((a, b) => a.km - b.km)
+    .map((c) => c.id);
+
+  const aPreferredByDist = sortByDistance(aPreferred);
+  const bPreferredByDist = sortByDistance(bPreferred);
+
   // Sort non-preferred candidates by distance to destination province
   const fallback = candidates
     .filter((c) => !preferred.includes(c.id))
@@ -341,33 +354,36 @@ function determineWarehouse(province, inventoryBySku) {
   const fallbackA = fallback.filter((c) => !DEPRIORITIZED_LOCS.has(c.id));
   const fallbackB = fallback.filter((c) =>  DEPRIORITIZED_LOCS.has(c.id));
 
+  // Iterate ids in given order, return the first one whose qty across all SKUs
+  // meets the minimum. The qty>=2 default protects against phantom-stock=1
+  // (2026-04-21 BURN/Terrace incident) without needing to re-sort by score.
   const tryTier = (ids, minQty) => {
-    const scored = ids
-      .map((id) => ({ id, score: scoreWarehouseAgainstOrder(id, inventoryBySku) }))
-      .filter((c) => c.score >= minQty)
-      .sort((a, b) => b.score - a.score);
-    if (!scored.length) return null;
-    const location = LOCATION_MAP[String(scored[0].id)];
-    return (location && location.shipstation_warehouse_id) ? { prosolLocId: scored[0].id, location } : null;
+    for (const id of ids) {
+      if (scoreWarehouseAgainstOrder(id, inventoryBySku) < minQty) continue;
+      const location = LOCATION_MAP[String(id)];
+      if (location && location.shipstation_warehouse_id) return { prosolLocId: id, location };
+    }
+    return null;
   };
 
-  // Pass 1A: A-tier preferred hubs, qty >= MIN_QTY_PREFERRED. Pick the one with
-  // the most stock cushion (rejected BURN for 1-phantom-cable on 2026-04-21).
-  const a = tryTier(aPreferred, MIN_QTY_PREFERRED);
+  // Pass 1A: closest A-tier preferred hub with qty >= MIN_QTY_PREFERRED.
+  // Distance-first means QC orders try OTTA before WCON, ON orders try the
+  // hub nearest the province centroid first, etc.
+  const a = tryTier(aPreferredByDist, MIN_QTY_PREFERRED);
   if (a) return a;
 
   // Pass 1B: B-tier preferred hubs (operationally slow — see DEPRIORITIZED_LOCS).
   // Only used when no A-tier hub has enough stock. Same MIN_QTY threshold.
-  const b = tryTier(bPreferred, MIN_QTY_PREFERRED);
+  const b = tryTier(bPreferredByDist, MIN_QTY_PREFERRED);
   if (b) return b;
 
   // Pass 2: distance-ranked fallback at qty >= 1 so low-stock items still ship.
   // A-tier hubs (preferred + non-deprioritized fallback) come first; B-tier
   // hubs are forced to the bottom regardless of distance.
   const ranked = [
-    ...aPreferred,
+    ...aPreferredByDist,
     ...fallbackA.map((c) => c.id),
-    ...bPreferred,
+    ...bPreferredByDist,
     ...fallbackB.map((c) => c.id),
   ];
   for (const locId of ranked) {
