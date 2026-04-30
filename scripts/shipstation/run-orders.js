@@ -38,6 +38,13 @@ const MAIN_HUBS = {
   NU: [10049, 10054, 10001],
 };
 
+// B-tier hubs: technically preferred for the province but operationally slow
+// (poor pack-turnaround, repeated phantom-pickup bindings, etc). Considered
+// only after every A-tier hub fails the stock check, and pushed to the bottom
+// of the distance-fallback ranking.
+//   10004 = WGRF (Saint-Laurent) — chronically slow turnaround.
+const DEPRIORITIZED_LOCS = new Set([10004]);
+
 const PO_BOX_RE = /\b(?:p\.?\s*o\.?\s*box|post\s+office\s+box)\b/i;
 
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
@@ -320,6 +327,8 @@ function scoreWarehouseAgainstOrder(locId, inventoryBySku) {
 
 function determineWarehouse(province, inventoryBySku) {
   const preferred = MAIN_HUBS[province] || [];
+  const aPreferred = preferred.filter((id) => !DEPRIORITIZED_LOCS.has(id));
+  const bPreferred = preferred.filter((id) =>  DEPRIORITIZED_LOCS.has(id));
   const [provLat, provLng] = PROVINCE_LAT_LNG[province] || [45, -75];
   const candidates = Object.entries(LOCATION_MAP)
     .map(([id, loc]) => ({ id: Number(id), ...loc }))
@@ -329,25 +338,38 @@ function determineWarehouse(province, inventoryBySku) {
   const fallback = candidates
     .filter((c) => !preferred.includes(c.id))
     .sort((a, b) => haversineKm(provLat, provLng, a.lat || 0, a.lng || 0) - haversineKm(provLat, provLng, b.lat || 0, b.lng || 0));
+  const fallbackA = fallback.filter((c) => !DEPRIORITIZED_LOCS.has(c.id));
+  const fallbackB = fallback.filter((c) =>  DEPRIORITIZED_LOCS.has(c.id));
 
-  // Pass 1: preferred hubs, require qty >= MIN_QTY_PREFERRED across ALL SKUs.
-  // Among passing hubs, pick the one with the highest min-qty (most stock
-  // cushion) rather than the first in the hardcoded MAIN_HUBS list order.
-  // This would have rejected BURN for the Terrace DITRA-HEAT order on
-  // 2026-04-21 (1 phantom cable) and chosen WCAS or a fallback instead.
-  const preferredScored = preferred
-    .map((id) => ({ id, score: scoreWarehouseAgainstOrder(id, inventoryBySku) }))
-    .filter((c) => c.score >= MIN_QTY_PREFERRED)
-    .sort((a, b) => b.score - a.score);
-  if (preferredScored.length) {
-    const best = preferredScored[0];
-    const location = LOCATION_MAP[String(best.id)];
-    if (location && location.shipstation_warehouse_id) return { prosolLocId: best.id, location };
-  }
+  const tryTier = (ids, minQty) => {
+    const scored = ids
+      .map((id) => ({ id, score: scoreWarehouseAgainstOrder(id, inventoryBySku) }))
+      .filter((c) => c.score >= minQty)
+      .sort((a, b) => b.score - a.score);
+    if (!scored.length) return null;
+    const location = LOCATION_MAP[String(scored[0].id)];
+    return (location && location.shipstation_warehouse_id) ? { prosolLocId: scored[0].id, location } : null;
+  };
 
-  // Pass 2: preserve old ranked fallback (distance-sorted) with relaxed
-  // threshold (qty >= 1) so low-stock items still ship from nearest source.
-  const ranked = [...preferred, ...fallback.map((c) => c.id)];
+  // Pass 1A: A-tier preferred hubs, qty >= MIN_QTY_PREFERRED. Pick the one with
+  // the most stock cushion (rejected BURN for 1-phantom-cable on 2026-04-21).
+  const a = tryTier(aPreferred, MIN_QTY_PREFERRED);
+  if (a) return a;
+
+  // Pass 1B: B-tier preferred hubs (operationally slow — see DEPRIORITIZED_LOCS).
+  // Only used when no A-tier hub has enough stock. Same MIN_QTY threshold.
+  const b = tryTier(bPreferred, MIN_QTY_PREFERRED);
+  if (b) return b;
+
+  // Pass 2: distance-ranked fallback at qty >= 1 so low-stock items still ship.
+  // A-tier hubs (preferred + non-deprioritized fallback) come first; B-tier
+  // hubs are forced to the bottom regardless of distance.
+  const ranked = [
+    ...aPreferred,
+    ...fallbackA.map((c) => c.id),
+    ...bPreferred,
+    ...fallbackB.map((c) => c.id),
+  ];
   for (const locId of ranked) {
     const location = LOCATION_MAP[String(locId)];
     if (!location || !location.shipstation_warehouse_id) continue;
@@ -405,8 +427,24 @@ async function getRates(order, fromPostalCode) {
   }
 
   if (!ups && !purolator) throw new Error('No UPS or Purolator rate returned');
-  const bestNonCp = [ups, purolator].filter(Boolean).sort((a, b) => a.shipmentCost - b.shipmentCost)[0];
-  if (!canadaPost) return { winner: bestNonCp, note: '', compared: { ups, purolator, canadaPost } };
+
+  // Prefer Purolator over UPS unless UPS is at least $3 cheaper.
+  // Rationale: Purolator's domestic transit and pickup reliability beats UPS
+  // for our Prosol lanes; the small price premium is worth it. UPS only wins
+  // when the savings clearly justify it ($3+ cheaper).
+  let bestNonCp;
+  let nonCpNote = '';
+  if (purolator && ups) {
+    if ((purolator.shipmentCost - ups.shipmentCost) >= 3) {
+      bestNonCp = ups;
+      nonCpNote = `UPS chosen — saves $${(purolator.shipmentCost - ups.shipmentCost).toFixed(2)} vs Purolator`;
+    } else {
+      bestNonCp = purolator;
+    }
+  } else {
+    bestNonCp = purolator || ups;
+  }
+  if (!canadaPost) return { winner: bestNonCp, note: nonCpNote, compared: { ups, purolator, canadaPost } };
 
   const cpBeatsUps = ups ? (ups.shipmentCost - canadaPost.shipmentCost) > 4 : false;
   const cpBeatsPuro = purolator ? (purolator.shipmentCost - canadaPost.shipmentCost) > 4 : false;
@@ -414,7 +452,7 @@ async function getRates(order, fromPostalCode) {
     return { winner: canadaPost, note: 'Canada Post >$4 cheaper than UPS and Purolator', compared: { ups, purolator, canadaPost } };
   }
 
-  return { winner: bestNonCp, note: '', compared: { ups, purolator, canadaPost } };
+  return { winner: bestNonCp, note: nonCpNote, compared: { ups, purolator, canadaPost } };
 }
 
 const SHIPSTATION_WAREHOUSE_META = Object.fromEntries(
