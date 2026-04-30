@@ -788,4 +788,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders, normalizeProvince, normalizeShipTo };
+module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource };

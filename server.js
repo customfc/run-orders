@@ -322,13 +322,14 @@ app.post('/api/pipeline/test-telegram', async (req, res) => {
 // ── Buy Labels ───────────────────────────────────────────────────────────────
 
 app.post('/api/labels/buy', async (req, res) => {
-  const { orderId, carrierCode, serviceCode, packageCode, weight, estimatedCost } = req.body;
+  const { orderId, carrierCode, serviceCode, packageCode, weight, estimatedCost, internalNotes } = req.body;
   if (!orderId || !carrierCode || !serviceCode) {
     return res.status(400).json({ success: false, error: 'orderId, carrierCode, serviceCode required' });
   }
 
   try {
     const { v1Request, getLabelUrl } = require('./lib/shipstation-v2');
+    const { orderSource } = require('./scripts/shipstation/run-orders');
 
     const payload = {
       orderId,
@@ -358,6 +359,46 @@ app.post('/api/labels/buy', async (req, res) => {
     }
 
     const costWarning = estimatedCost && labelCost > estimatedCost * 1.5;
+
+    // Record into opsState so the email + pos phases pick this label up just
+    // like a cron-driven buy. Without this, manually-bought labels never reach
+    // Kaitlyn (no email) and never get a Salesforce PO. Best-effort: a failure
+    // here doesn't roll back the (already-paid-for) label.
+    try {
+      const orderRes = await v1Request('GET', `/orders/${orderId}`);
+      if (orderRes.status === 200) {
+        const order = JSON.parse(orderRes.body);
+        const state = opsState.load(opsState.today());
+        opsState.recordLabelBought(state, {
+          orderId,
+          orderNumber: order.orderNumber,
+          source: orderSource(order),
+          shipmentId,
+          trackingNumber,
+          labelCost,
+          costWarning,
+          carrierCode,
+          serviceCode,
+          estimatedCost,
+          warehouseId: order.advancedOptions?.warehouseId || null,
+          packages: [{
+            shipmentId,
+            trackingNumber,
+            labelCost,
+            weight: payload.weight,
+            shape: null,
+            items: (order.items || []).map((it) => ({ sku: it.sku, name: it.name, quantity: it.quantity })),
+          }],
+        });
+        if (internalNotes) {
+          state.phases.buy.labels[String(orderId)].internalNotes = internalNotes;
+          opsState.save(state); // re-save with the note attached
+        }
+      }
+    } catch (e) {
+      console.error('[buy-label] opsState record failed (label still bought):', e.message);
+      audit.log({ action: 'buy-label-opsstate-fail', orderId, error: e.message });
+    }
 
     audit.log({
       action: 'buy-label',
