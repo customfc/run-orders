@@ -285,7 +285,7 @@ function resolveOrderItems(order) {
       continue;
     }
 
-    resolved.push({ ...base, kind: 'prosol', apiSku: mapped.api_sku, label: mapped.product || item.name || sku });
+    resolved.push({ ...base, kind: 'prosol', apiSku: mapped.api_sku, prosolSku: mapped.prosol_sku || mapped.api_sku, label: mapped.product || item.name || sku });
   }
   return { resolved, fixedWarehouseItems, failures };
 }
@@ -628,7 +628,12 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
           fromPostalCode = fixedWarehouse.postal_code;
         } else {
           const inventoryBySku = {};
-          const uniqueSkus = [...new Set(order.resolvedItems.map((item) => item.apiSku))];
+          // Use prosolSku for Prosol catalog lookup (falls back to apiSku for
+          // legacy resolved-item shapes). When prosol_sku diverges from api_sku
+          // (e.g. KD-STR: api_sku='13572' for SF, prosol_sku='KD-STR' for the
+          // Prosol catalog), passing apiSku to checkInventory returns null and
+          // the order goes to manual review even though it's actually in stock.
+          const uniqueSkus = [...new Set(order.resolvedItems.map((item) => item.prosolSku || item.apiSku))];
           for (const sku of uniqueSkus) {
             if (!inventoryCache.has(sku)) {
               onProgress({ type: 'inventory', message: `Checking Prosol stock: ${sku}`, orderNumber: order.orderNumber });

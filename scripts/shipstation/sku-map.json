@@ -260,13 +260,13 @@
     },
     "13572": {
       "api_sku": "13572",
-      "prosol_sku": "KDSTR",
+      "prosol_sku": "KD-STR",
       "product": "Schluter KERDI-DRAIN STRAINER",
       "category": "KERDI",
       "verified": true,
       "brand": "schluter",
       "schluter_item": "KD-STR",
-      "note": "Mirror of KD-STR keyed by SF item number (what Sechelt uses manually). Added 2026-04-22."
+      "note": "Mirror of KD-STR keyed by SF item number (what Sechelt uses manually). Added 2026-04-22. prosol_sku must be 'KD-STR' with dash — 'KDSTR' returns null in Prosol catalog (verified 2026-05-05)."
     },
     "_section_aqua_mix_poultice": "=== AQUA MIX - POULTICE STAIN REMOVER ===",
     "B000CD1L58": {
@@ -1406,14 +1406,14 @@
     },
     "KD-STR": {
       "api_sku": "13572",
-      "prosol_sku": "KDSTR",
+      "prosol_sku": "KD-STR",
       "product": "Schluter KERDI-DRAIN STRAINER",
       "category": "KERDI",
       "verified": true,
       "source": "shopify-manual",
       "brand": "schluter",
       "schluter_item": "KD-STR",
-      "note": "Shopify sends sku='KD-STR'. Prosol catalog uses KD-STR (productId 10256, 27 locations). SF PBSI Item Name='13572' with Manufacturer Code='KDSTR' (per Mac's 2026-04-22 screenshot). api_sku points to the SF Name so createShopifySoPo's findItemBySku lookup resolves; prosol_sku kept as manufacturer code. Backfill for orders #1246 #1247 pending."
+      "note": "Shopify sends sku='KD-STR'. Prosol catalog SKU is 'KD-STR' with dash (productId 10256, 27 locations) — verified 2026-05-05 that 'KDSTR' (no dash) returns null. SF PBSI Item Name='13572'. api_sku is the SF Name (createShopifySoPo's findItemBySku); prosol_sku is the Prosol catalog SKU (run-orders inventory check)."
     },
     "B07PV4JQ13": {
       "api_sku": "KD2FLKPVC",
