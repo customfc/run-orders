@@ -1415,6 +1415,17 @@
       "schluter_item": "KD-STR",
       "note": "Shopify sends sku='KD-STR'. Prosol catalog SKU is 'KD-STR' with dash (productId 10256, 27 locations) — verified 2026-05-05 that 'KDSTR' (no dash) returns null. SF PBSI Item Name='13572'. api_sku is the SF Name (createShopifySoPo's findItemBySku); prosol_sku is the Prosol catalog SKU (run-orders inventory check)."
     },
+    "KBZS55G": {
+      "api_sku": "KBZS55G",
+      "prosol_sku": "KBZS55G",
+      "product": "Schluter KERDI-BOARD-ZS Coarse Thread Screw 2\" (Pack of 100)",
+      "category": "KERDI",
+      "verified": true,
+      "source": "shopify-manual",
+      "brand": "schluter",
+      "schluter_item": "KBZS55G",
+      "note": "Shopify sends sku='KBZS55G'. Prosol catalog SKU = 'KBZS55G' (productId 16507) — verified 2026-05-05. Sister SKUs: KBZS35G (1-5/8\"), KBZS75G (3\")."
+    },
     "B07PV4JQ13": {
       "api_sku": "KD2FLKPVC",
       "prosol_sku": "KD2FLKPVC",
