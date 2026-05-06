@@ -176,18 +176,18 @@ const SS_WAREHOUSES = {
 // ─── Province → Preferred hub routing (Prosol location IDs, priority order) ──
 
 const PROVINCE_ROUTING = {
-  'BC': [10010, 10054],                         // Burnaby → Calgary
-  'AB': [10054, 10010, 10049],                   // Calgary → Burnaby → Winnipeg
+  'BC': [10010, 10003, 10054],                   // Burnaby → Coquitlam → Calgary
+  'AB': [10054, 10010, 10003, 10049],            // Calgary → Burnaby → Coquitlam → Winnipeg
   'SK': [10054, 10049, 10010],                   // Calgary → Winnipeg → Burnaby
   'MB': [10049, 10054, 10010],                   // Winnipeg → Calgary → Burnaby
-  'ON': [10001, 10013, 10024, 10027, 10032, 10043], // Concord → Cambridge → Kingston → London → Ottawa → Sudbury
+  'ON': [10001, 10028, 10013, 10024, 10027, 10032, 10043], // Concord → Mississauga → Cambridge → Kingston → London → Ottawa → Sudbury
   'QC': [10004, 10001],                          // St. Laurent → Concord
   'NB': [10004, 10001],                          // St. Laurent → Concord
   'NS': [10004, 10001],                          // St. Laurent → Concord
   'PE': [10004, 10001],                          // St. Laurent → Concord
   'NL': [10004, 10001],                          // St. Laurent → Concord
-  'YT': [10010, 10054],                          // Burnaby → Calgary
-  'NT': [10054, 10010, 10049],                   // Calgary → Burnaby → Winnipeg
+  'YT': [10010, 10003, 10054],                   // Burnaby → Coquitlam → Calgary
+  'NT': [10054, 10010, 10003, 10049],            // Calgary → Burnaby → Coquitlam → Winnipeg
   'NU': [10049, 10054, 10001],                   // Winnipeg → Calgary → Concord
 };
 
