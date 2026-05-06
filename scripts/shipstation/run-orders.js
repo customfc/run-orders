@@ -628,21 +628,33 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
           fromPostalCode = fixedWarehouse.postal_code;
         } else {
           const inventoryBySku = {};
-          // Use prosolSku for Prosol catalog lookup (falls back to apiSku for
-          // legacy resolved-item shapes). When prosol_sku diverges from api_sku
-          // (e.g. KD-STR: api_sku='13572' for SF, prosol_sku='KD-STR' for the
-          // Prosol catalog), passing apiSku to checkInventory returns null and
-          // the order goes to manual review even though it's actually in stock.
-          const uniqueSkus = [...new Set(order.resolvedItems.map((item) => item.prosolSku || item.apiSku))];
-          for (const sku of uniqueSkus) {
-            if (!inventoryCache.has(sku)) {
-              onProgress({ type: 'inventory', message: `Checking Prosol stock: ${sku}`, orderNumber: order.orderNumber });
-              inventoryCache.set(sku, await client.checkInventory(sku));
+          // The Prosol storefront search API and the PO catalog use different
+          // SKU formats depending on the product line:
+          //   - Aqua Mix: api_sku='C030192-4' is the storefront key; prosol_sku='C030192-01' is PO-only
+          //   - Schluter KD-STR: api_sku='13572' (SF id, no storefront hit); prosol_sku='KD-STR' is the storefront key
+          // Try api_sku first; on miss, retry with prosol_sku before giving up.
+          const skuPairs = [...new Map(
+            order.resolvedItems.map((item) => {
+              const primary = item.apiSku || item.prosolSku;
+              const fallback = item.prosolSku && item.prosolSku !== primary ? item.prosolSku : null;
+              return [primary, { primary, fallback }];
+            })
+          ).values()];
+          for (const { primary, fallback } of skuPairs) {
+            const cacheKey = primary;
+            if (!inventoryCache.has(cacheKey)) {
+              onProgress({ type: 'inventory', message: `Checking Prosol stock: ${primary}`, orderNumber: order.orderNumber });
+              let inv = await client.checkInventory(primary);
+              if (!inv && fallback) {
+                onProgress({ type: 'inventory', message: `Retry with prosol_sku: ${fallback}`, orderNumber: order.orderNumber });
+                inv = await client.checkInventory(fallback);
+              }
+              inventoryCache.set(cacheKey, inv);
               await sleep(5000);
             }
-            const inv = inventoryCache.get(sku);
-            if (!inv) throw new Error(`No Prosol inventory result for ${sku}`);
-            inventoryBySku[sku] = inv;
+            const inv = inventoryCache.get(cacheKey);
+            if (!inv) throw new Error(`No Prosol inventory result for ${primary}${fallback ? ` (also tried ${fallback})` : ''}`);
+            inventoryBySku[cacheKey] = inv;
           }
 
           const warehouse = determineWarehouse(order.normalizedProvince, inventoryBySku);
