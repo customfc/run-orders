@@ -37,6 +37,9 @@ const MAIN_HUBS = {
   NT: [10054, 10010, 10003, 10049],
   NU: [10049, 10054, 10001],
 };
+// Vancouver Island region inherits BC's hub membership; tier classification
+// is rewritten via REGION_TIER_OVERRIDES below.
+MAIN_HUBS.BCI = MAIN_HUBS.BC;
 
 // B-tier hubs: technically preferred for the province but operationally slow
 // (poor pack-turnaround, repeated phantom-pickup bindings, retail-style
@@ -61,6 +64,32 @@ const DEPRIORITIZED_LOCS = new Set([
   // Atlantic retail outlets
   10016, 10029,
 ]);
+
+// Region-specific tier overrides. Lets a hub be A-tier in one shipping
+// region and B-tier in another (e.g. NANA/VICT are global-B-tier "retail
+// outlets" but for Vancouver Island shipping they're the preferred hubs;
+// BURN/COQL/WCAS are flipped to B-tier so the picker only ferries to the
+// mainland when the island is dry).
+const REGION_TIER_OVERRIDES = {
+  BCI: {
+    promote: new Set([10031, 10045]),         // NANA, VICT → A-tier on the island
+    demote:  new Set([10010, 10003, 10054]),  // BURN, COQL, WCAS → B-tier (mainland fallback)
+  },
+};
+
+// Vancouver Island FSAs (as of 2026):
+//   V8L–V8Z (Greater Victoria, excluding mainland V8A/V8B/V8C/V8E/V8G/V8J)
+//   V9A–V9Y (mid + north island: Esquimalt, Duncan, Nanaimo, Comox, Campbell River, Port Alberni)
+//   V0R, V0S (north + west island: Tofino, Ucluelet, Port Hardy)
+const VANCOUVER_ISLAND_FSA_RE = /^V(?:8[KLMNPRSTVWXYZ]|9[A-Y]|0[RS])/;
+
+function effectiveRegionForOrder(province, postalCode) {
+  if (province === 'BC') {
+    const p = String(postalCode || '').replace(/\s/g, '').toUpperCase();
+    if (VANCOUVER_ISLAND_FSA_RE.test(p)) return 'BCI';
+  }
+  return province;
+}
 
 const PO_BOX_RE = /\b(?:p\.?\s*o\.?\s*box|post\s+office\s+box)\b/i;
 
@@ -342,11 +371,20 @@ function scoreWarehouseAgainstOrder(locId, inventoryBySku) {
   return minQty === Infinity ? 0 : minQty;
 }
 
-function determineWarehouse(province, inventoryBySku) {
-  const preferred = MAIN_HUBS[province] || [];
-  const aPreferred = preferred.filter((id) => !DEPRIORITIZED_LOCS.has(id));
-  const bPreferred = preferred.filter((id) =>  DEPRIORITIZED_LOCS.has(id));
-  const [provLat, provLng] = PROVINCE_LAT_LNG[province] || [45, -75];
+function determineWarehouse(region, inventoryBySku) {
+  const preferred = MAIN_HUBS[region] || [];
+  const override = REGION_TIER_OVERRIDES[region] || { promote: new Set(), demote: new Set() };
+  const isATier = (id) => {
+    if (override.promote.has(id)) return true;
+    if (override.demote.has(id))  return false;
+    return !DEPRIORITIZED_LOCS.has(id);
+  };
+  const aPreferred = preferred.filter(isATier);
+  const bPreferred = preferred.filter((id) => !isATier(id));
+  // BCI shares BC's province centroid since lat/lng-from-centroid distances
+  // already favor the island hubs over WCAS within the A-tier filter.
+  const centroidKey = region === 'BCI' ? 'BC' : region;
+  const [provLat, provLng] = PROVINCE_LAT_LNG[centroidKey] || [45, -75];
   const candidates = Object.entries(LOCATION_MAP)
     .map(([id, loc]) => ({ id: Number(id), ...loc }))
     .filter((loc) => loc.shipstation_warehouse_id);
@@ -368,8 +406,8 @@ function determineWarehouse(province, inventoryBySku) {
   const fallback = candidates
     .filter((c) => !preferred.includes(c.id))
     .sort((a, b) => haversineKm(provLat, provLng, a.lat || 0, a.lng || 0) - haversineKm(provLat, provLng, b.lat || 0, b.lng || 0));
-  const fallbackA = fallback.filter((c) => !DEPRIORITIZED_LOCS.has(c.id));
-  const fallbackB = fallback.filter((c) =>  DEPRIORITIZED_LOCS.has(c.id));
+  const fallbackA = fallback.filter((c) => isATier(c.id));
+  const fallbackB = fallback.filter((c) => !isATier(c.id));
 
   // Iterate ids in given order, return the first one whose qty across all SKUs
   // meets the minimum. The qty>=2 default protects against phantom-stock=1
@@ -674,7 +712,8 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
             inventoryBySku[cacheKey] = inv;
           }
 
-          const warehouse = determineWarehouse(order.normalizedProvince, inventoryBySku);
+          const region = effectiveRegionForOrder(order.normalizedProvince, order.shipTo?.postalCode);
+          const warehouse = determineWarehouse(region, inventoryBySku);
           if (!warehouse) throw new Error('No single mapped Prosol warehouse has all required items');
           warehouseId = Number(warehouse.location.shipstation_warehouse_id);
           warehouseLabel = `${warehouse.location.city} (${warehouse.location.code})`;

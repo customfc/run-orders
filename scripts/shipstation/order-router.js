@@ -181,6 +181,7 @@ const SS_WAREHOUSES = {
 // same A-then-B effect.
 const PROVINCE_ROUTING = {
   'BC': [10010, 10003, 10054,  10007, 10022, 10023, 10026, 10031, 10034, 10038, 10044, 10045, 10055],
+  'BCI': [10031, 10045,  10010, 10003, 10054,  10007, 10022, 10023, 10026, 10034, 10038, 10044, 10055], // Vancouver Island: NANA+VICT first, mainland fallback
   'AB': [10054, 10010, 10003, 10049,  10011, 10018, 10019, 10036],
   'SK': [10054, 10049, 10010,  10037, 10039],
   'MB': [10049, 10054, 10010],
@@ -194,6 +195,16 @@ const PROVINCE_ROUTING = {
   'NT': [10054, 10010, 10003, 10049],
   'NU': [10049, 10054, 10001],
 };
+
+// Vancouver Island FSAs — see run-orders.js for the canonical regex + comments.
+const VANCOUVER_ISLAND_FSA_RE = /^V(?:8[KLMNPRSTVWXYZ]|9[A-Y]|0[RS])/;
+function effectiveRegion(province, postalCode) {
+  if (province === 'BC') {
+    const p = String(postalCode || '').replace(/\s/g, '').toUpperCase();
+    if (VANCOUVER_ISLAND_FSA_RE.test(p)) return 'BCI';
+  }
+  return province;
+}
 
 // ─── Haversine distance (km) ─────────────────────────────────────────────────
 
@@ -806,10 +817,11 @@ async function main() {
       continue;
     }
 
-    // Determine optimal warehouse
+    // Determine optimal warehouse (route island orders to NANA/VICT first)
+    const region = effectiveRegion(province, postalCode);
     const warehouseResult = inventoryResults.length === 1
-      ? determineWarehouse(province, inventoryResults[0].locationStock, customerCoords)
-      : determineWarehouseMultiSku(province, inventoryResults, customerCoords);
+      ? determineWarehouse(region, inventoryResults[0].locationStock, customerCoords)
+      : determineWarehouseMultiSku(region, inventoryResults, customerCoords);
 
     if (!warehouseResult.ssWarehouseId) {
       log(`  ❌ ${warehouseResult.reason}`);
