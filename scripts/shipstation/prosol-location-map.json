@@ -13,7 +13,10 @@
     "postal_code": "L4K4G5",
     "active": true,
     "shipstation_warehouse_id": 1791764,
-    "is_main_hub": true
+    "is_main_hub": true,
+    "contact_phone": [
+      "+19054181082"
+    ]
   },
   "10003": {
     "id": 10003,
@@ -29,7 +32,10 @@
     "postal_code": "V3K7C1",
     "active": true,
     "shipstation_warehouse_id": 1824505,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+16043421011"
+    ]
   },
   "10004": {
     "id": 10004,
@@ -45,7 +51,10 @@
     "postal_code": "H4T2A2",
     "active": true,
     "shipstation_warehouse_id": 1791765,
-    "is_main_hub": true
+    "is_main_hub": true,
+    "contact_phone": [
+      "+15147451212"
+    ]
   },
   "10007": {
     "id": 10007,
@@ -61,7 +70,10 @@
     "postal_code": "V2T6X4",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+16048537778"
+    ]
   },
   "10010": {
     "id": 10010,
@@ -77,7 +89,10 @@
     "postal_code": "V5B3A9",
     "active": true,
     "shipstation_warehouse_id": 1374417,
-    "is_main_hub": true
+    "is_main_hub": true,
+    "contact_phone": [
+      "+17783275865"
+    ]
   },
   "10011": {
     "id": 10011,
@@ -93,7 +108,10 @@
     "postal_code": "T2E7K8",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+14035696922"
+    ]
   },
   "10013": {
     "id": 10013,
@@ -109,7 +127,10 @@
     "postal_code": "N1T1N5",
     "active": true,
     "shipstation_warehouse_id": 1793463,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+15197409311"
+    ]
   },
   "10014": {
     "id": 10014,
@@ -125,7 +146,10 @@
     "postal_code": "G7K0A2",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+14185498886"
+    ]
   },
   "10016": {
     "id": 10016,
@@ -140,8 +164,11 @@
     "address": "105 Akerley Blvd",
     "postal_code": "B3B1R7",
     "active": true,
-    "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "shipstation_warehouse_id": 1852858,
+    "is_main_hub": false,
+    "contact_phone": [
+      "+19024681990"
+    ]
   },
   "10017": {
     "id": 10017,
@@ -157,7 +184,10 @@
     "postal_code": "M3J2X1",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+14166304883"
+    ]
   },
   "10018": {
     "id": 10018,
@@ -173,7 +203,10 @@
     "postal_code": "T5M3N8",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+17804514222"
+    ]
   },
   "10019": {
     "id": 10019,
@@ -189,7 +222,10 @@
     "postal_code": "T6E5V8",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+17804355375"
+    ]
   },
   "10021": {
     "id": 10021,
@@ -205,7 +241,10 @@
     "postal_code": "L8W2E5",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+19055758106"
+    ]
   },
   "10022": {
     "id": 10022,
@@ -221,7 +260,10 @@
     "postal_code": "V2C5P7",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+12508515138"
+    ]
   },
   "10023": {
     "id": 10023,
@@ -237,7 +279,10 @@
     "postal_code": "V1X6A3",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+12508689441"
+    ]
   },
   "10024": {
     "id": 10024,
@@ -253,7 +298,10 @@
     "postal_code": "K7P0E9",
     "active": true,
     "shipstation_warehouse_id": 1504076,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+16133841212"
+    ]
   },
   "10025": {
     "id": 10025,
@@ -269,7 +317,10 @@
     "postal_code": "N2B1R9",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+19054181082"
+    ]
   },
   "10026": {
     "id": 10026,
@@ -285,7 +336,10 @@
     "postal_code": "V3A5E8",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+16045331080"
+    ]
   },
   "10027": {
     "id": 10027,
@@ -301,7 +355,10 @@
     "postal_code": "N6E1K7",
     "active": true,
     "shipstation_warehouse_id": 1793487,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+15196687260"
+    ]
   },
   "10028": {
     "id": 10028,
@@ -317,7 +374,10 @@
     "postal_code": "L4X2G1",
     "active": true,
     "shipstation_warehouse_id": 1824506,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+19054181082"
+    ]
   },
   "10029": {
     "id": 10029,
@@ -332,8 +392,11 @@
     "address": "400 Edinburgh Drive Unit B",
     "postal_code": "E1E2L1",
     "active": true,
-    "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "shipstation_warehouse_id": 1852856,
+    "is_main_hub": false,
+    "contact_phone": [
+      "+15068599494"
+    ]
   },
   "10031": {
     "id": 10031,
@@ -349,7 +412,10 @@
     "postal_code": "V9T3Y4",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+17787624333"
+    ]
   },
   "10032": {
     "id": 10032,
@@ -365,7 +431,10 @@
     "postal_code": "K1B4N4",
     "active": true,
     "shipstation_warehouse_id": 1814007,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+16137461212"
+    ]
   },
   "10034": {
     "id": 10034,
@@ -381,7 +450,10 @@
     "postal_code": "V2N1X2",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+12505624348"
+    ]
   },
   "10035": {
     "id": 10035,
@@ -397,7 +469,10 @@
     "postal_code": "G1P3T2",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+14186569458"
+    ]
   },
   "10036": {
     "id": 10036,
@@ -413,7 +488,10 @@
     "postal_code": "T4P1M6",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+14033468383"
+    ]
   },
   "10037": {
     "id": 10037,
@@ -429,7 +507,10 @@
     "postal_code": "S4N5A3",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+13065258215"
+    ]
   },
   "10038": {
     "id": 10038,
@@ -445,7 +526,10 @@
     "postal_code": "V6V1J4",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+16042701314"
+    ]
   },
   "10039": {
     "id": 10039,
@@ -461,7 +545,10 @@
     "postal_code": "S7P0B2",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+13066515033"
+    ]
   },
   "10040": {
     "id": 10040,
@@ -477,7 +564,10 @@
     "postal_code": "M1R5A3",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+19054181082"
+    ]
   },
   "10041": {
     "id": 10041,
@@ -493,7 +583,10 @@
     "postal_code": "L2M6S9",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+19054181082"
+    ]
   },
   "10043": {
     "id": 10043,
@@ -509,7 +602,10 @@
     "postal_code": "P3C5L8",
     "active": true,
     "shipstation_warehouse_id": 1786140,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+17055254044"
+    ]
   },
   "10044": {
     "id": 10044,
@@ -525,7 +621,10 @@
     "postal_code": "V3W6J3",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+16045913431"
+    ]
   },
   "10045": {
     "id": 10045,
@@ -541,7 +640,10 @@
     "postal_code": "V8X1J6",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+12504791114"
+    ]
   },
   "10048": {
     "id": 10048,
@@ -557,7 +659,10 @@
     "postal_code": "N9A6J3",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+15199461255"
+    ]
   },
   "10049": {
     "id": 10049,
@@ -573,7 +678,10 @@
     "postal_code": "R2X2R4",
     "active": true,
     "shipstation_warehouse_id": 1811347,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+12046321212"
+    ]
   },
   "10051": {
     "id": 10051,
@@ -589,7 +697,10 @@
     "postal_code": "J4Y0G5",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+14505001281"
+    ]
   },
   "10052": {
     "id": 10052,
@@ -605,7 +716,10 @@
     "postal_code": "L4N4Y8",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+17057332212"
+    ]
   },
   "10054": {
     "id": 10054,
@@ -621,7 +735,10 @@
     "postal_code": "T2H1Z9",
     "active": true,
     "shipstation_warehouse_id": 1284722,
-    "is_main_hub": true
+    "is_main_hub": true,
+    "contact_phone": [
+      "+14032534642"
+    ]
   },
   "10055": {
     "id": 10055,
@@ -637,7 +754,10 @@
     "postal_code": "V1B0A9",
     "active": true,
     "shipstation_warehouse_id": null,
-    "is_main_hub": false
+    "is_main_hub": false,
+    "contact_phone": [
+      "+12505035012"
+    ]
   },
   "biyork_markham": {
     "id": "biyork_markham",
