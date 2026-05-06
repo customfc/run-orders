@@ -328,8 +328,19 @@ app.post('/api/labels/buy', async (req, res) => {
   }
 
   try {
-    const { v1Request, getLabelUrl } = require('./lib/shipstation-v2');
+    const { v1Request, getLabelUrl, ensureValidShipTo } = require('./lib/shipstation-v2');
     const { orderSource } = require('./scripts/shipstation/run-orders');
+
+    // Pre-buy address guard. Same defense as the cron pipeline path — without
+    // this, an agent (or anything) hitting /api/labels/buy can still burn a
+    // UPS rejection on a malformed CA province. ensureValidShipTo throws a
+    // structured BAD_ADDRESS_* error with a clear remediation message.
+    try {
+      await ensureValidShipTo(orderId, req.body?.orderNumber || `orderId=${orderId}`);
+    } catch (e) {
+      audit.log({ action: 'buy-label', orderId, success: false, error: `pre-buy guard: ${e.message}` });
+      return res.json({ success: false, error: e.message, code: e.code || 'BAD_ADDRESS' });
+    }
 
     const payload = {
       orderId,
@@ -389,11 +400,8 @@ app.post('/api/labels/buy', async (req, res) => {
             shape: null,
             items: (order.items || []).map((it) => ({ sku: it.sku, name: it.name, quantity: it.quantity })),
           }],
+          internalNotes: internalNotes || null,
         });
-        if (internalNotes) {
-          state.phases.buy.labels[String(orderId)].internalNotes = internalNotes;
-          opsState.save(state); // re-save with the note attached
-        }
       }
     } catch (e) {
       console.error('[buy-label] opsState record failed (label still bought):', e.message);
