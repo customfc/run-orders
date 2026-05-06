@@ -352,6 +352,7 @@ S1-S3 are strictly serial. S4 unlocks parallel work on S5/S7/S10 (if gates are m
 **Exit criteria:**
 - Real packages appear on belt when pipeline runs
 - Clicking a package opens drawer with correct ShipStation data
+- **Pickup sidebar** carried forward from v1: today's booked pickups visible at a glance (grouped by date, today highlighted, warehouse + carrier + label count + confirmation). Sourced from `/api/pickups/active`. This is a daily-ops essential in v1 — must not regress in the rebuild.
 - Clicking warehouse tile opens drawer, edits persist
 - Destructive warehouse edit shows confirmation before writing
 
