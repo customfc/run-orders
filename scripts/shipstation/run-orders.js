@@ -23,27 +23,44 @@ const LOCATION_MAP = JSON.parse(fs.readFileSync(path.join(__dirname, 'prosol-loc
 const NON_PROSOL_MARKERS = new Set(['NON_PROSOL', 'SKIP']);
 const PERFECT_LEVEL_RE = /perfect\s+level/i;
 const MAIN_HUBS = {
-  BC: [10010, 10003, 10054],
-  AB: [10054, 10010, 10003, 10049],
-  SK: [10054, 10049, 10010],
+  BC: [10010, 10003, 10054, 10007, 10022, 10023, 10026, 10031, 10034, 10038, 10044, 10045, 10055],
+  AB: [10054, 10010, 10003, 10049, 10011, 10018, 10019, 10036],
+  SK: [10054, 10049, 10010, 10037, 10039],
   MB: [10049, 10054, 10010],
-  ON: [10001, 10028, 10013, 10024, 10027, 10032, 10043],
-  QC: [10004, 10001, 10028, 10032, 10027, 10013, 10024, 10043],
-  NB: [10004, 10001, 10032, 10027],
-  NS: [10004, 10001, 10032, 10027],
-  PE: [10004, 10001, 10032, 10027],
-  NL: [10004, 10001, 10032, 10027],
+  ON: [10001, 10028, 10013, 10024, 10027, 10032, 10043, 10017, 10021, 10025, 10040, 10041, 10048, 10052],
+  QC: [10004, 10001, 10028, 10032, 10027, 10013, 10024, 10043, 10014, 10035, 10051],
+  NB: [10004, 10001, 10032, 10027, 10029],
+  NS: [10004, 10001, 10032, 10027, 10016],
+  PE: [10004, 10001, 10032, 10027, 10016, 10029],
+  NL: [10004, 10001, 10032, 10027, 10016],
   YT: [10010, 10003, 10054],
   NT: [10054, 10010, 10003, 10049],
   NU: [10049, 10054, 10001],
 };
 
 // B-tier hubs: technically preferred for the province but operationally slow
-// (poor pack-turnaround, repeated phantom-pickup bindings, etc). Considered
-// only after every A-tier hub fails the stock check, and pushed to the bottom
-// of the distance-fallback ranking.
+// (poor pack-turnaround, repeated phantom-pickup bindings, retail-style
+// outlets that route through Kaitlyn at Concord rather than direct, etc).
+// Considered only after every A-tier hub fails the stock check, and pushed
+// to the bottom of the distance-fallback ranking.
 //   10004 = WGRF (Saint-Laurent) — chronically slow turnaround.
-const DEPRIORITIZED_LOCS = new Set([10004]);
+//   10007–10055 (excl. main hubs) = Prosol retail-style outlets newly
+//     wired into routing 2026-05-06; default B-tier until proven reliable.
+const DEPRIORITIZED_LOCS = new Set([
+  10004,
+  // BC retail outlets
+  10007, 10022, 10023, 10026, 10031, 10034, 10038, 10044, 10045, 10055,
+  // AB retail outlets
+  10011, 10018, 10019, 10036,
+  // SK retail outlets
+  10037, 10039,
+  // ON retail outlets
+  10017, 10021, 10025, 10040, 10041, 10048, 10052,
+  // QC retail outlets
+  10014, 10035, 10051,
+  // Atlantic retail outlets
+  10016, 10029,
+]);
 
 const PO_BOX_RE = /\b(?:p\.?\s*o\.?\s*box|post\s+office\s+box)\b/i;
 
