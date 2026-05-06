@@ -69,7 +69,7 @@
     "address": "#108 - 30799 Simpson Rd.",
     "postal_code": "V2T6X4",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869849,
     "is_main_hub": false,
     "contact_phone": [
       "+16048537778"
@@ -107,7 +107,7 @@
     "address": "3101 16 St NE",
     "postal_code": "T2E7K8",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869850,
     "is_main_hub": false,
     "contact_phone": [
       "+14035696922"
@@ -145,7 +145,7 @@
     "address": "1041, rue de la Rupert",
     "postal_code": "G7K0A2",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869851,
     "is_main_hub": false,
     "contact_phone": [
       "+14185498886"
@@ -183,7 +183,7 @@
     "address": "255 Steeprock Drive",
     "postal_code": "M3J2X1",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869852,
     "is_main_hub": false,
     "contact_phone": [
       "+14166304883"
@@ -202,7 +202,7 @@
     "address": "11662 - 154 Street",
     "postal_code": "T5M3N8",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869853,
     "is_main_hub": false,
     "contact_phone": [
       "+17804514222"
@@ -221,7 +221,7 @@
     "address": "9779 45th Ave NW",
     "postal_code": "T6E5V8",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869854,
     "is_main_hub": false,
     "contact_phone": [
       "+17804355375"
@@ -240,7 +240,7 @@
     "address": "47 Ditton dr",
     "postal_code": "L8W2E5",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869855,
     "is_main_hub": false,
     "contact_phone": [
       "+19055758106"
@@ -259,7 +259,7 @@
     "address": "1370 Dalhousie Dr.",
     "postal_code": "V2C5P7",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869856,
     "is_main_hub": false,
     "contact_phone": [
       "+12508515138"
@@ -278,7 +278,7 @@
     "address": "459 Banks Rd.",
     "postal_code": "V1X6A3",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869857,
     "is_main_hub": false,
     "contact_phone": [
       "+12508689441"
@@ -316,7 +316,7 @@
     "address": "500 Bingemans Center Drive",
     "postal_code": "N2B1R9",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869858,
     "is_main_hub": false,
     "contact_phone": [
       "+19054181082"
@@ -335,7 +335,7 @@
     "address": "#5 20555 Langley Bypass",
     "postal_code": "V3A5E8",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869859,
     "is_main_hub": false,
     "contact_phone": [
       "+16045331080"
@@ -411,7 +411,7 @@
     "address": "2512 Kenworth Road",
     "postal_code": "V9T3Y4",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869860,
     "is_main_hub": false,
     "contact_phone": [
       "+17787624333"
@@ -449,7 +449,7 @@
     "address": "1967 South Ogilvie Street",
     "postal_code": "V2N1X2",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869861,
     "is_main_hub": false,
     "contact_phone": [
       "+12505624348"
@@ -468,7 +468,7 @@
     "address": "2555, rue Watt, Porte #4",
     "postal_code": "G1P3T2",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869862,
     "is_main_hub": false,
     "contact_phone": [
       "+14186569458"
@@ -487,7 +487,7 @@
     "address": "7619 Gaetz Ave, #4&5",
     "postal_code": "T4P1M6",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869863,
     "is_main_hub": false,
     "contact_phone": [
       "+14033468383"
@@ -506,7 +506,7 @@
     "address": "515 6th Avenue E",
     "postal_code": "S4N5A3",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869864,
     "is_main_hub": false,
     "contact_phone": [
       "+13065258215"
@@ -525,7 +525,7 @@
     "address": "Unit#140, 12231 Bridgeport Road",
     "postal_code": "V6V1J4",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869865,
     "is_main_hub": false,
     "contact_phone": [
       "+16042701314"
@@ -544,7 +544,7 @@
     "address": "12 3603 Millar Avenue",
     "postal_code": "S7P0B2",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869866,
     "is_main_hub": false,
     "contact_phone": [
       "+13066515033"
@@ -563,7 +563,7 @@
     "address": "1412 Warden Ave.",
     "postal_code": "M1R5A3",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869867,
     "is_main_hub": false,
     "contact_phone": [
       "+19054181082"
@@ -582,7 +582,7 @@
     "address": "113 Cushman Road Unit # 54",
     "postal_code": "L2M6S9",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869868,
     "is_main_hub": false,
     "contact_phone": [
       "+19054181082"
@@ -620,7 +620,7 @@
     "address": "#101-13375 76th Ave",
     "postal_code": "V3W6J3",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869869,
     "is_main_hub": false,
     "contact_phone": [
       "+16045913431"
@@ -639,7 +639,7 @@
     "address": "3934 Quadra st. Unit 112",
     "postal_code": "V8X1J6",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869870,
     "is_main_hub": false,
     "contact_phone": [
       "+12504791114"
@@ -658,7 +658,7 @@
     "address": "4445 County Road #42",
     "postal_code": "N9A6J3",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869871,
     "is_main_hub": false,
     "contact_phone": [
       "+15199461255"
@@ -696,7 +696,7 @@
     "address": "2850 Matte",
     "postal_code": "J4Y0G5",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869872,
     "is_main_hub": false,
     "contact_phone": [
       "+14505001281"
@@ -715,7 +715,7 @@
     "address": "230 Bayview Unit 9 - 10",
     "postal_code": "L4N4Y8",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869873,
     "is_main_hub": false,
     "contact_phone": [
       "+17057332212"
@@ -753,7 +753,7 @@
     "address": "5000 Silver Star Rd",
     "postal_code": "V1B0A9",
     "active": true,
-    "shipstation_warehouse_id": null,
+    "shipstation_warehouse_id": 1869874,
     "is_main_hub": false,
     "contact_phone": [
       "+12505035012"
