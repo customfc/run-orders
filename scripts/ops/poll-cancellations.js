@@ -20,12 +20,40 @@
 
 require('dotenv').config();
 
+const fs = require('fs');
+const path = require('path');
 const sp = require('../../lib/sp-api');
 const { findOrderByAmazonOrderId, cancelOrder } = require('../../lib/shipstation-v2');
 const { notify } = require('../../lib/telegram');
 const { open } = require('../../lib/analytics-db');
 
 const MARKETPLACE = process.env.AMAZON_SP_MARKETPLACE_ID || 'A2EUQ1WTGCTBG2'; // Amazon.ca
+
+const STATE_FILE = path.join(__dirname, '..', '..', 'data', 'poll-cancellations-state.json');
+const FAILURE_THRESHOLD = 4;            // consecutive ticks (~1hr) before alerting
+const ALERT_REPEAT_MS = 4 * 60 * 60e3;  // re-alert every 4h while still failing
+
+function loadState() {
+  try { return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); }
+  catch { return { consecutiveFailures: 0, firstFailureAt: null, lastAlertAt: null }; }
+}
+function saveState(s) { fs.writeFileSync(STATE_FILE, JSON.stringify(s, null, 2)); }
+
+async function listOrdersWithRetry(args, { attempts = 3 } = {}) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try { return await sp.listOrders(args); }
+    catch (e) {
+      lastErr = e;
+      const transient = /listOrders failed: 5\d\d/.test(e.message) || e.status === 429;
+      if (!transient || i === attempts - 1) throw e;
+      const delay = 2000 * Math.pow(3, i); // 2s, 6s
+      console.warn(`[poll-cancel] listOrders attempt ${i + 1} failed (${e.message.slice(0, 80)}), retrying in ${delay}ms`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
 
 function sellerCentralLink(orderId) {
   return `https://sellercentral.amazon.ca/orders-v3/order/${orderId}`;
@@ -38,7 +66,7 @@ async function listBuyerCancellationsFromApi({ lookbackMinutes = 60 * 24 * 7 } =
   const matches = [];
   let nextToken;
   do {
-    const page = await sp.listOrders({
+    const page = await listOrdersWithRetry({
       orderStatuses: 'Unshipped',
       lastUpdatedAfter: since,
       nextToken,
@@ -159,18 +187,53 @@ async function handleOrder(db, order, { dryRun }) {
   return { order: id, action, ssOrderId: ssOrder?.orderId, ssStatus, alreadyShipped };
 }
 
+function fmtDuration(ms) {
+  const m = Math.round(ms / 60000);
+  if (m < 60) return `${m}m`;
+  return `${(m / 60).toFixed(1)}h`;
+}
+
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const db = open();
+  const state = loadState();
 
   let orders;
   try {
     orders = await listBuyerCancellationsFromApi();
   } catch (e) {
     console.error('[poll-cancel] listBuyerCancellationsFromApi failed:', e.message);
-    if (!dryRun) await notify('debug', 'poll-cancellations error', e.message);
+
+    state.consecutiveFailures = (state.consecutiveFailures || 0) + 1;
+    state.firstFailureAt = state.firstFailureAt || new Date().toISOString();
+    const sustained = state.consecutiveFailures >= FAILURE_THRESHOLD;
+    const cooledDown = !state.lastAlertAt || (Date.now() - new Date(state.lastAlertAt).getTime()) >= ALERT_REPEAT_MS;
+
+    if (!dryRun && sustained && cooledDown) {
+      const downFor = fmtDuration(Date.now() - new Date(state.firstFailureAt).getTime());
+      const body = [
+        `Amazon SP-API \`listOrders\` failing for ~${downFor} (since ${state.firstFailureAt}).`,
+        `Buyer-cancellation guard is BLIND during this window.`,
+        ``,
+        `Action plan:`,
+        `• Usually nothing — these clear on their own within hours.`,
+        `• Status: https://sellercentral.amazon.ca/help/hub`,
+        `• If worried about cancels: Seller Central → Manage Orders → filter "Buyer requested cancellation".`,
+        ``,
+        `You'll get a recovery ping when SP-API comes back. Last error: ${e.message.slice(0, 120)}`,
+      ].join('\n');
+      await notify('attn', 'SP-API down — cancellation guard blind', body);
+      state.lastAlertAt = new Date().toISOString();
+    }
+    saveState(state);
     return { error: e.message };
   }
+
+  if (state.consecutiveFailures >= FAILURE_THRESHOLD && state.lastAlertAt) {
+    const downFor = fmtDuration(Date.now() - new Date(state.firstFailureAt).getTime());
+    if (!dryRun) await notify('attn', 'SP-API recovered', `Cancellation guard live again. Outage lasted ~${downFor}.`);
+  }
+  saveState({ consecutiveFailures: 0, firstFailureAt: null, lastAlertAt: null });
 
   console.log(`[poll-cancel] ${orders.length} buyer-cancellation-flagged MFN order(s) returned by Amazon`);
   const results = [];
