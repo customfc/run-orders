@@ -222,6 +222,43 @@ function resolveMappedEntry(rawSku) {
   return SKU_MAPPINGS[rawSku];
 }
 
+// Pull a SKU-shaped trailing token from an Amazon listing title.
+// Many Schluter / Mapei listings end with " - <SKU>" where SKU is the canonical
+// product code (e.g. "... - KL1V60E60", "... - DHEHK24043"). When present this
+// is the ground truth — more reliable than ASIN→prosol_sku lookups, which have
+// historically been mis-curated (see /docs incident 2026-04-29 KL1V60E60→KL1DRE60
+// where a $400 channel body was shipped as a $166 grate). Returns null when no
+// trailing SKU is detectable so callers fall back to the map.
+function extractTrailingSku(name) {
+  const text = String(name || '').trim();
+  const m = text.match(/[\s\-,]\s*([A-Z][A-Z0-9/\-]{4,30})\s*$/);
+  if (!m) return null;
+  const sku = m[1].replace(/[\-/]$/, '');
+  if (sku.length < 5) return null;
+  if (!/[A-Z]/.test(sku) || !/\d/.test(sku)) return null;
+  return sku;
+}
+
+function normalizeSkuForCompare(s) {
+  return String(s || '').toUpperCase().replace(/[\s\-/]/g, '');
+}
+
+// Returns a string reason if the title's trailing SKU clearly differs from the
+// mapped prosol/api SKU; null when they match or when the title has no SKU
+// suffix to validate against.
+function titleSkuMismatchReason(itemName, mappedSku) {
+  const extracted = extractTrailingSku(itemName);
+  if (!extracted) return null;
+  const a = normalizeSkuForCompare(extracted);
+  const b = normalizeSkuForCompare(mappedSku);
+  if (!a || !b) return null;
+  if (a === b) return null;
+  // Substring match handles formatting variants: "KEBA100/125/10M" vs
+  // "KEBA10012510M", "DHERT102/BW" vs "DHERT102BW", "KL1V60E60" vs "KL1V60E60-FBA".
+  if (a.includes(b) || b.includes(a)) return null;
+  return `title says "${extracted}" but sku-map points to "${mappedSku}"`;
+}
+
 // Pull a Schluter cable SKU straight out of the item name — Amazon titles
 // reliably end with the model number (e.g. "…120V, 35.3 Feet - DHEHK12011").
 // This is more reliable than sqft parsing since Amazon frequently prints
@@ -281,6 +318,16 @@ function resolveOrderItems(order) {
 
     if (mapped.api_sku === 'SKIP') continue;
 
+    // HALT_* sentinel — sku-map explicitly flags this ASIN as unsourceable
+    // (e.g. customer-facing SKU not stocked at any Prosol location). Forces
+    // human decision before we accidentally ship the wrong product.
+    const apiHalt = typeof mapped.api_sku === 'string' && mapped.api_sku.startsWith('HALT_');
+    const proHalt = typeof mapped.prosol_sku === 'string' && mapped.prosol_sku.startsWith('HALT_');
+    if (apiHalt || proHalt) {
+      failures.push(`${sku} flagged HALT (${mapped.api_sku}/${mapped.prosol_sku}) — ${mapped.note || 'manual review required before shipping'}`);
+      continue;
+    }
+
     if (mapped.api_sku === 'UNMAPPED' || mapped.api_sku === 'UNMAPPED_GROUT') {
       failures.push(`Manual lookup required for ${sku} (${mapped.product || item.name || sku})`);
       continue;
@@ -328,6 +375,17 @@ function resolveOrderItems(order) {
 
     if (PERFECT_LEVEL_RE.test(mapped.product || displayName)) {
       failures.push(`Perfect Level requires explicit non-Prosol routing before automation (${mapped.product || displayName})`);
+      continue;
+    }
+
+    // Title-vs-map sanity check: if the order's product name carries an
+    // explicit trailing SKU (e.g. "... - KL1V60E60"), that's the ground
+    // truth. Refuse to ship if the mapped prosol_sku is a different family.
+    // This catches mis-curated mappings before they cost money.
+    const finalSku = mapped.prosol_sku || mapped.api_sku;
+    const mismatch = titleSkuMismatchReason(item.name, finalSku);
+    if (mismatch) {
+      failures.push(`${sku} title-vs-map mismatch: ${mismatch}`);
       continue;
     }
 
