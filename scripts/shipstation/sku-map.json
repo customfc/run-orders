@@ -985,6 +985,18 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
     },
+    "B07PJM3YPB": {
+      "api_sku": "KL1V60E50",
+      "prosol_sku": "KL1V60E50",
+      "product": "Schluter KERDI-LINE Center Outlet Channel Body 19-11/16\" (20\") - KL1V60E50",
+      "package_shape": "solo",
+      "note": "Channel body, 19-11/16\" / 20\" length (E50). Sibling of B07PLNDKQN (KL1V60E60, 24\" / E60). Added 2026-05-11 after orders 701-6792231-0518635 + 702-5316486-1731415 rejected with 'No sku-map entry for B07PJM3YPB'. Prosol stocked at 38 locations on 2026-05-11. cost_cad confirmed via Prosol portal lookup; map_cad pending Schluter MAP CSV backfill.",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KL1V60E50",
+      "cost_cad": 105.30,
+      "cost_source": "prosol-portal-2026-05-11"
+    },
     "B07PLLDCP6": {
       "api_sku": "KL1DRE90",
       "prosol_sku": "KL1DRE90",
@@ -3142,6 +3154,20 @@
       "retail_cad": 124.94,
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
+    },
+    "KBZT32Z": {
+      "api_sku": "KBZT32Z",
+      "prosol_sku": "KBZT32Z",
+      "product": "KERDI-BOARD-ZT TAB WASHER GALV STEEL 1-1/4\" (100)",
+      "category": "KERDI",
+      "verified": true,
+      "source": "prosol-portal-2026-05-11",
+      "brand": "schluter",
+      "schluter_item": "KBZT32Z",
+      "note": "100-pack variant. 1000-pack is at B006XXO0VI (KBZT32Z/L). Added 2026-05-11 after Shopify order 1258 rejected with 'No sku-map entry for KBZT32Z'. cost_cad + retail_cad confirmed via Prosol portal lookup; map_cad pending Schluter MAP CSV backfill.",
+      "cost_cad": 8.59,
+      "retail_cad": 15.06,
+      "cost_source": "prosol-portal-2026-05-11"
     },
     "B07PYVMPJN": {
       "api_sku": "SWS1D5EB",
