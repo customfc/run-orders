@@ -941,6 +941,22 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
     },
+    "_section_schluter_ditra_drain": "=== SCHLUTER - DITRA-DRAIN (drainage membrane) ===",
+    "B00T9Z60VK": {
+      "api_sku": "DITRADRAIN25M",
+      "prosol_sku": "DITRA-DRAIN25M",
+      "product": "Schluter DITRA-DRAIN Drainage Membrane 3'3\" x 82' - 4mm (250 sqft / 269 SF spec)",
+      "package_shape": "solo",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DITRA-DRAIN25M",
+      "barcode": "4011832089978",
+      "map_cad": 829.16,
+      "retail_cad": 921.29,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "prosol_salesforce_id": "02224"
+    },
     "_section_schluter_kerdi_tubkit": "=== SCHLUTER - KERDI-TUBKIT ===",
     "B074Y66KJ2": {
       "api_sku": "KKB7",
