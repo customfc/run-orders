@@ -1287,6 +1287,13 @@
       "product": "Polyblend Plus NS Grout #335 Winter Gray 10lb",
       "verified": true
     },
+    "CPBPG1110N": {
+      "api_sku": "CPBPG1110N",
+      "prosol_sku": "CPBPG1110N",
+      "product": "Polyblend Plus NS Grout #11 Snow White 10lb",
+      "verified": true,
+      "note": "No Amazon ASIN exists for Snow White — used for customer-service replacements where the buyer ordered a different white (Arctic/Bright/etc) but wanted Snow White."
+    },
     "_section_custom_flooring_centres": "=== CUSTOM FLOORING CENTRES ===",
     "B08X225YBK": {
       "api_sku": "NON_PROSOL",
