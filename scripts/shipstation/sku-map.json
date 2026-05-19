@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU \u2192 Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-05-19T16:00:00.000Z",
+  "_updated": "2026-05-19T16:30:00.000Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -1727,6 +1727,4521 @@
       "product": "Mapei UltraCare Grout Refresh \u2014 Night Sky (237 ml)",
       "brand": "mapei",
       "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_4_to_1_mud_bed_mix_sand_cement_mortar": "=== MAPEI - 4 to 1 Mud Bed Mix Sand & Cement Mortar ===",
+    "1415500021": {
+      "api_sku": "94141-55",
+      "prosol_sku": "94141-55",
+      "product": "Mapei 4 to 1 Mud Bed Mix Sand & Cement Mortar",
+      "brand": "mapei",
+      "category": "Mud Bed / Bedding",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_adesilex_p10_premium_mosaic_glass_tile_mortar": "=== MAPEI - Adesilex P10 Premium Mosaic & Glass Tile Mortar ===",
+    "15411C": {
+      "api_sku": "94154-11",
+      "prosol_sku": "94154-11",
+      "product": "Mapei Adesilex P10 Premium Mosaic & Glass Tile Mortar",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_aquadefense_premium_waterproofing_crack_isolation_membrane": "=== MAPEI - AquaDefense Premium Waterproofing & Crack-Isolation Membrane ===",
+    "01953": {
+      "api_sku": "94019-53",
+      "prosol_sku": "94019-53",
+      "product": "Mapei AquaDefense Premium Waterproofing & Crack-Isolation Membrane (3.79 l)",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "01963": {
+      "api_sku": "94019-63",
+      "prosol_sku": "94019-63",
+      "product": "Mapei AquaDefense Premium Waterproofing & Crack-Isolation Membrane (13.2 l)",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "01968": {
+      "api_sku": "94019-68",
+      "prosol_sku": "94019-68",
+      "product": "Mapei AquaDefense Premium Waterproofing & Crack-Isolation Membrane (18.9 l)",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_concrete_renew_fine_grade_concrete_resurfacer": "=== MAPEI - Concrete Renew Fine-Grade Concrete Resurfacer ===",
+    "11126000": {
+      "api_sku": "94111-26",
+      "prosol_sku": "94111-26",
+      "product": "Mapei Concrete Renew Fine-Grade Concrete Resurfacer",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_eco_prim_grip_multipurpose_bond_promoting_primer": "=== MAPEI - ECO Prim Grip Multipurpose Bond-Promoting Primer ===",
+    "36153000": {
+      "api_sku": "94361-53",
+      "prosol_sku": "94361-53",
+      "product": "Mapei ECO Prim Grip Multipurpose Bond-Promoting Primer (3.79 l)",
+      "brand": "mapei",
+      "category": "Primer",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "36163000": {
+      "api_sku": "94361-63",
+      "prosol_sku": "94361-63",
+      "product": "Mapei ECO Prim Grip Multipurpose Bond-Promoting Primer (13.2 l)",
+      "brand": "mapei",
+      "category": "Primer",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_eco307_adhesive_resilient_fl_15lt": "=== MAPEI - Eco307 Adhesive Resilient Fl. 15lt ===",
+    "0745615": {
+      "api_sku": "ECO307-15",
+      "prosol_sku": "ECO307-15",
+      "product": "Mapei Eco307 Adhesive Resilient Fl. 15lt",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_fiberglass_mesh_reinforcement_net_39_3_8_x_75": "=== MAPEI - Fiberglass Mesh Reinforcement Net 39 3/8\" x 75' ===",
+    "03101000": {
+      "api_sku": "94031-01",
+      "prosol_sku": "94031-01",
+      "product": "Mapei Fiberglass Mesh Reinforcement Net 39 3/8\" x 75'",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_fiberglass_mesh_reinforcement_net_roll_1_x_150": "=== MAPEI - Fiberglass Mesh Reinforcement Net, Roll - 1' x 150' ===",
+    "8040003-2": {
+      "api_sku": "94914-04R",
+      "prosol_sku": "94914-04R",
+      "product": "Mapei Fiberglass Mesh Reinforcement Net, Roll - 1' x 150'",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_fiberglass_mesh_reinforcement_net_roll_39_3_8_x_328": "=== MAPEI - Fiberglass Mesh Reinforcement Net, Roll - 39 3/8\" x 328' ===",
+    "8040002-2": {
+      "api_sku": "94914-03R",
+      "prosol_sku": "94914-03R",
+      "product": "Mapei Fiberglass Mesh Reinforcement Net, Roll - 39 3/8\" x 328'",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_flexcolor_3d_ready_to_use_translucent_grout": "=== MAPEI - Flexcolor 3D Ready-to-Use Translucent Grout ===",
+    "4KN020702": {
+      "api_sku": "FC3D207-01",
+      "prosol_sku": "FC3D207-01",
+      "product": "Mapei Flexcolor 3D Ready-to-Use Translucent Grout \u2014 Champagne Bubbles",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_flexcolor_cq_ready_to_use_grout_with_color_coated_quartz": "=== MAPEI - Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz ===",
+    "4KA000002": {
+      "api_sku": "FCCQ00-01",
+      "prosol_sku": "FCCQ00-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Eggshell (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA000004": {
+      "api_sku": "FCCQ00-03",
+      "prosol_sku": "FCCQ00-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Eggshell (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA000102": {
+      "api_sku": "FCCQ01-01",
+      "prosol_sku": "FCCQ01-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Alabaster (1 gal)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA000202": {
+      "api_sku": "FCCQ02-01",
+      "prosol_sku": "FCCQ02-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Pewter (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA000902": {
+      "api_sku": "FCCQ09-01",
+      "prosol_sku": "FCCQ09-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Gray (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA001102": {
+      "api_sku": "FCCQ11-01",
+      "prosol_sku": "FCCQ11-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Sahara Beige (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA001402": {
+      "api_sku": "FCCQ14-01",
+      "prosol_sku": "FCCQ14-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Biscuit (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA001902": {
+      "api_sku": "FCCQ19-01",
+      "prosol_sku": "FCCQ19-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Pearl Gray (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA002702": {
+      "api_sku": "FCCQ27-01",
+      "prosol_sku": "FCCQ27-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Silver (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA003902": {
+      "api_sku": "FCCQ39-01",
+      "prosol_sku": "FCCQ39-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Ivory (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA004202": {
+      "api_sku": "FCCQ42-01",
+      "prosol_sku": "FCCQ42-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Mocha (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA004702": {
+      "api_sku": "FCCQ47-01",
+      "prosol_sku": "FCCQ47-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Charcoal (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA004902": {
+      "api_sku": "FCCQ49-01",
+      "prosol_sku": "FCCQ49-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Light Almond (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA007702": {
+      "api_sku": "FCCQ77-01",
+      "prosol_sku": "FCCQ77-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Frost (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA009302": {
+      "api_sku": "FCCQ93-01",
+      "prosol_sku": "FCCQ93-01",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Warm Gray (1.89 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA010104": {
+      "api_sku": "FCCQ101-03",
+      "prosol_sku": "FCCQ101-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Rain (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA010304": {
+      "api_sku": "FCCQ103-03",
+      "prosol_sku": "FCCQ103-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Cobblestone (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA010404": {
+      "api_sku": "FCCQ104-03",
+      "prosol_sku": "FCCQ104-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Timberwolf (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA010504": {
+      "api_sku": "FCCQ105-03",
+      "prosol_sku": "FCCQ105-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Driftwood (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA010704": {
+      "api_sku": "FCCQ107-03",
+      "prosol_sku": "FCCQ107-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Iron (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA522104": {
+      "api_sku": "FCCQ5221-03",
+      "prosol_sku": "FCCQ5221-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Moonbeam (1 gal)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA522604": {
+      "api_sku": "FCCQ5226-03",
+      "prosol_sku": "FCCQ5226-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Nutmeg (1 gal)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA522704": {
+      "api_sku": "FCCQ5227-03",
+      "prosol_sku": "FCCQ5227-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Castle Wall (1 gal)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA522904": {
+      "api_sku": "FCCQ5229-03",
+      "prosol_sku": "FCCQ5229-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Sea Salt (1 gal)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA523004": {
+      "api_sku": "FCCQ5230-03",
+      "prosol_sku": "FCCQ5230-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Armor (1 gal)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA523104": {
+      "api_sku": "FCCQ5231-03",
+      "prosol_sku": "FCCQ5231-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Deep Ocean (1 gal)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4KA523204": {
+      "api_sku": "FCCQ5232-03",
+      "prosol_sku": "FCCQ5232-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Night Sky (1 gal)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "50101": {
+      "api_sku": "FCCQ01-03",
+      "prosol_sku": "FCCQ01-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Alabaster (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "50201": {
+      "api_sku": "FCCQ02-03",
+      "prosol_sku": "FCCQ02-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Pewter (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "50401": {
+      "api_sku": "FCCQ04-03",
+      "prosol_sku": "FCCQ04-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Bahama Beige (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "50501": {
+      "api_sku": "FCCQ05-03",
+      "prosol_sku": "FCCQ05-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Chamois (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "50701": {
+      "api_sku": "FCCQ07-03",
+      "prosol_sku": "FCCQ07-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Chocolate (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "50901": {
+      "api_sku": "FCCQ09-03",
+      "prosol_sku": "FCCQ09-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Gray (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "51001": {
+      "api_sku": "FCCQ10-03",
+      "prosol_sku": "FCCQ10-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Black (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "51101": {
+      "api_sku": "FCCQ11-03",
+      "prosol_sku": "FCCQ11-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Sahara Beige (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "51401": {
+      "api_sku": "FCCQ14-03",
+      "prosol_sku": "FCCQ14-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Biscuit (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "51501": {
+      "api_sku": "FCCQ15-03",
+      "prosol_sku": "FCCQ15-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Bone (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "51901": {
+      "api_sku": "FCCQ19-03",
+      "prosol_sku": "FCCQ19-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Pearl Gray (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "52701": {
+      "api_sku": "FCCQ27-03",
+      "prosol_sku": "FCCQ27-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Silver (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "53801": {
+      "api_sku": "FCCQ38-03",
+      "prosol_sku": "FCCQ38-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Avalanche (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "53901": {
+      "api_sku": "FCCQ39-03",
+      "prosol_sku": "FCCQ39-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Ivory (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "54201": {
+      "api_sku": "FCCQ42-03",
+      "prosol_sku": "FCCQ42-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Mocha (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "54401": {
+      "api_sku": "FCCQ44-03",
+      "prosol_sku": "FCCQ44-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Pale Umber (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "54701": {
+      "api_sku": "FCCQ47-03",
+      "prosol_sku": "FCCQ47-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Charcoal (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "54901": {
+      "api_sku": "FCCQ49-03",
+      "prosol_sku": "FCCQ49-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Light Almond (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "57701": {
+      "api_sku": "FCCQ77-03",
+      "prosol_sku": "FCCQ77-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Frost (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "59301": {
+      "api_sku": "FCCQ93-03",
+      "prosol_sku": "FCCQ93-03",
+      "product": "Mapei Flexcolor CQ Ready-to-Use Grout with Color-Coated Quartz \u2014 Warm Gray (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_granirapid_two_component_flexible_tile_mortar_liquid": "=== MAPEI - Granirapid Two-Component Flexible Tile Mortar, Liquid ===",
+    "7052056": {
+      "api_sku": "94318-68",
+      "prosol_sku": "94318-68",
+      "product": "Mapei Granirapid Two-Component Flexible Tile Mortar, Liquid (18.9 l)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "7052057": {
+      "api_sku": "94318-57",
+      "prosol_sku": "94318-57",
+      "product": "Mapei Granirapid Two-Component Flexible Tile Mortar, Liquid (7.57 l)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_granirapid_two_component_flexible_tile_mortar_powder_gray": "=== MAPEI - Granirapid Two-Component Flexible Tile Mortar, Powder, Gray ===",
+    "7051040": {
+      "api_sku": "94129-50",
+      "prosol_sku": "94129-50",
+      "product": "Mapei Granirapid Two-Component Flexible Tile Mortar, Powder, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_granirapid_two_component_flexible_tile_mortar_powder_white": "=== MAPEI - Granirapid Two-Component Flexible Tile Mortar, Powder, White ===",
+    "7051041": {
+      "api_sku": "94130-50",
+      "prosol_sku": "94130-50",
+      "product": "Mapei Granirapid Two-Component Flexible Tile Mortar, Powder, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ker_121_professional_grade_polymer_modified_mortar": "=== MAPEI - Ker 121 Professional-Grade Polymer-Modified Mortar ===",
+    "1215000021": {
+      "api_sku": "94121-50",
+      "prosol_sku": "94121-50",
+      "product": "Mapei Ker 121 Professional-Grade Polymer-Modified Mortar",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ker_909_professional_tile_adhesive": "=== MAPEI - Ker 909 Professional Tile Adhesive ===",
+    "90963021": {
+      "api_sku": "94909-63",
+      "prosol_sku": "94909-63",
+      "product": "Mapei Ker 909 Professional Tile Adhesive (13.2 l)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "90968021": {
+      "api_sku": "94909-68",
+      "prosol_sku": "94909-68",
+      "product": "Mapei Ker 909 Professional Tile Adhesive (18.9 l)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_kerabond_premium_tile_mortar_gray": "=== MAPEI - Kerabond Premium Tile Mortar Gray ===",
+    "002005021": {
+      "api_sku": "94101-50",
+      "prosol_sku": "94101-50",
+      "product": "Mapei Kerabond Premium Tile Mortar Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_kerabond_premium_tile_mortar_white": "=== MAPEI - Kerabond Premium Tile Mortar White ===",
+    "001005021": {
+      "api_sku": "94102-50",
+      "prosol_sku": "94102-50",
+      "product": "Mapei Kerabond Premium Tile Mortar White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_kerabond_t_premium_large_heavy_tile_thin_set_mortar_gray": "=== MAPEI - Kerabond T Premium Large & Heavy Tile Thin-Set Mortar, Gray ===",
+    "1015221": {
+      "api_sku": "94101-52",
+      "prosol_sku": "94101-52",
+      "product": "Mapei Kerabond T Premium Large & Heavy Tile Thin-Set Mortar, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_kerabond_t_premium_large_heavy_tile_thin_set_mortar_white": "=== MAPEI - Kerabond T Premium Large & Heavy Tile Thin-Set Mortar, White ===",
+    "1025221": {
+      "api_sku": "94102-52",
+      "prosol_sku": "94102-52",
+      "product": "Mapei Kerabond T Premium Large & Heavy Tile Thin-Set Mortar, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keracaulk_s_sanded_siliconized_acrylic_caulk": "=== MAPEI - Keracaulk S Sanded Siliconized Acrylic Caulk ===",
+    "30010": {
+      "api_sku": "94500-67",
+      "prosol_sku": "94500-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Eggshell",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "30110": {
+      "api_sku": "94501-67",
+      "prosol_sku": "94501-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Alabaster",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "30210": {
+      "api_sku": "94502-67",
+      "prosol_sku": "94502-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Pewter",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "30410": {
+      "api_sku": "94504-67",
+      "prosol_sku": "94504-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Bahama Beige",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "30510": {
+      "api_sku": "94505-67",
+      "prosol_sku": "94505-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Chamois",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "30610": {
+      "api_sku": "94506-67",
+      "prosol_sku": "94506-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Harvest",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "30710": {
+      "api_sku": "94507-67",
+      "prosol_sku": "94507-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Chocolate",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "30910": {
+      "api_sku": "94509-67",
+      "prosol_sku": "94509-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Gray",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "31010": {
+      "api_sku": "94510-67",
+      "prosol_sku": "94510-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Black",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "31110": {
+      "api_sku": "94511-67",
+      "prosol_sku": "94511-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Sahara Beige",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "31410": {
+      "api_sku": "94514-67",
+      "prosol_sku": "94514-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Biscuit",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "31510": {
+      "api_sku": "94515-67",
+      "prosol_sku": "94515-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Bone",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "31910": {
+      "api_sku": "94519-67",
+      "prosol_sku": "94519-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Pearl Gray",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "32710": {
+      "api_sku": "94527-67",
+      "prosol_sku": "94527-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Silver",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "33810": {
+      "api_sku": "94538-67",
+      "prosol_sku": "94538-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Avalanche",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "33910": {
+      "api_sku": "94539-67",
+      "prosol_sku": "94539-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Ivory",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "34210": {
+      "api_sku": "94542-67",
+      "prosol_sku": "94542-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Mocha",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "34410": {
+      "api_sku": "94544-67",
+      "prosol_sku": "94544-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Pale Umber",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "34710": {
+      "api_sku": "94547-67",
+      "prosol_sku": "94547-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Charcoal",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "34910": {
+      "api_sku": "94549-67",
+      "prosol_sku": "94549-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Light Almond",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "37710": {
+      "api_sku": "94577-67",
+      "prosol_sku": "94577-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Frost",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "37910": {
+      "api_sku": "94579-67",
+      "prosol_sku": "94579-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Cocoa",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "39310": {
+      "api_sku": "94593-67",
+      "prosol_sku": "94593-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Warm Gray",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA010154": {
+      "api_sku": "945101-67",
+      "prosol_sku": "945101-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Rain",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA010354": {
+      "api_sku": "945103-67",
+      "prosol_sku": "945103-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Cobblestone",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA010454": {
+      "api_sku": "945104-67",
+      "prosol_sku": "945104-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Timberwolf",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA010554": {
+      "api_sku": "945105-67",
+      "prosol_sku": "945105-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Driftwood",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA010754": {
+      "api_sku": "945107-67",
+      "prosol_sku": "945107-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Iron",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA522133": {
+      "api_sku": "9455221-67",
+      "prosol_sku": "9455221-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Moonbeam",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA522233": {
+      "api_sku": "9455222-67",
+      "prosol_sku": "9455222-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Honey Butter",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA522533": {
+      "api_sku": "9455225-67",
+      "prosol_sku": "9455225-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Dust Storm",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA522633": {
+      "api_sku": "9455226-67",
+      "prosol_sku": "9455226-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Nutmeg",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA522733": {
+      "api_sku": "9455227-67",
+      "prosol_sku": "9455227-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Castle Wall",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA522833": {
+      "api_sku": "9455228-67",
+      "prosol_sku": "9455228-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Cavern Moss",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA522933": {
+      "api_sku": "9455229-67",
+      "prosol_sku": "9455229-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Sea Salt",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA523133": {
+      "api_sku": "9455231-67",
+      "prosol_sku": "9455231-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Deep Ocean",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JA523233": {
+      "api_sku": "9455232-67",
+      "prosol_sku": "9455232-67",
+      "product": "Mapei Keracaulk S Sanded Siliconized Acrylic Caulk \u2014 Night Sky",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keracaulk_u_unsanded_siliconized_acrylic_caulk": "=== MAPEI - Keracaulk U Unsanded Siliconized Acrylic Caulk ===",
+    "4JB010154": {
+      "api_sku": "946101-67",
+      "prosol_sku": "946101-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Rain",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JB010354": {
+      "api_sku": "946103-67",
+      "prosol_sku": "946103-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Cobblestone",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JB010454": {
+      "api_sku": "946104-67",
+      "prosol_sku": "946104-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Timberwolf",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JB010554": {
+      "api_sku": "946105-67",
+      "prosol_sku": "946105-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Driftwood",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JB010754": {
+      "api_sku": "946107-67",
+      "prosol_sku": "946107-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Iron",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JB522133": {
+      "api_sku": "9465221-67",
+      "prosol_sku": "9465221-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Moonbeam",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JB522233": {
+      "api_sku": "9465222-67",
+      "prosol_sku": "9465222-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Honey Butter",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JB522333": {
+      "api_sku": "9465223-67",
+      "prosol_sku": "9465223-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Oatmeal",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JB522433": {
+      "api_sku": "9465224-67",
+      "prosol_sku": "9465224-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Wicker",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JB522633": {
+      "api_sku": "9465226-67",
+      "prosol_sku": "9465226-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Nutmeg",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "4JB522833": {
+      "api_sku": "9465228-67",
+      "prosol_sku": "9465228-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Cavern Moss",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "90010": {
+      "api_sku": "94600-67",
+      "prosol_sku": "94600-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Eggshell",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "90110": {
+      "api_sku": "94601-67",
+      "prosol_sku": "94601-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Alabaster",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "90210": {
+      "api_sku": "94602-67",
+      "prosol_sku": "94602-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Pewter",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "90410": {
+      "api_sku": "94604-67",
+      "prosol_sku": "94604-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Bahama Beige",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "90510": {
+      "api_sku": "94605-67",
+      "prosol_sku": "94605-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Chamois",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "90610": {
+      "api_sku": "94606-67",
+      "prosol_sku": "94606-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Harvest",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "90910": {
+      "api_sku": "94609-67",
+      "prosol_sku": "94609-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Gray",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "91010": {
+      "api_sku": "94610-67",
+      "prosol_sku": "94610-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Black",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "91110": {
+      "api_sku": "94611-67",
+      "prosol_sku": "94611-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Sahara Beige",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "91410": {
+      "api_sku": "94614-67",
+      "prosol_sku": "94614-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Biscuit",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "91510": {
+      "api_sku": "94615-67",
+      "prosol_sku": "94615-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Bone",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "91910": {
+      "api_sku": "94619-67",
+      "prosol_sku": "94619-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Pearl Gray",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "92710": {
+      "api_sku": "94627-67",
+      "prosol_sku": "94627-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Silver",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "93810": {
+      "api_sku": "94638-67",
+      "prosol_sku": "94638-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Avalanche",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "93910": {
+      "api_sku": "94639-67",
+      "prosol_sku": "94639-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Ivory",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "94410": {
+      "api_sku": "94644-67",
+      "prosol_sku": "94644-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Pale Umber",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "94710": {
+      "api_sku": "94647-67",
+      "prosol_sku": "94647-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Charcoal",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "94910": {
+      "api_sku": "94649-67",
+      "prosol_sku": "94649-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Light Almond",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "97710": {
+      "api_sku": "94677-67",
+      "prosol_sku": "94677-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Frost",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "99310": {
+      "api_sku": "94693-67",
+      "prosol_sku": "94693-67",
+      "product": "Mapei Keracaulk U Unsanded Siliconized Acrylic Caulk \u2014 Warm Gray",
+      "brand": "mapei",
+      "category": "Sealant / Caulk",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keracolor_s_sanded_grout_with_polymer": "=== MAPEI - Keracolor S Sanded Grout with Polymer ===",
+    "2001021": {
+      "api_sku": "94200-10",
+      "prosol_sku": "94200-10",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Eggshell (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2002521": {
+      "api_sku": "94200-25",
+      "prosol_sku": "94200-25",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Eggshell (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2022521": {
+      "api_sku": "94202-25",
+      "prosol_sku": "94202-25",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Pewter (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2051021": {
+      "api_sku": "94205-10",
+      "prosol_sku": "94205-10",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Chamois (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2092521": {
+      "api_sku": "94209-25",
+      "prosol_sku": "94209-25",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Grey (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2142521": {
+      "api_sku": "94214-25",
+      "prosol_sku": "94214-25",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Biscuit (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2192521": {
+      "api_sku": "94219-25",
+      "prosol_sku": "94219-25",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Pearl Grey (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2272521": {
+      "api_sku": "94227-25",
+      "prosol_sku": "94227-25",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Silver (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2382521": {
+      "api_sku": "94238-25",
+      "prosol_sku": "94238-25",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Avalanche (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2472521": {
+      "api_sku": "94247-25",
+      "prosol_sku": "94247-25",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Charcoal (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2771021": {
+      "api_sku": "94277-10",
+      "prosol_sku": "94277-10",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Frost (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2772521": {
+      "api_sku": "94277-25",
+      "prosol_sku": "94277-25",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Frost (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2932521": {
+      "api_sku": "94293-25",
+      "prosol_sku": "94293-25",
+      "product": "Mapei Keracolor S Sanded Grout with Polymer \u2014 Warm Grey (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keracolor_u_unsanded_grout_with_polymer": "=== MAPEI - Keracolor U Unsanded Grout with Polymer ===",
+    "5UH000011C": {
+      "api_sku": "94800-25",
+      "prosol_sku": "94800-25",
+      "product": "Mapei Keracolor U Unsanded Grout with Polymer \u2014 Eggshell (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "80028001": {
+      "api_sku": "94800-01",
+      "prosol_sku": "94800-01",
+      "product": "Mapei Keracolor U Unsanded Grout with Polymer \u2014 Eggshell (1 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "8272521": {
+      "api_sku": "94827-25",
+      "prosol_sku": "94827-25",
+      "product": "Mapei Keracolor U Unsanded Grout with Polymer \u2014 Silver (1 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "8382521": {
+      "api_sku": "94838-25",
+      "prosol_sku": "94838-25",
+      "product": "Mapei Keracolor U Unsanded Grout with Polymer \u2014 Avalanche (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "8772521": {
+      "api_sku": "94877-25",
+      "prosol_sku": "94877-25",
+      "product": "Mapei Keracolor U Unsanded Grout with Polymer \u2014 Frost (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "8932521": {
+      "api_sku": "94893-25",
+      "prosol_sku": "94893-25",
+      "product": "Mapei Keracolor U Unsanded Grout with Polymer \u2014 Warm Gray (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keraflex_plus_extra_smooth_large_heavy_tile_mortar_white": "=== MAPEI - Keraflex Plus Extra Smooth Large & Heavy Tile Mortar, White ===",
+    "1194820": {
+      "api_sku": "94482-44",
+      "prosol_sku": "94482-44",
+      "product": "Mapei Keraflex Plus Extra Smooth Large & Heavy Tile Mortar, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keraflex_plus_extra_smooth_large_heavy_tile_mortar_gray": "=== MAPEI - Keraflex Plus Extra Smooth Large & Heavy-Tile Mortar, Gray ===",
+    "1194720": {
+      "api_sku": "94472-44",
+      "prosol_sku": "94472-44",
+      "product": "Mapei Keraflex Plus Extra Smooth Large & Heavy-Tile Mortar, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keraflex_rs_extra_smooth_large_heavy_tile_mortar_gray": "=== MAPEI - Keraflex RS Extra Smooth Large & Heavy Tile Mortar, Gray ===",
+    "1191720": {
+      "api_sku": "94172-44",
+      "prosol_sku": "94172-44",
+      "product": "Mapei Keraflex RS Extra Smooth Large & Heavy Tile Mortar, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keraflex_sg_extra_smooth_large_heavy_tile_mortar_gray": "=== MAPEI - Keraflex SG Extra Smooth Large & Heavy Tile Mortar, Gray ===",
+    "1196120": {
+      "api_sku": "94612-44",
+      "prosol_sku": "94612-44",
+      "product": "Mapei Keraflex SG Extra Smooth Large & Heavy Tile Mortar, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keraflex_sg_extra_smooth_large_heavy_tile_mortar_white": "=== MAPEI - Keraflex SG Extra Smooth Large & Heavy Tile Mortar, White ===",
+    "1196220": {
+      "api_sku": "94622-44",
+      "prosol_sku": "94622-44",
+      "product": "Mapei Keraflex SG Extra Smooth Large & Heavy Tile Mortar, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keraflex_super_premium_extra_smooth_large_heavy_tile_mortar_": "=== MAPEI - Keraflex Super Premium Extra Smooth Large & Heavy Tile Mortar, White ===",
+    "1200120": {
+      "api_sku": "94012-44",
+      "prosol_sku": "94012-44",
+      "product": "Mapei Keraflex Super Premium Extra Smooth Large & Heavy Tile Mortar, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "1200220": {
+      "api_sku": "94022-44",
+      "prosol_sku": "94022-44",
+      "product": "Mapei Keraflex Super Premium Extra Smooth Large & Heavy Tile Mortar, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keralastic_latex_additive_for_kerabond": "=== MAPEI - Keralastic Latex Additive for Kerabond ===",
+    "7020020": {
+      "api_sku": "94310-68",
+      "prosol_sku": "94310-68",
+      "product": "Mapei Keralastic Latex Additive for Kerabond (18.9 l)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "7022007": {
+      "api_sku": "94310-57",
+      "prosol_sku": "94310-57",
+      "product": "Mapei Keralastic Latex Additive for Kerabond (7.57 l)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_keraply_professional_latex_additive": "=== MAPEI - Keraply Professional Latex Additive ===",
+    "7030020": {
+      "api_sku": "94307-68",
+      "prosol_sku": "94307-68",
+      "product": "Mapei Keraply Professional Latex Additive (18.9 l)",
+      "brand": "mapei",
+      "category": "Additive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "7033010": {
+      "api_sku": "94307-57",
+      "prosol_sku": "94307-57",
+      "product": "Mapei Keraply Professional Latex Additive (7.57 l)",
+      "brand": "mapei",
+      "category": "Additive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_kerapoxy_cq_premium_epoxy_grout_with_color_coated_quartz": "=== MAPEI - Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz ===",
+    "40052": {
+      "api_sku": "94400-52",
+      "prosol_sku": "94400-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Eggshell",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "40152": {
+      "api_sku": "94401-52",
+      "prosol_sku": "94401-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Alabaster",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "40252": {
+      "api_sku": "94402-52",
+      "prosol_sku": "94402-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Pewter",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "40952": {
+      "api_sku": "94409-52",
+      "prosol_sku": "94409-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Gray",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "41052": {
+      "api_sku": "94410-52",
+      "prosol_sku": "94410-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Black",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "41152": {
+      "api_sku": "94411-52",
+      "prosol_sku": "94411-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Sahara Beige",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "41552": {
+      "api_sku": "94415-52",
+      "prosol_sku": "94415-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Bone",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "41952": {
+      "api_sku": "94419-52",
+      "prosol_sku": "94419-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Pearl Gray",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "42752": {
+      "api_sku": "94427-52",
+      "prosol_sku": "94427-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Silver",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "43852": {
+      "api_sku": "94438-52",
+      "prosol_sku": "94438-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Avalanche",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "43952": {
+      "api_sku": "94439-52",
+      "prosol_sku": "94439-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Ivory",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "44452": {
+      "api_sku": "94444-52",
+      "prosol_sku": "94444-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Pale Umber",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "44752": {
+      "api_sku": "94447-52",
+      "prosol_sku": "94447-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Charcoal",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "47752": {
+      "api_sku": "94477-52",
+      "prosol_sku": "94477-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Frost",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "49352": {
+      "api_sku": "94493-52",
+      "prosol_sku": "94493-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Warm Gray",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB010104": {
+      "api_sku": "944101-52",
+      "prosol_sku": "944101-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Rain",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB010304": {
+      "api_sku": "944103-52",
+      "prosol_sku": "944103-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Cobblestone",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB010404": {
+      "api_sku": "944104-52",
+      "prosol_sku": "944104-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Timberwolf",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB010504": {
+      "api_sku": "944105-52",
+      "prosol_sku": "944105-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Driftwood",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB010704": {
+      "api_sku": "944107-52",
+      "prosol_sku": "944107-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Iron",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB522104": {
+      "api_sku": "9445221-52",
+      "prosol_sku": "9445221-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Moonbeam",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB522604": {
+      "api_sku": "9445226-52",
+      "prosol_sku": "9445226-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Nutmeg",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB522804": {
+      "api_sku": "9445228-52",
+      "prosol_sku": "9445228-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Cavern Moss",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB522904": {
+      "api_sku": "9445229-52",
+      "prosol_sku": "9445229-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Sea Salt",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB523004": {
+      "api_sku": "9445230-52",
+      "prosol_sku": "9445230-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Armor",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UB523204": {
+      "api_sku": "9445232-52",
+      "prosol_sku": "9445232-52",
+      "product": "Mapei Kerapoxy CQ Premium Epoxy Grout with Color-Coated Quartz \u2014 Night Sky",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_kerapoxy_kit_premium_epoxy_grout": "=== MAPEI - Kerapoxy Kit Premium Epoxy Grout ===",
+    "3400018": {
+      "api_sku": "KP00-03",
+      "prosol_sku": "KP00-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Eggshell (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3401018": {
+      "api_sku": "KP01-03",
+      "prosol_sku": "KP01-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Alabaster (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3402018": {
+      "api_sku": "KP02-03",
+      "prosol_sku": "KP02-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Pewter (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3404018": {
+      "api_sku": "KP04-03",
+      "prosol_sku": "KP04-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Bahama Beige (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3405018": {
+      "api_sku": "KP05-03",
+      "prosol_sku": "KP05-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Chamois (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3409018": {
+      "api_sku": "KP09-03",
+      "prosol_sku": "KP09-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Gray (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3410018": {
+      "api_sku": "KP10-03",
+      "prosol_sku": "KP10-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Black (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3411018": {
+      "api_sku": "KP11-03",
+      "prosol_sku": "KP11-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Sahara Beige (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3414018": {
+      "api_sku": "KP14-03",
+      "prosol_sku": "KP14-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Biscuit (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3415018": {
+      "api_sku": "KP15-03",
+      "prosol_sku": "KP15-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Bone (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3419018": {
+      "api_sku": "KP19-03",
+      "prosol_sku": "KP19-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Pearl Gray (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3427018": {
+      "api_sku": "KP27-03",
+      "prosol_sku": "KP27-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Silver (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3438018": {
+      "api_sku": "KP38-03",
+      "prosol_sku": "KP38-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Avalanche (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3439018": {
+      "api_sku": "KP39-03",
+      "prosol_sku": "KP39-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Ivory (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3442018": {
+      "api_sku": "KP42-03",
+      "prosol_sku": "KP42-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Mocha (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3447018": {
+      "api_sku": "KP47-03",
+      "prosol_sku": "KP47-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Charcoal (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3449018": {
+      "api_sku": "KP49-03",
+      "prosol_sku": "KP49-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Light Almond (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3477018": {
+      "api_sku": "KP77-03",
+      "prosol_sku": "KP77-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Frost (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3493018": {
+      "api_sku": "KP93-03",
+      "prosol_sku": "KP93-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Warm Gray (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "350001821": {
+      "api_sku": "KP00-01",
+      "prosol_sku": "KP00-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Eggshell (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "350101821": {
+      "api_sku": "KP01-01",
+      "prosol_sku": "KP01-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Alabaster (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "350201821": {
+      "api_sku": "KP02-01",
+      "prosol_sku": "KP02-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Pewter (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "350401821": {
+      "api_sku": "KP04-01",
+      "prosol_sku": "KP04-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Bahama Beige (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "350501821": {
+      "api_sku": "KP05-01",
+      "prosol_sku": "KP05-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Chamois (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "350901821": {
+      "api_sku": "KP09-01",
+      "prosol_sku": "KP09-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Gray (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "351001821": {
+      "api_sku": "KP10-01",
+      "prosol_sku": "KP10-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Black (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "351101821": {
+      "api_sku": "KP11-01",
+      "prosol_sku": "KP11-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Sahara Beige (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "351401821": {
+      "api_sku": "KP14-01",
+      "prosol_sku": "KP14-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Biscuit (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "351501821": {
+      "api_sku": "KP15-01",
+      "prosol_sku": "KP15-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Bone (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "351901821": {
+      "api_sku": "KP19-01",
+      "prosol_sku": "KP19-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Pearl Gray (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "352701821": {
+      "api_sku": "KP27-01",
+      "prosol_sku": "KP27-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Silver (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "353801821": {
+      "api_sku": "KP38-01",
+      "prosol_sku": "KP38-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Avalanche (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "353901821": {
+      "api_sku": "KP39-01",
+      "prosol_sku": "KP39-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Ivory (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "354201821": {
+      "api_sku": "KP42-01",
+      "prosol_sku": "KP42-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Mocha (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "354701821": {
+      "api_sku": "KP47-01",
+      "prosol_sku": "KP47-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Charcoal (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "354901821": {
+      "api_sku": "KP49-01",
+      "prosol_sku": "KP49-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Light Almond (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "357701821": {
+      "api_sku": "KP77-01",
+      "prosol_sku": "KP77-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Frost (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "359301821": {
+      "api_sku": "KP93-01",
+      "prosol_sku": "KP93-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Warm Gray (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UC010358C": {
+      "api_sku": "KP103-01",
+      "prosol_sku": "KP103-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Cobblestone (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UC010704": {
+      "api_sku": "KP107-03",
+      "prosol_sku": "KP107-03",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Iron (3.79 l)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5UC010758C": {
+      "api_sku": "KP107-01",
+      "prosol_sku": "KP107-01",
+      "product": "Mapei Kerapoxy Kit Premium Epoxy Grout \u2014 Iron (946 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapeband_cove_roll_3_x_163_sold_in_linear_feet": "=== MAPEI - Mapeband Cove Roll 3\" x 163' (Sold in Linear Feet) ===",
+    "02401000-LF": {
+      "api_sku": "94024-01",
+      "prosol_sku": "94024-01",
+      "product": "Mapei Mapeband Cove Roll 3\" x 163' (Sold in Linear Feet)",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapecem_100_high_build_fast_setting_mortar": "=== MAPEI - Mapecem 100 High-Build Fast-Setting Mortar ===",
+    "17450000": {
+      "api_sku": "94174-50",
+      "prosol_sku": "94174-50",
+      "product": "Mapei Mapecem 100 High-Build Fast-Setting Mortar",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapecem_102_medium_build_fast_setting_mortar": "=== MAPEI - Mapecem 102 Medium-Build Fast-Setting Mortar ===",
+    "151025": {
+      "api_sku": "94151-55",
+      "prosol_sku": "94151-55",
+      "product": "Mapei Mapecem 102 Medium-Build Fast-Setting Mortar",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapecem_202_medium_build_fast_setting_mortar_part_a": "=== MAPEI - Mapecem 202 Medium-Build Fast-Setting Mortar Part A ===",
+    "0150025": {
+      "api_sku": "94150-A",
+      "prosol_sku": "94150-A",
+      "product": "Mapei Mapecem 202 Medium-Build Fast-Setting Mortar Part A",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapecem_202_medium_build_fast_setting_mortar_part_b": "=== MAPEI - Mapecem 202 Medium-Build Fast-Setting Mortar Part B ===",
+    "0150003": {
+      "api_sku": "94150-B",
+      "prosol_sku": "94150-B",
+      "product": "Mapei Mapecem 202 Medium-Build Fast-Setting Mortar Part B",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapecem_premix_fast_setting_screed_mortar": "=== MAPEI - Mapecem Premix Fast-Setting Screed Mortar ===",
+    "2060021": {
+      "api_sku": "94145-50",
+      "prosol_sku": "94145-50",
+      "product": "Mapei Mapecem Premix Fast-Setting Screed Mortar",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapecem_quickpatch_high_performance_concrete_patch": "=== MAPEI - Mapecem Quickpatch High-Performance Concrete Patch ===",
+    "10510000": {
+      "api_sku": "94105-10",
+      "prosol_sku": "94105-10",
+      "product": "Mapei Mapecem Quickpatch High-Performance Concrete Patch (10 lb)",
+      "brand": "mapei",
+      "category": "Patch / Skim Coat",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "10525000": {
+      "api_sku": "94105-25",
+      "prosol_sku": "94105-25",
+      "product": "Mapei Mapecem Quickpatch High-Performance Concrete Patch (25 lb)",
+      "brand": "mapei",
+      "category": "Patch / Skim Coat",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapeguard_2_crack_isolation_waterproofing_and_sound_reductio": "=== MAPEI - Mapeguard 2 Crack Isolation, Waterproofing and Sound Reduction Membrane 39-3/8\" x 68-5/8' - 1 mm (225 sqft) ===",
+    "04051": {
+      "api_sku": "94040-51",
+      "prosol_sku": "94040-51",
+      "product": "Mapei Mapeguard 2 Crack Isolation, Waterproofing and Sound Reduction Membrane 39-3/8\" x 68-5/8' - 1 mm (225 sqft)",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapeguard_um_membrane_sold_in_linear_feet": "=== MAPEI - Mapeguard UM Membrane (Sold in Linear Feet) ===",
+    "94285-30-CUT-LF": {
+      "api_sku": "94285-30-C",
+      "prosol_sku": "94285-30-C",
+      "product": "Mapei Mapeguard UM Membrane (Sold in Linear Feet)",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapeguard_um_premium_performance_vapor_pressure_equalizing_u": "=== MAPEI - Mapeguard UM Premium-Performance Vapor-Pressure-Equalizing Underlayment Membrane 39\" x 98' 4\" ===",
+    "2850905": {
+      "api_sku": "94285-05",
+      "prosol_sku": "94285-05",
+      "product": "Mapei Mapeguard UM Premium-Performance Vapor-Pressure-Equalizing Underlayment Membrane 39\" x 16' 4\"",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "2850930": {
+      "api_sku": "94285-30",
+      "prosol_sku": "94285-30",
+      "product": "Mapei Mapeguard UM Premium-Performance Vapor-Pressure-Equalizing Underlayment Membrane 39\" x 98' 4\"",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapeheat_membrane_per_linear_foot": "=== MAPEI - Mapeheat Membrane per Linear Foot ===",
+    "2856715CUT": {
+      "api_sku": "942856-15C",
+      "prosol_sku": "942856-15C",
+      "product": "Mapei Mapeheat Membrane per Linear Foot",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapelastic_315_cement_based_crack_isolation_waterproofing_me": "=== MAPEI - Mapelastic 315 Cement-Based Crack Isolation & Waterproofing Membrane Latex ===",
+    "31550000": {
+      "api_sku": "94315-50",
+      "prosol_sku": "94315-50",
+      "product": "Mapei Mapelastic 315 Cement-Based Crack Isolation & Waterproofing Membrane",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "31557000": {
+      "api_sku": "94315-57",
+      "prosol_sku": "94315-57",
+      "product": "Mapei Mapelastic 315 Cement-Based Crack Isolation & Waterproofing Membrane Latex",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapelastic_ci_professional_crack_isolation_membrane": "=== MAPEI - Mapelastic CI Professional Crack-Isolation Membrane ===",
+    "32163": {
+      "api_sku": "94321-63",
+      "prosol_sku": "94321-63",
+      "product": "Mapei Mapelastic CI Professional Crack-Isolation Membrane",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapelastic_hpg_flexible_waterproofing_crack_isolation_membra": "=== MAPEI - Mapelastic HPG Flexible Waterproofing & Crack-Isolation Membrane ===",
+    "35553000": {
+      "api_sku": "94355-53",
+      "prosol_sku": "94355-53",
+      "product": "Mapei Mapelastic HPG Flexible Waterproofing & Crack-Isolation Membrane (3.79 l)",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "35568000": {
+      "api_sku": "94355-68",
+      "prosol_sku": "94355-68",
+      "product": "Mapei Mapelastic HPG Flexible Waterproofing & Crack-Isolation Membrane (18.9 l)",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapelastic_turbo_liquid_waterproofing_membrane_part_a": "=== MAPEI - Mapelastic Turbo Liquid Waterproofing Membrane Part A ===",
+    "1676310": {
+      "api_sku": "94763-22",
+      "prosol_sku": "94763-22",
+      "product": "Mapei Mapelastic Turbo Liquid Waterproofing Membrane Part A",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapelastic_turbo_liquid_waterproofing_membrane_part_b": "=== MAPEI - Mapelastic Turbo Liquid Waterproofing Membrane Part B ===",
+    "1676408": {
+      "api_sku": "94764-08",
+      "prosol_sku": "94764-08",
+      "product": "Mapei Mapelastic Turbo Liquid Waterproofing Membrane Part B",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapesil_t_plus_silicone_sealant": "=== MAPEI - Mapesil T Plus Silicone Sealant ===",
+    "3BU000091": {
+      "api_sku": "3BU000091",
+      "prosol_sku": "3BU000091",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Eggshell",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU000191": {
+      "api_sku": "3BU000191",
+      "prosol_sku": "3BU000191",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Alabaster",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU000291": {
+      "api_sku": "3BU000291",
+      "prosol_sku": "3BU000291",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Pewter",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU000491": {
+      "api_sku": "3BU000491",
+      "prosol_sku": "3BU000491",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Bahama Beige",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU000591": {
+      "api_sku": "3BU000591",
+      "prosol_sku": "3BU000591",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Chamois",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU000691": {
+      "api_sku": "3BU000691",
+      "prosol_sku": "3BU000691",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Harvest",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU000791": {
+      "api_sku": "3BU000791",
+      "prosol_sku": "3BU000791",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Chocolate",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU000991": {
+      "api_sku": "3BU000991",
+      "prosol_sku": "3BU000991",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Gray",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU001091": {
+      "api_sku": "3BU001091",
+      "prosol_sku": "3BU001091",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Black",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU001191": {
+      "api_sku": "3BU001191",
+      "prosol_sku": "3BU001191",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Sahara Beige",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU001491": {
+      "api_sku": "3BU001491",
+      "prosol_sku": "3BU001491",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Biscuit",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU001591": {
+      "api_sku": "3BU001591",
+      "prosol_sku": "3BU001591",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Bone",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU001991": {
+      "api_sku": "3BU001991",
+      "prosol_sku": "3BU001991",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Pearl Gray",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU002391": {
+      "api_sku": "3BU002391",
+      "prosol_sku": "3BU002391",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Clear",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU002791": {
+      "api_sku": "3BU002791",
+      "prosol_sku": "3BU002791",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Silver",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU003891": {
+      "api_sku": "3BU003891",
+      "prosol_sku": "3BU003891",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Avalanche",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU003991": {
+      "api_sku": "3BU003991",
+      "prosol_sku": "3BU003991",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Ivory",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU004291": {
+      "api_sku": "3BU004291",
+      "prosol_sku": "3BU004291",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Mocha",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU004491": {
+      "api_sku": "3BU004491",
+      "prosol_sku": "3BU004491",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Pale Umber",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU004791": {
+      "api_sku": "3BU004791",
+      "prosol_sku": "3BU004791",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Charcoal",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU004991": {
+      "api_sku": "3BU004991",
+      "prosol_sku": "3BU004991",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Light Almond",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU007791": {
+      "api_sku": "3BU007791",
+      "prosol_sku": "3BU007791",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Frost",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU007991": {
+      "api_sku": "3BU007991",
+      "prosol_sku": "3BU007991",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Cocoa",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU009391": {
+      "api_sku": "3BU009391",
+      "prosol_sku": "3BU009391",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Warm Gray",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU010191": {
+      "api_sku": "3BU010191",
+      "prosol_sku": "3BU010191",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Rain",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU010391": {
+      "api_sku": "3BU010391",
+      "prosol_sku": "3BU010391",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Cobblestone",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU010491": {
+      "api_sku": "3BU010491",
+      "prosol_sku": "3BU010491",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Timberwolf",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU010591": {
+      "api_sku": "3BU010591",
+      "prosol_sku": "3BU010591",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Driftwood",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU010791": {
+      "api_sku": "3BU010791",
+      "prosol_sku": "3BU010791",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Iron",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU011791": {
+      "api_sku": "3BU011791",
+      "prosol_sku": "3BU011791",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Pure White",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU011891": {
+      "api_sku": "3BU011891",
+      "prosol_sku": "3BU011891",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Jet Black",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU522191": {
+      "api_sku": "3BU522191",
+      "prosol_sku": "3BU522191",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Moonbeam",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU522291": {
+      "api_sku": "3BU522291",
+      "prosol_sku": "3BU522291",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Honey Butter",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU522391": {
+      "api_sku": "3BU522391",
+      "prosol_sku": "3BU522391",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Oatmeal",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU522491": {
+      "api_sku": "3BU522491",
+      "prosol_sku": "3BU522491",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Wicker",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU522591": {
+      "api_sku": "3BU522591",
+      "prosol_sku": "3BU522591",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Sandstorm",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU522691": {
+      "api_sku": "3BU522691",
+      "prosol_sku": "3BU522691",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Nutmeg",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU522791": {
+      "api_sku": "3BU522791",
+      "prosol_sku": "3BU522791",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Castle Wall",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU522891": {
+      "api_sku": "3BU522891",
+      "prosol_sku": "3BU522891",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Cavern Moss",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU522991": {
+      "api_sku": "3BU522991",
+      "prosol_sku": "3BU522991",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Sea Salt",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU523091": {
+      "api_sku": "3BU523091",
+      "prosol_sku": "3BU523091",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Armor",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU523191": {
+      "api_sku": "3BU523191",
+      "prosol_sku": "3BU523191",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Deep Ocean",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3BU523291": {
+      "api_sku": "3BU523291",
+      "prosol_sku": "3BU523291",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Night Sky",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_mapesonic_2_all_in_one_acoustic_underlayment_39_x_49_2_1_93_": "=== MAPEI - Mapesonic 2 All-in-One Acoustic Underlayment 39\" x 49.2' - 1.93 mm (160 sqft) ===",
+    "04140000": {
+      "api_sku": "94041-40",
+      "prosol_sku": "94041-40",
+      "product": "Mapei Mapesonic 2 All-in-One Acoustic Underlayment 39\" x 49.2' - 1.93 mm (160 sqft)",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_moisture_reduction_barrier_planiseal_vs_alkali_resistant_epo": "=== MAPEI - Moisture Reduction Barrier Planiseal VS Alkali-Resistant Epoxy Part B Jug ===",
+    "46364": {
+      "api_sku": "94463-64",
+      "prosol_sku": "94463-64",
+      "product": "Mapei Moisture Reduction Barrier Planiseal VS Alkali-Resistant Epoxy Part A Pail",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "46353": {
+      "api_sku": "94463-53",
+      "prosol_sku": "94463-53",
+      "product": "Mapei Moisture Reduction Barrier Planiseal VS Alkali-Resistant Epoxy Part B Jug",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_novoplan_1_calcium_aluminate_based_self_leveling_underlaymen": "=== MAPEI - Novoplan 1 Calcium-Aluminate-Based Self-Leveling Underlayment ===",
+    "13350000": {
+      "api_sku": "94133-50",
+      "prosol_sku": "94133-50",
+      "product": "Mapei Novoplan 1 Calcium-Aluminate-Based Self-Leveling Underlayment",
+      "brand": "mapei",
+      "category": "Self-Leveler",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_novoplan_2_plus_professional_self_leveling_underlayment": "=== MAPEI - Novoplan 2 Plus Professional Self-Leveling Underlayment ===",
+    "1785156": {
+      "api_sku": "94178-50",
+      "prosol_sku": "94178-50",
+      "product": "Mapei Novoplan 2 Plus Professional Self-Leveling Underlayment",
+      "brand": "mapei",
+      "category": "Self-Leveler",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_novoplan_dpl_deep_pour_self_leveling_compound": "=== MAPEI - Novoplan DPL Deep-Pour Self-Leveling Compound ===",
+    "2732956": {
+      "api_sku": "94956-50",
+      "prosol_sku": "94956-50",
+      "product": "Mapei Novoplan DPL Deep-Pour Self-Leveling Compound",
+      "brand": "mapei",
+      "category": "Self-Leveler",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_novoplan_easy_plus_self_leveling_underlayment": "=== MAPEI - Novoplan Easy Plus Self-Leveling Underlayment ===",
+    "2731923": {
+      "api_sku": "94135-50",
+      "prosol_sku": "94135-50",
+      "product": "Mapei Novoplan Easy Plus Self-Leveling Underlayment",
+      "brand": "mapei",
+      "category": "Self-Leveler",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_novoplan_hfl_high_flow_self_leveling_compound": "=== MAPEI - Novoplan HFL High-Flow Self-Leveling Compound ===",
+    "2732856": {
+      "api_sku": "94856-50",
+      "prosol_sku": "94856-50",
+      "product": "Mapei Novoplan HFL High-Flow Self-Leveling Compound",
+      "brand": "mapei",
+      "category": "Self-Leveler",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_novoplan_sp_self_leveling_underlayment": "=== MAPEI - Novoplan SP Self-Leveling Underlayment ===",
+    "2732123": {
+      "api_sku": "94321-50",
+      "prosol_sku": "94321-50",
+      "product": "Mapei Novoplan SP Self-Leveling Underlayment",
+      "brand": "mapei",
+      "category": "Self-Leveler",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planibond_eba_high_modulus_epoxy_bonding_agent_kit": "=== MAPEI - Planibond EBA High-Modulus Epoxy Bonding Agent Kit ===",
+    "40158000": {
+      "api_sku": "94401-58",
+      "prosol_sku": "94401-58",
+      "product": "Mapei Planibond EBA High-Modulus Epoxy Bonding Agent Kit",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planicrete_ac_acrylic_latex_admixture": "=== MAPEI - Planicrete AC Acrylic Latex Admixture ===",
+    "7013004": {
+      "api_sku": "94309-53",
+      "prosol_sku": "94309-53",
+      "product": "Mapei Planicrete AC Acrylic Latex Admixture (3.79 l)",
+      "brand": "mapei",
+      "category": "Additive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "7013020": {
+      "api_sku": "94309-68",
+      "prosol_sku": "94309-68",
+      "product": "Mapei Planicrete AC Acrylic Latex Admixture (18.9 l)",
+      "brand": "mapei",
+      "category": "Additive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planicrete_w_flexible_setting_compound": "=== MAPEI - Planicrete W Flexible Setting Compound ===",
+    "3430007": {
+      "api_sku": "94902-56",
+      "prosol_sku": "94902-56",
+      "product": "Mapei Planicrete W Flexible Setting Compound",
+      "brand": "mapei",
+      "category": "Additive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planipatch_fast_setting_polymer_modified_cement_based_patchi": "=== MAPEI - Planipatch Fast-Setting Polymer-Modified Cement-Based Patching Compound ===",
+    "0080010": {
+      "api_sku": "94110-10",
+      "prosol_sku": "94110-10",
+      "product": "Mapei Planipatch Fast-Setting Polymer-Modified Cement-Based Patching Compound (10 lb)",
+      "brand": "mapei",
+      "category": "Patch / Skim Coat",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "0080050": {
+      "api_sku": "94110-50",
+      "prosol_sku": "94110-50",
+      "product": "Mapei Planipatch Fast-Setting Polymer-Modified Cement-Based Patching Compound (45 lb)",
+      "brand": "mapei",
+      "category": "Patch / Skim Coat",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "11004000": {
+      "api_sku": "94110-04",
+      "prosol_sku": "94110-04",
+      "product": "Mapei Planipatch Fast-Setting Polymer-Modified Cement-Based Patching Compound (4.4 lb)",
+      "brand": "mapei",
+      "category": "Patch / Skim Coat",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "11027000": {
+      "api_sku": "94110-27",
+      "prosol_sku": "94110-27",
+      "product": "Mapei Planipatch Fast-Setting Polymer-Modified Cement-Based Patching Compound (22 lb)",
+      "brand": "mapei",
+      "category": "Patch / Skim Coat",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planipatch_plus_acrylic_latex_additive": "=== MAPEI - Planipatch Plus Acrylic Latex Additive ===",
+    "7050001": {
+      "api_sku": "94312-53",
+      "prosol_sku": "94312-53",
+      "product": "Mapei Planipatch Plus Acrylic Latex Additive (3.79 l)",
+      "brand": "mapei",
+      "category": "Patch / Skim Coat",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "7050005": {
+      "api_sku": "94312-68",
+      "prosol_sku": "94312-68",
+      "product": "Mapei Planipatch Plus Acrylic Latex Additive (18.9 l)",
+      "brand": "mapei",
+      "category": "Patch / Skim Coat",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planiprep_psc_floor_patch": "=== MAPEI - Planiprep PSC Floor Patch ===",
+    "7378305": {
+      "api_sku": "94783-10",
+      "prosol_sku": "94783-10",
+      "product": "Mapei Planiprep PSC Floor Patch (10 lb)",
+      "brand": "mapei",
+      "category": "Self-Leveler",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "7378309": {
+      "api_sku": "94783-20",
+      "prosol_sku": "94783-20",
+      "product": "Mapei Planiprep PSC Floor Patch (20 lb)",
+      "brand": "mapei",
+      "category": "Self-Leveler",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planiprep_sc_fiber_reinforced_skimcoating_compound": "=== MAPEI - Planiprep SC Fiber-Reinforced Skimcoating Compound ===",
+    "37411": {
+      "api_sku": "94374-11",
+      "prosol_sku": "94374-11",
+      "product": "Mapei Planiprep SC Fiber-Reinforced Skimcoating Compound",
+      "brand": "mapei",
+      "category": "Self-Leveler",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planiseal_msp_moisture_control_membrane_pail": "=== MAPEI - Planiseal MSP Moisture-Control Membrane Pail ===",
+    "2436315": {
+      "api_sku": "94243-15",
+      "prosol_sku": "94243-15",
+      "product": "Mapei Planiseal MSP Moisture-Control Membrane Pail",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planislope_rs_polymer_modified_sloping_mortar": "=== MAPEI - Planislope RS Polymer-Modified Sloping Mortar ===",
+    "0376523": {
+      "api_sku": "94765-50",
+      "prosol_sku": "94765-50",
+      "product": "Mapei Planislope RS Polymer-Modified Sloping Mortar",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planitop_330_fast_cementitious_rendering_mortar": "=== MAPEI - Planitop 330 Fast Cementitious Rendering Mortar ===",
+    "223523": {
+      "api_sku": "94223-50",
+      "prosol_sku": "94223-50",
+      "product": "Mapei Planitop 330 Fast Cementitious Rendering Mortar",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planitop_x_fiber_reinforced_vertical_overhead_repair_mortar": "=== MAPEI - Planitop X Fiber-Reinforced Vertical & Overhead Repair Mortar ===",
+    "12850000": {
+      "api_sku": "94128-50",
+      "prosol_sku": "94128-50",
+      "product": "Mapei Planitop X Fiber-Reinforced Vertical & Overhead Repair Mortar",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_planitop_xs_extended_working_time_vertical_overhead_repair_m": "=== MAPEI - Planitop XS Extended-Working-Time Vertical & Overhead Repair Mortar ===",
+    "13050000": {
+      "api_sku": "94130-51",
+      "prosol_sku": "94130-51",
+      "product": "Mapei Planitop XS Extended-Working-Time Vertical & Overhead Repair Mortar",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_primer_l_advanced_technology_acrylic_latex_primer_for_concre": "=== MAPEI - Primer L Advanced-Technology Acrylic Latex Primer for Concrete ===",
+    "36053000": {
+      "api_sku": "94360-53",
+      "prosol_sku": "94360-53",
+      "product": "Mapei Primer L Advanced-Technology Acrylic Latex Primer for Concrete (3.79 l)",
+      "brand": "mapei",
+      "category": "Primer",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "36068000": {
+      "api_sku": "94360-68",
+      "prosol_sku": "94360-68",
+      "product": "Mapei Primer L Advanced-Technology Acrylic Latex Primer for Concrete (18.9 l)",
+      "brand": "mapei",
+      "category": "Primer",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_primer_x_fast_drying_textured_primer": "=== MAPEI - Primer X Fast-Drying Textured Primer ===",
+    "1559508": {
+      "api_sku": "94508-53",
+      "prosol_sku": "94508-53",
+      "product": "Mapei Primer X Fast-Drying Textured Primer",
+      "brand": "mapei",
+      "category": "Primer",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_reinforcing_fabric_38_x_75": "=== MAPEI - Reinforcing Fabric 38\" x 75' ===",
+    "0170007": {
+      "api_sku": "94170-007",
+      "prosol_sku": "94170-007",
+      "product": "Mapei Reinforcing Fabric 38\" x 75'",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_reinforcing_fabric_6_x_75": "=== MAPEI - Reinforcing Fabric 6\" x 75' ===",
+    "0170004": {
+      "api_sku": "94170-004",
+      "prosol_sku": "94170-004",
+      "product": "Mapei Reinforcing Fabric 6\" x 75'",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_sm_primer_fast_water_based_fast_tacking_primer": "=== MAPEI - SM Primer Fast Water-Based Fast-Tacking Primer ===",
+    "33354": {
+      "api_sku": "94333-54",
+      "prosol_sku": "94333-54",
+      "product": "Mapei SM Primer Fast Water-Based Fast-Tacking Primer",
+      "brand": "mapei",
+      "category": "Primer",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_sm_primer_water_based_primer": "=== MAPEI - SM Primer Water-Based Primer ===",
+    "7071001": {
+      "api_sku": "94333-53",
+      "prosol_sku": "94333-53",
+      "product": "Mapei SM Primer Water-Based Primer (3.79 l)",
+      "brand": "mapei",
+      "category": "Primer",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "7071005": {
+      "api_sku": "94333-68",
+      "prosol_sku": "94333-68",
+      "product": "Mapei SM Primer Water-Based Primer (18.9 l)",
+      "brand": "mapei",
+      "category": "Primer",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_topcem_premix_accelerated_cure_screed_mortar": "=== MAPEI - Topcem Premix Accelerated-Cure Screed Mortar ===",
+    "15750": {
+      "api_sku": "94157-50",
+      "prosol_sku": "94157-50",
+      "product": "Mapei Topcem Premix Accelerated-Cure Screed Mortar",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_type_1_premium_tile_adhesive": "=== MAPEI - Type 1 Premium Tile Adhesive ===",
+    "1040010": {
+      "api_sku": "94903-91",
+      "prosol_sku": "94903-91",
+      "product": "Mapei Type 1 Premium Tile Adhesive (946 ml)",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "1040011": {
+      "api_sku": "94903-53",
+      "prosol_sku": "94903-53",
+      "product": "Mapei Type 1 Premium Tile Adhesive (3.79 l)",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "1040016": {
+      "api_sku": "94903-63",
+      "prosol_sku": "94903-63",
+      "product": "Mapei Type 1 Premium Tile Adhesive (13.2 l)",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracare_abrasive_surface_cleaner": "=== MAPEI - UltraCare Abrasive Surface Cleaner ===",
+    "01532021": {
+      "api_sku": "94015-32",
+      "prosol_sku": "94015-32",
+      "product": "Mapei UltraCare Abrasive Surface Cleaner",
+      "brand": "mapei",
+      "category": "Cleaner / Care",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracare_enhancing_plus_premium_stone_sealer": "=== MAPEI - UltraCare Enhancing Plus Premium Stone Sealer ===",
+    "00316021": {
+      "api_sku": "94003-16",
+      "prosol_sku": "94003-16",
+      "product": "Mapei UltraCare Enhancing Plus Premium Stone Sealer",
+      "brand": "mapei",
+      "category": "Cleaner / Care",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracare_enhancing_stone_sealer": "=== MAPEI - UltraCare Enhancing Stone Sealer ===",
+    "00532021": {
+      "api_sku": "94005-32",
+      "prosol_sku": "94005-32",
+      "product": "Mapei UltraCare Enhancing Stone Sealer (946 ml)",
+      "brand": "mapei",
+      "category": "Cleaner / Care",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "00554021": {
+      "api_sku": "94005-54",
+      "prosol_sku": "94005-54",
+      "product": "Mapei UltraCare Enhancing Stone Sealer (3.79 l)",
+      "brand": "mapei",
+      "category": "Cleaner / Care",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracare_everyday_stone_grout_cleaner_resealer": "=== MAPEI - UltraCare Everyday Stone & Grout Cleaner & Resealer ===",
+    "00924021": {
+      "api_sku": "94009-24",
+      "prosol_sku": "94009-24",
+      "product": "Mapei UltraCare Everyday Stone & Grout Cleaner & Resealer",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracare_grout_maximizer_liquid_polymer_admixture": "=== MAPEI - UltraCare Grout Maximizer Liquid Polymer Admixture ===",
+    "03502C": {
+      "api_sku": "94035-02",
+      "prosol_sku": "94035-02",
+      "product": "Mapei UltraCare Grout Maximizer Liquid Polymer Admixture",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracare_grout_release_high_performance_sacrificial_coating": "=== MAPEI - UltraCare Grout Release High-Performance Sacrificial Coating ===",
+    "1154159C": {
+      "api_sku": "1154159C",
+      "prosol_sku": "1154159C",
+      "product": "Mapei UltraCare Grout Release High-Performance Sacrificial Coating",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracare_grout_sealer": "=== MAPEI - UltraCare Grout Sealer ===",
+    "00684021": {
+      "api_sku": "94006-84",
+      "prosol_sku": "94006-84",
+      "product": "Mapei UltraCare Grout Sealer",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracare_heavy_duty_sealer_coating_stripper": "=== MAPEI - UltraCare Heavy-Duty Sealer & Coating Stripper ===",
+    "01832021": {
+      "api_sku": "94018-32",
+      "prosol_sku": "94018-32",
+      "product": "Mapei UltraCare Heavy-Duty Sealer & Coating Stripper",
+      "brand": "mapei",
+      "category": "Cleaner / Care",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracare_high_gloss_sealer_finish": "=== MAPEI - UltraCare High-Gloss Sealer & Finish ===",
+    "00732021": {
+      "api_sku": "94007-32",
+      "prosol_sku": "94007-32",
+      "product": "Mapei UltraCare High-Gloss Sealer & Finish",
+      "brand": "mapei",
+      "category": "Cleaner / Care",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracare_penetrating_plus_stone_tile_grout_sealer": "=== MAPEI - UltraCare Penetrating Plus Stone, Tile & Grout Sealer ===",
+    "00216021": {
+      "api_sku": "94002-16",
+      "prosol_sku": "94002-16",
+      "product": "Mapei UltraCare Penetrating Plus Stone, Tile & Grout Sealer",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_20_standard_flooring_adhesive": "=== MAPEI - Ultrabond ECO 20 Standard Flooring Adhesive ===",
+    "96820000": {
+      "api_sku": "ECO20-20",
+      "prosol_sku": "ECO20-20",
+      "product": "Mapei Ultrabond ECO 20 Standard Flooring Adhesive",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_220_premium_flooring_adhesive": "=== MAPEI - Ultrabond ECO 220 Premium Flooring Adhesive ===",
+    "92264000": {
+      "api_sku": "ECO220-15",
+      "prosol_sku": "ECO220-15",
+      "product": "Mapei Ultrabond ECO 220 Premium Flooring Adhesive",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_3185_premium_latex_carpet_pad_cement": "=== MAPEI - Ultrabond ECO 3185 Premium Latex Carpet Pad Cement ===",
+    "98453": {
+      "api_sku": "94984-53",
+      "prosol_sku": "94984-53",
+      "product": "Mapei Ultrabond ECO 3185 Premium Latex Carpet Pad Cement",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_360_premium_high_performance_adhesive": "=== MAPEI - Ultrabond ECO 360 Premium High-Performance Adhesive ===",
+    "93653": {
+      "api_sku": "ECO360-04",
+      "prosol_sku": "ECO360-04",
+      "product": "Mapei Ultrabond ECO 360 Premium High-Performance Adhesive (3.79 l)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "93664": {
+      "api_sku": "ECO360-15",
+      "prosol_sku": "ECO360-15",
+      "product": "Mapei Ultrabond ECO 360 Premium High-Performance Adhesive (15.1 l)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_711_premium_clear_thin_spread_vct_adhesive": "=== MAPEI - Ultrabond ECO 711 Premium Clear Thin-Spread VCT Adhesive ===",
+    "97154": {
+      "api_sku": "ECO711-04",
+      "prosol_sku": "ECO711-04",
+      "product": "Mapei Ultrabond ECO 711 Premium Clear Thin-Spread VCT Adhesive (3.79 l)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "97164": {
+      "api_sku": "ECO711-15",
+      "prosol_sku": "ECO711-15",
+      "product": "Mapei Ultrabond ECO 711 Premium Clear Thin-Spread VCT Adhesive (15.1 l)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "97391000": {
+      "api_sku": "ECO711-01",
+      "prosol_sku": "ECO711-01",
+      "product": "Mapei Ultrabond ECO 711 Premium Clear Thin-Spread VCT Adhesive (946 ml)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_811_universal_carpet_tile_adhesive": "=== MAPEI - Ultrabond ECO 811 Universal Carpet Tile Adhesive ===",
+    "1949904": {
+      "api_sku": "ECO811-04",
+      "prosol_sku": "ECO811-04",
+      "product": "Mapei Ultrabond ECO 811 Universal Carpet Tile Adhesive (3.79 l)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "1949915": {
+      "api_sku": "ECO811-15",
+      "prosol_sku": "ECO811-15",
+      "product": "Mapei Ultrabond ECO 811 Universal Carpet Tile Adhesive (15.1 l)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "1949919": {
+      "api_sku": "ECO811-20",
+      "prosol_sku": "ECO811-20",
+      "product": "Mapei Ultrabond ECO 811 Universal Carpet Tile Adhesive (18.9 l)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_901_premium_adhesive_for_fiber_glass_panels": "=== MAPEI - Ultrabond ECO 901 Premium Adhesive for Fiber Glass Panels ===",
+    "90164": {
+      "api_sku": "ECO901-15",
+      "prosol_sku": "ECO901-15",
+      "product": "Mapei Ultrabond ECO 901 Premium Adhesive for Fiber Glass Panels",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_907_fast_curing_silane_modified_polymer_adhesi": "=== MAPEI - Ultrabond ECO 907 Fast-Curing Silane-Modified Polymer Adhesive ===",
+    "1947956": {
+      "api_sku": "ECO907-591",
+      "prosol_sku": "ECO907-591",
+      "product": "Mapei Ultrabond ECO 907 Fast-Curing Silane-Modified Polymer Adhesive (591 ml)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "1947958": {
+      "api_sku": "ECO907-858",
+      "prosol_sku": "ECO907-858",
+      "product": "Mapei Ultrabond ECO 907 Fast-Curing Silane-Modified Polymer Adhesive (858 ml)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_977_fast_set_urethane_adhesive_for_hardwood_fl": "=== MAPEI - Ultrabond ECO 977 Fast-Set Urethane Adhesive for Hardwood Flooring ===",
+    "1947615": {
+      "api_sku": "ECO977-15",
+      "prosol_sku": "ECO977-15",
+      "product": "Mapei Ultrabond ECO 977 Fast-Set Urethane Adhesive for Hardwood Flooring",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_983_modified_silane_moisture_control_wood_floo": "=== MAPEI - Ultrabond ECO 983 Modified-Silane Moisture-Control Wood-Flooring Adhesive ===",
+    "1942515": {
+      "api_sku": "ECO983-15",
+      "prosol_sku": "ECO983-15",
+      "product": "Mapei Ultrabond ECO 983 Modified-Silane Moisture-Control Wood-Flooring Adhesive",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_985_hybrid_polymer_based_moisture_control_and_": "=== MAPEI - Ultrabond ECO 985 Hybrid-Polymer-Based Moisture-Control and Sound-Reducing Wood-Flooring Adhesive ===",
+    "98664": {
+      "api_sku": "ECO985-15",
+      "prosol_sku": "ECO985-15",
+      "product": "Mapei Ultrabond ECO 985 Hybrid-Polymer-Based Moisture-Control and Sound-Reducing Wood-Flooring Adhesive",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_ms_4_lvt_professional_hybrid_polymer_adhesive": "=== MAPEI - Ultrabond ECO MS 4 LVT Professional Hybrid-Polymer Adhesive ===",
+    "3585215": {
+      "api_sku": "94852-15",
+      "prosol_sku": "94852-15",
+      "product": "Mapei Ultrabond ECO MS 4 LVT Professional Hybrid-Polymer Adhesive",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_ms_4_lvt_wall_professional_hybrid_polymer_adhe": "=== MAPEI - Ultrabond ECO MS 4 LVT Wall Professional Hybrid-Polymer Adhesive ===",
+    "3585304": {
+      "api_sku": "94853-04",
+      "prosol_sku": "94853-04",
+      "product": "Mapei Ultrabond ECO MS 4 LVT Wall Professional Hybrid-Polymer Adhesive (3.79 l)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "3585315": {
+      "api_sku": "94853-15",
+      "prosol_sku": "94853-15",
+      "product": "Mapei Ultrabond ECO MS 4 LVT Wall Professional Hybrid-Polymer Adhesive (15.1 l)",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_975_standard_urethane_adhesive_for_hardwood_fl": "=== MAPEI - Ultrabond Eco 975 Standard Urethane Adhesive for Hardwood Flooring ===",
+    "1945616": {
+      "api_sku": "ECO975-15",
+      "prosol_sku": "ECO975-15",
+      "product": "Mapei Ultrabond Eco 975 Standard Urethane Adhesive for Hardwood Flooring",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_980_premium_urethane_adhesive_for_hardwood_flo": "=== MAPEI - Ultrabond Eco 980 Premium Urethane Adhesive for Hardwood Flooring ===",
+    "1942715": {
+      "api_sku": "ECO980-15",
+      "prosol_sku": "ECO980-15",
+      "product": "Mapei Ultrabond Eco 980 Premium Urethane Adhesive for Hardwood Flooring",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_eco_995_premium_urethane_adhesive_for_hardwood_flo": "=== MAPEI - Ultrabond Eco 995 Premium Urethane Adhesive for Hardwood Flooring ===",
+    "1945815": {
+      "api_sku": "ECO995-15",
+      "prosol_sku": "ECO995-15",
+      "product": "Mapei Ultrabond Eco 995 Premium Urethane Adhesive for Hardwood Flooring",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_g19_professional_two_part_urethane_flooring_adhesi": "=== MAPEI - Ultrabond G19 Professional Two-Part Urethane Flooring Adhesive ===",
+    "3050006": {
+      "api_sku": "G19-04",
+      "prosol_sku": "G19-04",
+      "product": "Mapei Ultrabond G19 Professional Two-Part Urethane Flooring Adhesive",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_g21_premium_two_part_urethane_flooring_adhesive": "=== MAPEI - Ultrabond G21 Premium Two-Part Urethane Flooring Adhesive ===",
+    "3090007": {
+      "api_sku": "G21-07",
+      "prosol_sku": "G21-07",
+      "product": "Mapei Ultrabond G21 Premium Two-Part Urethane Flooring Adhesive",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultrabond_urethane_cleaner_professional_adhesive_remover": "=== MAPEI - Ultrabond Urethane Cleaner Professional Adhesive Remover ===",
+    "03432000": {
+      "api_sku": "94034-32",
+      "prosol_sku": "94034-32",
+      "product": "Mapei Ultrabond Urethane Cleaner Professional Adhesive Remover",
+      "brand": "mapei",
+      "category": "Flooring Adhesive",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracolor_plus_fa_rapid_setting_all_in_one_grout": "=== MAPEI - Ultracolor Plus FA Rapid-Setting All-in-One Grout ===",
+    "6BU000005": {
+      "api_sku": "6BU000005",
+      "prosol_sku": "6BU000005",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Eggshell (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000011": {
+      "api_sku": "6BU000011",
+      "prosol_sku": "6BU000011",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Eggshell (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000105": {
+      "api_sku": "6BU000105",
+      "prosol_sku": "6BU000105",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Alabaster (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000111": {
+      "api_sku": "6BU000111",
+      "prosol_sku": "6BU000111",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Alabaster (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000205": {
+      "api_sku": "6BU000205",
+      "prosol_sku": "6BU000205",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Pewter (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000211": {
+      "api_sku": "6BU000211",
+      "prosol_sku": "6BU000211",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Pewter (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000405": {
+      "api_sku": "6BU000405",
+      "prosol_sku": "6BU000405",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Bahama Beige (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000411": {
+      "api_sku": "6BU000411",
+      "prosol_sku": "6BU000411",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Bahama Beige (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000505": {
+      "api_sku": "6BU000505",
+      "prosol_sku": "6BU000505",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Chamois (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000511": {
+      "api_sku": "6BU000511",
+      "prosol_sku": "6BU000511",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Chamois (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000605": {
+      "api_sku": "6BU000605",
+      "prosol_sku": "6BU000605",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Harvest (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000611": {
+      "api_sku": "6BU000611",
+      "prosol_sku": "6BU000611",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Harvest (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000705": {
+      "api_sku": "6BU000705",
+      "prosol_sku": "6BU000705",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Chocolate (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000711": {
+      "api_sku": "6BU000711",
+      "prosol_sku": "6BU000711",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Chocolate (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000905": {
+      "api_sku": "6BU000905",
+      "prosol_sku": "6BU000905",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Gray (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU000911": {
+      "api_sku": "6BU000911",
+      "prosol_sku": "6BU000911",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Gray (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU001005": {
+      "api_sku": "6BU001005",
+      "prosol_sku": "6BU001005",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Black (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU001011": {
+      "api_sku": "6BU001011",
+      "prosol_sku": "6BU001011",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Black (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU001105": {
+      "api_sku": "6BU001105",
+      "prosol_sku": "6BU001105",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Sahara Beige (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU001111": {
+      "api_sku": "6BU001111",
+      "prosol_sku": "6BU001111",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Sahara Beige (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU001405": {
+      "api_sku": "6BU001405",
+      "prosol_sku": "6BU001405",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Biscuit (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU001411": {
+      "api_sku": "6BU001411",
+      "prosol_sku": "6BU001411",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Biscuit (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU001505": {
+      "api_sku": "6BU001505",
+      "prosol_sku": "6BU001505",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Bone (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU001511": {
+      "api_sku": "6BU001511",
+      "prosol_sku": "6BU001511",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Bone (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU001905": {
+      "api_sku": "6BU001905",
+      "prosol_sku": "6BU001905",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Pearl Gray (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU001911": {
+      "api_sku": "6BU001911",
+      "prosol_sku": "6BU001911",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Pearl Gray (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU002705": {
+      "api_sku": "6BU002705",
+      "prosol_sku": "6BU002705",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Silver (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU002711": {
+      "api_sku": "6BU002711",
+      "prosol_sku": "6BU002711",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Silver (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU003805": {
+      "api_sku": "6BU003805",
+      "prosol_sku": "6BU003805",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Avalanche (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU003811": {
+      "api_sku": "6BU003811",
+      "prosol_sku": "6BU003811",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Avalanche (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU003905": {
+      "api_sku": "6BU003905",
+      "prosol_sku": "6BU003905",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Ivory (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU003911": {
+      "api_sku": "6BU003911",
+      "prosol_sku": "6BU003911",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Ivory (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU004205": {
+      "api_sku": "6BU004205",
+      "prosol_sku": "6BU004205",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Mocha (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU004211": {
+      "api_sku": "6BU004211",
+      "prosol_sku": "6BU004211",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Mocha (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU004405": {
+      "api_sku": "6BU004405",
+      "prosol_sku": "6BU004405",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Pale Umber (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU004411": {
+      "api_sku": "6BU004411",
+      "prosol_sku": "6BU004411",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Pale Umber (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU004705": {
+      "api_sku": "6BU004705",
+      "prosol_sku": "6BU004705",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Charcoal (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU004711": {
+      "api_sku": "6BU004711",
+      "prosol_sku": "6BU004711",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Charcoal (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU004905": {
+      "api_sku": "6BU004905",
+      "prosol_sku": "6BU004905",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Light Almond (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU004911": {
+      "api_sku": "6BU004911",
+      "prosol_sku": "6BU004911",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Light Almond (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU007705": {
+      "api_sku": "6BU007705",
+      "prosol_sku": "6BU007705",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Frost (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU007711": {
+      "api_sku": "6BU007711",
+      "prosol_sku": "6BU007711",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Frost (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU007905": {
+      "api_sku": "6BU007905",
+      "prosol_sku": "6BU007905",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Cocoa (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU007911": {
+      "api_sku": "6BU007911",
+      "prosol_sku": "6BU007911",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Cocoa (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU009305": {
+      "api_sku": "6BU009305",
+      "prosol_sku": "6BU009305",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Warm Gray (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU009311": {
+      "api_sku": "6BU009311",
+      "prosol_sku": "6BU009311",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Warm Gray (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU010105": {
+      "api_sku": "6BU010105",
+      "prosol_sku": "6BU010105",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Rain (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU010111": {
+      "api_sku": "6BU010111",
+      "prosol_sku": "6BU010111",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Rain (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU010305": {
+      "api_sku": "6BU010305",
+      "prosol_sku": "6BU010305",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Cobblestone (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU010311": {
+      "api_sku": "6BU010311",
+      "prosol_sku": "6BU010311",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Cobblestone (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU010405": {
+      "api_sku": "6BU010405",
+      "prosol_sku": "6BU010405",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Timberwolf (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU010411": {
+      "api_sku": "6BU010411",
+      "prosol_sku": "6BU010411",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Timberwolf (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU010505": {
+      "api_sku": "6BU010505",
+      "prosol_sku": "6BU010505",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Driftwood (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU010511": {
+      "api_sku": "6BU010511",
+      "prosol_sku": "6BU010511",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Driftwood (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU010705": {
+      "api_sku": "6BU010705",
+      "prosol_sku": "6BU010705",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Iron (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU010711": {
+      "api_sku": "6BU010711",
+      "prosol_sku": "6BU010711",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Iron (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522105": {
+      "api_sku": "6BU522105",
+      "prosol_sku": "6BU522105",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Moonbeam (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522111": {
+      "api_sku": "6BU522111",
+      "prosol_sku": "6BU522111",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Moonbeam (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522205": {
+      "api_sku": "6BU522205",
+      "prosol_sku": "6BU522205",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Honey Butter (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522211": {
+      "api_sku": "6BU522211",
+      "prosol_sku": "6BU522211",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Honey Butter (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522305": {
+      "api_sku": "6BU522305",
+      "prosol_sku": "6BU522305",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Oatmeal (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522311": {
+      "api_sku": "6BU522311",
+      "prosol_sku": "6BU522311",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Oatmeal (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522405": {
+      "api_sku": "6BU522405",
+      "prosol_sku": "6BU522405",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Wicker (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522411": {
+      "api_sku": "6BU522411",
+      "prosol_sku": "6BU522411",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Wicker (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522505": {
+      "api_sku": "6BU522505",
+      "prosol_sku": "6BU522505",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Sandstorm (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522511": {
+      "api_sku": "6BU522511",
+      "prosol_sku": "6BU522511",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Sandstorm (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522605": {
+      "api_sku": "6BU522605",
+      "prosol_sku": "6BU522605",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Nutmeg (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522611": {
+      "api_sku": "6BU522611",
+      "prosol_sku": "6BU522611",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Nutmeg (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522705": {
+      "api_sku": "6BU522705",
+      "prosol_sku": "6BU522705",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Castle Wall (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522711": {
+      "api_sku": "6BU522711",
+      "prosol_sku": "6BU522711",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Castle Wall (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522805": {
+      "api_sku": "6BU522805",
+      "prosol_sku": "6BU522805",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Cavern Moss (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522811": {
+      "api_sku": "6BU522811",
+      "prosol_sku": "6BU522811",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Cavern Moss (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522905": {
+      "api_sku": "6BU522905",
+      "prosol_sku": "6BU522905",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Sea Salt (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU522911": {
+      "api_sku": "6BU522911",
+      "prosol_sku": "6BU522911",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Sea Salt (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU523005": {
+      "api_sku": "6BU523005",
+      "prosol_sku": "6BU523005",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Armor (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU523011": {
+      "api_sku": "6BU523011",
+      "prosol_sku": "6BU523011",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Armor (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU523105": {
+      "api_sku": "6BU523105",
+      "prosol_sku": "6BU523105",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Deep Ocean (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU523111": {
+      "api_sku": "6BU523111",
+      "prosol_sku": "6BU523111",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Deep Ocean (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU523205": {
+      "api_sku": "6BU523205",
+      "prosol_sku": "6BU523205",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Night Sky (10 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BU523211": {
+      "api_sku": "6BU523211",
+      "prosol_sku": "6BU523211",
+      "product": "Mapei Ultracolor Plus FA Rapid-Setting All-in-One Grout \u2014 Night Sky (25 lb)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracolor_plus_max": "=== MAPEI - Ultracolor Plus Max ===",
+    "6BS511711": {
+      "api_sku": "6BS011711",
+      "prosol_sku": "6BS011711",
+      "product": "Mapei Ultracolor Plus Max \u2014 Pure White",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BS511811": {
+      "api_sku": "6BS011811",
+      "prosol_sku": "6BS011811",
+      "product": "Mapei Ultracolor Plus Max \u2014 Jet Black",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultracolor_plus_max_high_performance_rapid_setting_grout": "=== MAPEI - Ultracolor Plus Max High-Performance Rapid-Setting Grout ===",
+    "6BS011705": {
+      "api_sku": "6BS011705",
+      "prosol_sku": "6BS011705",
+      "product": "Mapei Ultracolor Plus Max High-Performance Rapid-Setting Grout \u2014 Pure White",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "6BS011805": {
+      "api_sku": "6BS011805",
+      "prosol_sku": "6BS011805",
+      "product": "Mapei Ultracolor Plus Max High-Performance Rapid-Setting Grout \u2014 Jet Black",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_1_polymer_modified_mortar_gray": "=== MAPEI - Ultraflex 1 Polymer-Modified Mortar, Gray ===",
+    "006004821": {
+      "api_sku": "94182-50",
+      "prosol_sku": "94182-50",
+      "product": "Mapei Ultraflex 1 Polymer-Modified Mortar, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_1_polymer_modified_mortar_white": "=== MAPEI - Ultraflex 1 Polymer-Modified Mortar, White ===",
+    "006004921": {
+      "api_sku": "94183-50",
+      "prosol_sku": "94183-50",
+      "product": "Mapei Ultraflex 1 Polymer-Modified Mortar, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_2_lt_large_tile_mortar_with_polymer_gray": "=== MAPEI - Ultraflex 2 LT Large-Tile Mortar with Polymer, Gray ===",
+    "2902823": {
+      "api_sku": "94823-50",
+      "prosol_sku": "94823-50",
+      "product": "Mapei Ultraflex 2 LT Large-Tile Mortar with Polymer, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_2_lt_large_tile_mortar_with_polymer_white": "=== MAPEI - Ultraflex 2 LT Large-Tile Mortar with Polymer, White ===",
+    "2902423": {
+      "api_sku": "94423-50",
+      "prosol_sku": "94423-50",
+      "product": "Mapei Ultraflex 2 LT Large-Tile Mortar with Polymer, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_2_professional_tile_mortar_with_polymer_gray": "=== MAPEI - Ultraflex 2 Professional Tile Mortar with Polymer, Gray ===",
+    "006005321": {
+      "api_sku": "94115-10",
+      "prosol_sku": "94115-10",
+      "product": "Mapei Ultraflex 2 Professional Tile Mortar with Polymer, Gray (10 lb)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "006005421": {
+      "api_sku": "94115-25",
+      "prosol_sku": "94115-25",
+      "product": "Mapei Ultraflex 2 Professional Tile Mortar with Polymer, Gray (25 lb)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "006005521": {
+      "api_sku": "94115-50",
+      "prosol_sku": "94115-50",
+      "product": "Mapei Ultraflex 2 Professional Tile Mortar with Polymer, Gray (50 lb)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_2_professional_tile_mortar_with_polymer_white": "=== MAPEI - Ultraflex 2 Professional Tile Mortar with Polymer, White ===",
+    "006005721": {
+      "api_sku": "94116-50",
+      "prosol_sku": "94116-50",
+      "product": "Mapei Ultraflex 2 Professional Tile Mortar with Polymer, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_lft_large_heavy_tile_mortar_gray": "=== MAPEI - Ultraflex LFT Large & Heavy Tile Mortar, Gray ===",
+    "1125000021": {
+      "api_sku": "94112-50",
+      "prosol_sku": "94112-50",
+      "product": "Mapei Ultraflex LFT Large & Heavy Tile Mortar, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_lft_large_heavy_tile_mortar_white": "=== MAPEI - Ultraflex LFT Large & Heavy Tile Mortar, White ===",
+    "1135000021": {
+      "api_sku": "94113-50",
+      "prosol_sku": "94113-50",
+      "product": "Mapei Ultraflex LFT Large & Heavy Tile Mortar, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_lft_rapid_fast_setting_large_heavy_tile_mortar_gra": "=== MAPEI - Ultraflex LFT Rapid Fast-Setting Large & Heavy Tile Mortar, Gray ===",
+    "14150": {
+      "api_sku": "94141-50",
+      "prosol_sku": "94141-50",
+      "product": "Mapei Ultraflex LFT Rapid Fast-Setting Large & Heavy Tile Mortar, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_lft_rapid_fast_setting_large_heavy_tile_mortar_whi": "=== MAPEI - Ultraflex LFT Rapid Fast-Setting Large & Heavy Tile Mortar, White ===",
+    "14250": {
+      "api_sku": "94142-51",
+      "prosol_sku": "94142-51",
+      "product": "Mapei Ultraflex LFT Rapid Fast-Setting Large & Heavy Tile Mortar, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_lht_professional_large_heavy_tile_mortar_gray": "=== MAPEI - Ultraflex LHT Professional Large & Heavy Tile Mortar, Gray ===",
+    "2183123": {
+      "api_sku": "94218-31",
+      "prosol_sku": "94218-31",
+      "product": "Mapei Ultraflex LHT Professional Large & Heavy Tile Mortar, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_lht_professional_large_heavy_tile_mortar_white": "=== MAPEI - Ultraflex LHT Professional Large & Heavy Tile Mortar, White ===",
+    "2183023": {
+      "api_sku": "94218-30",
+      "prosol_sku": "94218-30",
+      "product": "Mapei Ultraflex LHT Professional Large & Heavy Tile Mortar, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraflex_rs_premium_rapid_setting_tile_mortar_with_polymer_": "=== MAPEI - Ultraflex RS Premium Rapid-Setting Tile Mortar with Polymer, White ===",
+    "0110044": {
+      "api_sku": "94107-26",
+      "prosol_sku": "94107-26",
+      "product": "Mapei Ultraflex RS Premium Rapid-Setting Tile Mortar with Polymer, Gray (25 lb)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "0110045": {
+      "api_sku": "94107-51",
+      "prosol_sku": "94107-51",
+      "product": "Mapei Ultraflex RS Premium Rapid-Setting Tile Mortar with Polymer, Gray (50 lb)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "0110047": {
+      "api_sku": "94108-50",
+      "prosol_sku": "94108-50",
+      "product": "Mapei Ultraflex RS Premium Rapid-Setting Tile Mortar with Polymer, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultralite_mortar_premium_lightweight_mortar_with_polymer": "=== MAPEI - Ultralite Mortar Premium Lightweight Mortar with Polymer ===",
+    "1462500021": {
+      "api_sku": "94146-25",
+      "prosol_sku": "94146-25",
+      "product": "Mapei Ultralite Mortar Premium Lightweight Mortar with Polymer",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultralite_mortar_pro_lightweight_mortar_with_polymer_gray": "=== MAPEI - Ultralite Mortar Pro Lightweight Mortar with Polymer, Gray ===",
+    "1562521": {
+      "api_sku": "94156-25",
+      "prosol_sku": "94156-25",
+      "product": "Mapei Ultralite Mortar Pro Lightweight Mortar with Polymer, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultralite_mortar_pro_lightweight_mortar_with_polymer_white": "=== MAPEI - Ultralite Mortar Pro Lightweight Mortar with Polymer, White ===",
+    "1662521": {
+      "api_sku": "94166-25",
+      "prosol_sku": "94166-25",
+      "product": "Mapei Ultralite Mortar Pro Lightweight Mortar with Polymer, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultralite_s2_highly_deformable_lightweight_mortar_with_polym": "=== MAPEI - Ultralite S2 Highly Deformable Lightweight Mortar with Polymer, White ===",
+    "1201511C": {
+      "api_sku": "94120-15",
+      "prosol_sku": "94120-15",
+      "product": "Mapei Ultralite S2 Highly Deformable Lightweight Mortar with Polymer, Gray",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "1201611C": {
+      "api_sku": "94120-16",
+      "prosol_sku": "94120-16",
+      "product": "Mapei Ultralite S2 Highly Deformable Lightweight Mortar with Polymer, White",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultramastic_eco_high_performance_floor_wall_tile_adhesive": "=== MAPEI - Ultramastic ECO High-Performance Floor & Wall Tile Adhesive ===",
+    "90753000": {
+      "api_sku": "94907-53",
+      "prosol_sku": "94907-53",
+      "product": "Mapei Ultramastic ECO High-Performance Floor & Wall Tile Adhesive (3.79 l)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "90763000": {
+      "api_sku": "94907-63",
+      "prosol_sku": "94907-63",
+      "product": "Mapei Ultramastic ECO High-Performance Floor & Wall Tile Adhesive (13.2 l)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "90791000": {
+      "api_sku": "94907-91",
+      "prosol_sku": "94907-91",
+      "product": "Mapei Ultramastic ECO High-Performance Floor & Wall Tile Adhesive (946 ml)",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraplan_1_plus_high_performance_quick_setting_self_levelin": "=== MAPEI - Ultraplan 1 Plus High-Performance Quick-Setting Self-Leveling Underlayment ===",
+    "17350000": {
+      "api_sku": "94173-50",
+      "prosol_sku": "94173-50",
+      "product": "Mapei Ultraplan 1 Plus High-Performance Quick-Setting Self-Leveling Underlayment",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraplan_lite_lightweight_self_leveling_underlayment": "=== MAPEI - Ultraplan Lite Lightweight Self-Leveling Underlayment ===",
+    "7492911": {
+      "api_sku": "94329-25",
+      "prosol_sku": "94329-25",
+      "product": "Mapei Ultraplan Lite Lightweight Self-Leveling Underlayment",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_ultraplan_m20_plus_quick_setting_self_leveling_underlayment": "=== MAPEI - Ultraplan M20 Plus Quick-Setting Self-Leveling Underlayment ===",
+    "19250000": {
+      "api_sku": "94192-50",
+      "prosol_sku": "94192-50",
+      "product": "Mapei Ultraplan M20 Plus Quick-Setting Self-Leveling Underlayment",
+      "brand": "mapei",
+      "category": "Tile Mortar / Thinset",
       "verified": true,
       "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
     },
