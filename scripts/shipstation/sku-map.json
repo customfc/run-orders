@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU \u2192 Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-04-30T14:35:00.000Z",
+  "_updated": "2026-05-19T16:00:00.000Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -266,7 +266,7 @@
       "verified": true,
       "brand": "schluter",
       "schluter_item": "KD-STR",
-      "note": "Mirror of KD-STR keyed by SF item number (what Sechelt uses manually). Added 2026-04-22. prosol_sku must be 'KD-STR' with dash — 'KDSTR' returns null in Prosol catalog (verified 2026-05-05)."
+      "note": "Mirror of KD-STR keyed by SF item number (what Sechelt uses manually). Added 2026-04-22. prosol_sku must be 'KD-STR' with dash \u2014 'KDSTR' returns null in Prosol catalog (verified 2026-05-05)."
     },
     "_section_aqua_mix_poultice": "=== AQUA MIX - POULTICE STAIN REMOVER ===",
     "B000CD1L58": {
@@ -992,7 +992,7 @@
       "prosol_sku": "KL1V60E60",
       "product": "Schluter KERDI-LINE Center Outlet Channel Body 24\" (23-5/8\") - KL1V60E60",
       "package_shape": "solo",
-      "note": "Channel body. Verified stocked at 16+ Prosol BC locations on 2026-05-09 (BURN 16, COQL 8, RICH 9, SURR 15, etc.). Previously mismapped to KL1DRE60 (frameless grate, different product) — caused $400 customer refund on order 702-5873933-2397030 (2026-04-29). Original mapper's claim that KL1V60E60 was not stocked was wrong; the snapshot only contained SKUs the map already referenced, so KL1V60E60 never showed up in stock data because it wasn't yet mapped. Title-vs-map guardrail in run-orders.js now catches this class of bug.",
+      "note": "Channel body. Verified stocked at 16+ Prosol BC locations on 2026-05-09 (BURN 16, COQL 8, RICH 9, SURR 15, etc.). Previously mismapped to KL1DRE60 (frameless grate, different product) \u2014 caused $400 customer refund on order 702-5873933-2397030 (2026-04-29). Original mapper's claim that KL1V60E60 was not stocked was wrong; the snapshot only contained SKUs the map already referenced, so KL1V60E60 never showed up in stock data because it wasn't yet mapped. Title-vs-map guardrail in run-orders.js now catches this class of bug.",
       "verified": true,
       "brand": "schluter",
       "schluter_item": "KL1V60E60",
@@ -1010,7 +1010,7 @@
       "verified": true,
       "brand": "schluter",
       "schluter_item": "KL1V60E50",
-      "cost_cad": 105.30,
+      "cost_cad": 105.3,
       "cost_source": "prosol-portal-2026-05-11"
     },
     "B07PLLDCP6": {
@@ -1292,7 +1292,7 @@
       "prosol_sku": "CPBPG1110N",
       "product": "Polyblend Plus NS Grout #11 Snow White 10lb",
       "verified": true,
-      "note": "No Amazon ASIN exists for Snow White — used for customer-service replacements where the buyer ordered a different white (Arctic/Bright/etc) but wanted Snow White."
+      "note": "No Amazon ASIN exists for Snow White \u2014 used for customer-service replacements where the buyer ordered a different white (Arctic/Bright/etc) but wanted Snow White."
     },
     "_section_custom_flooring_centres": "=== CUSTOM FLOORING CENTRES ===",
     "B08X225YBK": {
@@ -1387,6 +1387,349 @@
     "_section_armstrong": "=== ARMSTRONG ===",
     "_section_mbp": "=== MBP PRIMER ===",
     "_section_mapei": "=== MAPEI ===",
+    "_section_mapei_grout_refresh": "=== MAPEI - ULTRACARE GROUT REFRESH (237 ml, 38 colors) ===",
+    "5LA000052": {
+      "api_sku": "943850021",
+      "prosol_sku": "943850021",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Eggshell (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA000152": {
+      "api_sku": "943850121",
+      "prosol_sku": "943850121",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Alabaster (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA000252": {
+      "api_sku": "943850221",
+      "prosol_sku": "943850221",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Pewter (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA000452": {
+      "api_sku": "943850421",
+      "prosol_sku": "943850421",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Bahama Beige (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA000552": {
+      "api_sku": "943850521",
+      "prosol_sku": "943850521",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Chamois (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA000652": {
+      "api_sku": "943850621",
+      "prosol_sku": "943850621",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Harvest (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA000752": {
+      "api_sku": "943850721",
+      "prosol_sku": "943850721",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Chocolate (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA000952": {
+      "api_sku": "943850921",
+      "prosol_sku": "943850921",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Gray (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA001052": {
+      "api_sku": "943851021",
+      "prosol_sku": "943851021",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Black (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA001152": {
+      "api_sku": "943851121",
+      "prosol_sku": "943851121",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Sahara Beige (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA001452": {
+      "api_sku": "943851421",
+      "prosol_sku": "943851421",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Biscuit (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA001552": {
+      "api_sku": "943851521",
+      "prosol_sku": "943851521",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Bone (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA001952": {
+      "api_sku": "943851921",
+      "prosol_sku": "943851921",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Pearl Gray (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA002752": {
+      "api_sku": "943852721",
+      "prosol_sku": "943852721",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Silver (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA003852": {
+      "api_sku": "943853821",
+      "prosol_sku": "943853821",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Avalanche (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA003952": {
+      "api_sku": "943853921",
+      "prosol_sku": "943853921",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Ivory (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA004252": {
+      "api_sku": "943854221",
+      "prosol_sku": "943854221",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Mocha (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA004752": {
+      "api_sku": "943854721",
+      "prosol_sku": "943854721",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Charcoal (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA004952": {
+      "api_sku": "943854921",
+      "prosol_sku": "943854921",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Light Almond (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA007752": {
+      "api_sku": "943857721",
+      "prosol_sku": "943857721",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Frost (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA007952": {
+      "api_sku": "943857921",
+      "prosol_sku": "943857921",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Cocoa (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA009352": {
+      "api_sku": "943859321",
+      "prosol_sku": "943859321",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Warm Gray (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA010152": {
+      "api_sku": "9438510121",
+      "prosol_sku": "9438510121",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Rain (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA010352": {
+      "api_sku": "9438510321",
+      "prosol_sku": "9438510321",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Cobblestone (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA010452": {
+      "api_sku": "9438510421",
+      "prosol_sku": "9438510421",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Timberwolf (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA010552": {
+      "api_sku": "9438510521",
+      "prosol_sku": "9438510521",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Driftwood (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA010752": {
+      "api_sku": "9438510721",
+      "prosol_sku": "9438510721",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Iron (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA011752": {
+      "api_sku": "9438511721",
+      "prosol_sku": "9438511721",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Pure White (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA011852": {
+      "api_sku": "9438511821",
+      "prosol_sku": "9438511821",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Jet Black (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA522133": {
+      "api_sku": "94385522121",
+      "prosol_sku": "94385522121",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Moonbeam (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA522233": {
+      "api_sku": "94385522221",
+      "prosol_sku": "94385522221",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Honey Butter (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA522333": {
+      "api_sku": "94385522321",
+      "prosol_sku": "94385522321",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Oatmeal (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA522633": {
+      "api_sku": "94385522621",
+      "prosol_sku": "94385522621",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Nutmeg (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA522733": {
+      "api_sku": "94385522721",
+      "prosol_sku": "94385522721",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Castle Wall (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA522833": {
+      "api_sku": "94385522821",
+      "prosol_sku": "94385522821",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Cavern Moss (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA522933": {
+      "api_sku": "94385522921",
+      "prosol_sku": "94385522921",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Sea Salt (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA523133": {
+      "api_sku": "94385523121",
+      "prosol_sku": "94385523121",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Deep Ocean (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "5LA523233": {
+      "api_sku": "94385523221",
+      "prosol_sku": "94385523221",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Night Sky (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
     "_section_skip": "=== SKIP - NOT REAL PRODUCTS ===",
     "UNKNOWN": "SKIP",
     "WELCOME10": "SKIP",
@@ -1455,7 +1798,7 @@
       "source": "shopify-manual",
       "brand": "schluter",
       "schluter_item": "KD-STR",
-      "note": "Shopify sends sku='KD-STR'. Prosol catalog SKU is 'KD-STR' with dash (productId 10256, 27 locations) — verified 2026-05-05 that 'KDSTR' (no dash) returns null. SF PBSI Item Name='13572'. api_sku is the SF Name (createShopifySoPo's findItemBySku); prosol_sku is the Prosol catalog SKU (run-orders inventory check)."
+      "note": "Shopify sends sku='KD-STR'. Prosol catalog SKU is 'KD-STR' with dash (productId 10256, 27 locations) \u2014 verified 2026-05-05 that 'KDSTR' (no dash) returns null. SF PBSI Item Name='13572'. api_sku is the SF Name (createShopifySoPo's findItemBySku); prosol_sku is the Prosol catalog SKU (run-orders inventory check)."
     },
     "KBZS55G": {
       "api_sku": "KBZS55G",
@@ -1466,7 +1809,7 @@
       "source": "shopify-manual",
       "brand": "schluter",
       "schluter_item": "KBZS55G",
-      "note": "Shopify sends sku='KBZS55G'. Prosol catalog SKU = 'KBZS55G' (productId 16507) — verified 2026-05-05. Sister SKUs: KBZS35G (1-5/8\"), KBZS75G (3\")."
+      "note": "Shopify sends sku='KBZS55G'. Prosol catalog SKU = 'KBZS55G' (productId 16507) \u2014 verified 2026-05-05. Sister SKUs: KBZS35G (1-5/8\"), KBZS75G (3\")."
     },
     "B07PV4JQ13": {
       "api_sku": "KD2FLKPVC",
