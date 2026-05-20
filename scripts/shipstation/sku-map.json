@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU \u2192 Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-05-20T13:00:00.000Z",
+  "_updated": "2026-05-20T14:00:00.000Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -999,7 +999,9 @@
       "map_cad": 380.02,
       "retail_cad": 422.24,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B07PJM3YPB": {
       "api_sku": "KL1V60E50",
@@ -1011,7 +1013,9 @@
       "brand": "schluter",
       "schluter_item": "KL1V60E50",
       "cost_cad": 105.3,
-      "cost_source": "prosol-portal-2026-05-11"
+      "cost_source": "prosol-portal-2026-05-11",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B07PLLDCP6": {
       "api_sku": "KL1DRE90",
@@ -7136,7 +7140,9 @@
       "map_cad": 435.26,
       "retail_cad": 483.62,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B07H4YSH3Y": {
       "api_sku": "KBKIT",
@@ -7215,7 +7221,9 @@
       "map_cad": 416.76,
       "retail_cad": 463.07,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B07PZFB3ZW": {
       "api_sku": "SNS1D6EB",
@@ -7342,7 +7350,9 @@
       "map_cad": 412.79,
       "retail_cad": 458.65,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B00BUAXH6S": {
       "api_sku": "KD2/ABS/E",
@@ -7515,7 +7525,9 @@
       "map_cad": 478.01,
       "retail_cad": 531.12,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B07PGBSNLV": {
       "api_sku": "KL1DRE60",
@@ -7835,7 +7847,9 @@
       "map_cad": 441.23,
       "retail_cad": 490.25,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B082QTBTT7": {
       "api_sku": "SES1D5MGS",
@@ -7881,7 +7895,9 @@
       "map_cad": 447.4,
       "retail_cad": 497.11,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B006XXK8NM": {
       "api_sku": "KD2/ABS/FL",
@@ -7927,7 +7943,9 @@
       "map_cad": 417.83,
       "retail_cad": 464.26,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B07PLNJ5B7": {
       "api_sku": "KL1V60E110",
@@ -7943,7 +7961,9 @@
       "map_cad": 456.74,
       "retail_cad": 507.49,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B07Q1K92VZ": {
       "api_sku": "KDIF4GRKEBD8",
@@ -7989,7 +8009,9 @@
       "map_cad": 608.2,
       "retail_cad": 675.78,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B082QR3Q3S": {
       "api_sku": "SES1D6MGS",
@@ -8223,7 +8245,9 @@
       "map_cad": 421.88,
       "retail_cad": 468.76,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B082QQHQ76": {
       "api_sku": "SES3D5MGS",
@@ -8350,7 +8374,9 @@
       "map_cad": 593.97,
       "retail_cad": 659.97,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "max_per_pkg": 2,
+      "max_pkg_weight_lb": 50
     },
     "B079G7NFRQ": {
       "api_sku": "KD2/ABS/FL",
