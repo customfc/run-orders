@@ -53,6 +53,15 @@ function formatPostal(p) {
   return (p || '').replace(/\s/g, '').toUpperCase();
 }
 
+// CP's PhoneType XSD rejects "+17783275865" — needs hyphenated NNN-NNN-NNNN.
+// Backfilling the location map with E.164 phones (commit 2bbe82d, 2026-05-06)
+// silently broke every CP cron pickup. Normalize here.
+function formatPhone(raw) {
+  const d = String(raw || '').replace(/\D/g, '').slice(-10);
+  if (d.length !== 10) return null;
+  return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
 function cpRequest(method, urlPath, body = null) {
   return new Promise((resolve, reject) => {
     const opts = {
@@ -87,7 +96,8 @@ function buildXml(loc, date, boxes, preferred, closing) {
   const province = loc.province || 'QC';
   const city = loc.city;
   const company = `Prosol ${city}`;
-  const phone = (Array.isArray(loc.contact_phone) ? loc.contact_phone[0] : loc.contact_phone) || '514-745-1212';
+  const rawPhone = Array.isArray(loc.contact_phone) ? loc.contact_phone[0] : loc.contact_phone;
+  const phone = formatPhone(rawPhone) || '514-745-1212';
   const contactName = `Prosol ${city}`;
   const volumeStr = `${boxes} BOX`;
 
