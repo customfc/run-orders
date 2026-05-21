@@ -159,7 +159,7 @@ function normalizeProvince(raw) {
     'NEW BRUNSWICK': 'NB', NB: 'NB',
     'NOVA SCOTIA': 'NS', NS: 'NS',
     'PRINCE EDWARD ISLAND': 'PE', PE: 'PE',
-    'NEWFOUNDLAND AND LABRADOR': 'NL', NL: 'NL',
+    'NEWFOUNDLAND AND LABRADOR': 'NL', 'NEWFOUNDLAND': 'NL', NL: 'NL',
     'YUKON': 'YT', YT: 'YT',
     'NORTHWEST TERRITORIES': 'NT', NT: 'NT',
     'NUNAVUT': 'NU', NU: 'NU',
