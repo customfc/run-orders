@@ -348,6 +348,13 @@
       "product": "Aqua Mix - Grout Sealer Penetrating 946ml (Quart)",
       "verified": true
     },
+    "4653": {
+      "api_sku": "C020372-4",
+      "prosol_sku": "C020372-01",
+      "product": "Aqua Mix - Penetrating Sealer 946ml (Quart)",
+      "note": "Shopify SKU. UPC 18704213724 (Prosol-verified). Same physical product as ASIN B000GFPNF6 — Aqua Mix lists this as 'Grout Sealer Penetrating' on Prosol's side; yourfloors labels it 'Penetrating Sealer'.",
+      "verified": true
+    },
     "_section_aqua_mix_heavy_duty": "=== AQUA MIX - HEAVY DUTY TILE & GROUT CLEANER ===",
     "B000CCOHCS": {
       "api_sku": "C010382-4",
