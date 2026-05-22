@@ -91,7 +91,11 @@ function effectiveRegionForOrder(province, postalCode) {
   return province;
 }
 
-const PO_BOX_RE = /\b(?:p\.?\s*o\.?\s*box|post\s+office\s+box)\b/i;
+// CP-hint regex: forces canada_post_walleted carrier when the address signals
+// a postal-only delivery point. Original was PO Box only; extended 2026-05-22
+// after order #1259 was misrouted to Purolator with "Canada Post box number"
+// in address2 (customer ended up chasing the package at a Purolator depot).
+const CP_HINT_RE = /\b(?:p\.?\s*o\.?\s*box|post\s+office\s+box|canada\s+post|postal\s+(?:box|outlet)|rpo|bo[iî]te\s+postale)\b/i;
 
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
@@ -543,16 +547,16 @@ async function getRates(order, fromPostalCode) {
   }
 
   const street = `${order.shipTo?.street1 || ''} ${order.shipTo?.street2 || ''}`.trim();
-  const isPoBox = PO_BOX_RE.test(street);
+  const cpHint = CP_HINT_RE.test(street);
   const [ups, purolator, canadaPost] = await Promise.all([
     one('ups_walleted'),
     one('purolator_walleted'),
     one('canada_post_walleted'),
   ]);
 
-  if (isPoBox) {
-    if (!canadaPost) throw new Error('PO Box order but Canada Post returned no rate');
-    return { winner: canadaPost, note: 'PO Box → Canada Post forced', compared: { ups, purolator, canadaPost } };
+  if (cpHint) {
+    if (!canadaPost) throw new Error('CP-hint address but Canada Post returned no rate');
+    return { winner: canadaPost, note: 'CP-hint in address → Canada Post forced', compared: { ups, purolator, canadaPost } };
   }
 
   if (!ups && !purolator) throw new Error('No UPS or Purolator rate returned');
