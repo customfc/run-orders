@@ -200,10 +200,18 @@ function isAmazonOrder(order) {
   return order.advancedOptions?.source === 'amazon_ca';
 }
 
+// yourfloors.ca ShipStation store id. Any order with this storeId is a Shopify
+// order regardless of `advancedOptions.source` value.
+const YOURFLOORS_STORE_ID = 798860;
+
 function isShopifyOrder(order) {
-  // Shopify orders come in as source='web'. Store the specific storeId too
-  // so we can distinguish from any other web-sourced store if that ever matters.
-  return order.advancedOptions?.source === 'web';
+  // ShipStation stamps `advancedOptions.source` with the Shopify channel id:
+  // "web" for the main storefront, but a numeric channel id for other channels
+  // (mobile apps, draft orders, custom integrations). Match by storeId too —
+  // fixed 2026-05-22 after yourfloors #1264 (source="3890849") sat in
+  // awaiting_shipment for 2 days because the "web"-only check filtered it out.
+  return order.advancedOptions?.source === 'web'
+    || order.advancedOptions?.storeId === YOURFLOORS_STORE_ID;
 }
 
 function orderSource(order) {
