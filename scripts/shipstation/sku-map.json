@@ -1116,6 +1116,16 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
     },
+    "PRMPS1": {
+      "api_sku": "PRMPS1",
+      "prosol_sku": "PRMPS1",
+      "product": "Schluter PRIMER-PS Peel & Stick Membrane Primer 3.78L (1 Gallon)",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "PRMPS1",
+      "note": "Shopify SKU. Prosol-verified UPC 4011832202810. The 1-gallon companion to PRMPSQT1 (946ml).",
+      "barcode": "4011832202810"
+    },
     "_section_plm": "=== PERFECT LEVEL MASTER ===",
     "B00X6V9EQQ": {
       "api_sku": "NON_PROSOL",
@@ -1186,6 +1196,13 @@
       "prosol_sku": "CPBPG6010N",
       "product": "Polyblend Plus NS Grout #60 Charcoal 10lb",
       "verified": true
+    },
+    "11657": {
+      "api_sku": "CPBPG54210N",
+      "prosol_sku": "CPBPG54210N",
+      "product": "Polyblend Plus NS Grout #542 Graystone 10lb",
+      "verified": true,
+      "note": "Shopify SKU. yourfloors lists as 'Greystone' but Mapei/CBP officially spells it 'Graystone' — same #542 product. Prosol-verified."
     },
     "B097FWPGV6": {
       "api_sku": "CPBPG18310N",
@@ -1668,6 +1685,15 @@
       "category": "Grout / Sealant",
       "verified": true,
       "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "B0CS3W22YC": {
+      "api_sku": "5LA522133",
+      "prosol_sku": "94385522121",
+      "product": "Mapei UltraCare Grout Refresh \u2014 Moonbeam (236 ml / 8 oz)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "note": "Amazon ASIN. Same physical product as mfg_sku 5LA522133 (Moonbeam color #5221). Listing marketing says 'Stain & Sealer'; Prosol catalog labels it 'Colorant & Sealer'."
     },
     "5LA522233": {
       "api_sku": "5LA522233",
@@ -4320,6 +4346,15 @@
       "category": "Grout / Sealant",
       "verified": true,
       "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "B0B8LJMNF3": {
+      "api_sku": "3BU010191",
+      "prosol_sku": "3BU010191",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 #101 Rain (10.1 oz)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "note": "Amazon ASIN. Same physical product as mfg_sku 3BU010191 (color #101 = Rain). Prosol-verified."
     },
     "3BU010391": {
       "api_sku": "3BU010391",
