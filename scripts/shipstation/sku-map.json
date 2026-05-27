@@ -4006,6 +4006,16 @@
       "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
     },
     "_section_mapei_mapeguard_2_crack_isolation_waterproofing_and_sound_reductio": "=== MAPEI - Mapeguard 2 Crack Isolation, Waterproofing and Sound Reduction Membrane 39-3/8\" x 68-5/8' - 1 mm (225 sqft) ===",
+    "B0D45X4H6J": {
+      "api_sku": "04051",
+      "prosol_sku": "94040-51",
+      "product": "Mapei Mapeguard 2 Crack Isolation, Waterproofing and Sound Reduction Membrane 39-3/8\" x 68-5/8' - 1 mm (225 sqft)",
+      "brand": "mapei",
+      "category": "Membrane / Underlayment",
+      "package_shape": "solo",
+      "verified": true,
+      "source": "asin-link 2026-05-27 (order 702-9583781-7490643); api_sku 04051 confirmed via live Prosol API"
+    },
     "04051": {
       "api_sku": "04051",
       "prosol_sku": "94040-51",
