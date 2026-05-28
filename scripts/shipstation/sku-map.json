@@ -628,6 +628,14 @@
       "verified": false,
       "needs_order_lookup": true
     },
+    "B00JU7JUSC": {
+      "api_sku": "DHEHK240167",
+      "prosol_sku": "DHEHK240167",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 166.7 sqft",
+      "package_shape": "cable_kit",
+      "verified": true,
+      "source": "asin-link 2026-05-28 (order 702-7574713-5192224); third ASIN for DHEHK240167 (existing: B01N5TJEGJ, B071YVTQ5X); confirmed via live Prosol API id=14022"
+    },
     "B01N5TJEGJ": {
       "api_sku": "DHEHK240167",
       "prosol_sku": "DHEHK240167",
