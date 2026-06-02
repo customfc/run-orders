@@ -1864,12 +1864,12 @@
     "_section_mapei_eco_373_psa_pressure_sensitive_adhesive": "=== MAPEI - ECO 373 PSA (Pressure Sensitive Adhesive) ===",
     "00438": {
       "api_sku": "ECO373-01",
-      "prosol_sku": "ECO373-01",
-      "product": "Mapei ECO 373 Pressure Sensitive Adhesive — 1 Quart",
+      "prosol_sku": "1942301",
+      "product": "Mapei Ultrabond ECO 373 Universal Pressure-Sensitive Multi-Flooring Adhesive — 946 mL (1 qt)",
       "brand": "mapei",
-      "category": "Other",
+      "category": "Adhesive",
       "verified": true,
-      "source": "Shopify SKU 00438 (SF item 00438) → Prosol ECO373-01 (added 2026-06-02, order 1277)"
+      "source": "Shopify SKU 00438 (SF item 00438, mfg ECO373-01); Prosol order code 1942301 (946 mL = 1 qt) found via Prosol product search (added 2026-06-02, order 1277)"
     },
     "_section_mapei_eco307_adhesive_resilient_fl_15lt": "=== MAPEI - Eco307 Adhesive Resilient Fl. 15lt ===",
     "0745615": {
