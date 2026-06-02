@@ -271,6 +271,86 @@ function titleSkuMismatchReason(itemName, mappedSku) {
   return `title says "${extracted}" but sku-map points to "${mappedSku}"`;
 }
 
+// ── Prosol SUGGEST-only candidate search ─────────────────────────────────────
+// When staging can't resolve a SKU, search Prosol's catalog by the product
+// title and surface the top matches (api_sku + prosol_sku + name-with-size +
+// stock) in the manualReview alert, so a human resolves the sku-map entry in
+// one tap instead of logging into Prosol. This NEVER writes the sku-map and
+// NEVER feeds the buy/PO path — the human always picks, so a wrong size/variant
+// candidate can never become a wrong PO. Size is not a structured field on the
+// storefront endpoint (it lives in the product name tail, e.g. "... - 946 mL"),
+// so we surface the full name and tell the human to confirm size against title.
+const SUGGEST_MAX_CANDIDATES = 5;
+
+function prosolProductName(p) {
+  return typeof p.name === 'object' ? (p.name?.en || p.name?.fr || '') : (p.name || '');
+}
+
+// Trailing SKU in the title is ground truth (often a direct hit); else a
+// CLEANED title — the raw Amazon title (parentheticals, sizes, marketing words)
+// produces poor fuzzy results, so strip size/unit tokens + parentheticals and
+// cap to the first few significant words (brand + product line + variant).
+// Never search the seller SKU (ASIN/Shopify id) — it isn't in Prosol's catalog.
+const SUGGEST_SIZE_TOKEN_RE = /\b\d+(?:\.\d+)?\s?(?:ml|mL|l|litre|liter|oz|fl\s?oz|qt|quart|gal|gallon|lb|lbs|kg|g|mm|cm|sq\s?ft|sqft|ft|in|")\b/gi;
+function buildSuggestQuery({ name, sku } = {}) {
+  const trailing = extractTrailingSku(name);
+  if (trailing) return trailing;
+  let q = String(name || '').trim();
+  if (q) {
+    q = q.replace(/\([^)]*\)/g, ' ')          // drop parentheticals
+         .replace(SUGGEST_SIZE_TOKEN_RE, ' ') // drop size/unit tokens
+         .replace(/[®™]/g, ' ')
+         .replace(/\s*[-–]\s*/g, ' ')         // separators → space
+         .replace(/\s+/g, ' ').trim();
+    const words = q.split(' ').filter(Boolean).slice(0, 6); // brand + line + variant
+    if (words.length) return words.join(' ');
+  }
+  return sku && sku !== 'UNKNOWN' ? sku : null;
+}
+
+// One Prosol search → up to N candidate lines. Returns [] on any miss/garbage.
+// Caller spaces calls (shared Prosol account). Ranks SKU/name token hits to the
+// top but NEVER collapses to one — the human decides.
+async function suggestProsolCandidates(client, query) {
+  if (!query) return [];
+  const res = await client.apiGet(`/api/storefront/products?search=${encodeURIComponent(query)}&limit=20`);
+  if (!res || res.status !== 200) return [];
+  let products;
+  try { const d = JSON.parse(res.body); products = d.data || d; } catch { return []; }
+  if (!Array.isArray(products) || !products.length) return [];
+  const seen = new Set();
+  const qNorm = normalizeSkuForCompare(query);
+  // Rank by query-word overlap with the candidate name (so the model number,
+  // variant/color word, etc. float the right product to the top), with a strong
+  // bonus for an exact SKU token hit. Convenience only — never collapses to one.
+  const qWords = String(query).toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+  const scored = products
+    .filter((p) => { if (seen.has(p.id)) return false; seen.add(p.id); return true; }) // de-dupe EN/FR by id
+    .map((p) => {
+      const name = prosolProductName(p);
+      const lname = name.toLowerCase();
+      const overlap = qWords.reduce((n, w) => n + (lname.includes(w) ? 1 : 0), 0);
+      const skuHit = qNorm && (normalizeSkuForCompare(p.sku).includes(qNorm)
+        || normalizeSkuForCompare(p.prosol_sku).includes(qNorm)
+        || normalizeSkuForCompare(name).includes(qNorm));
+      return { p, name, score: (skuHit ? 100 : 0) + overlap };
+    })
+    .sort((a, b) => b.score - a.score);
+  return scored.slice(0, SUGGEST_MAX_CANDIDATES).map(({ p, name }) => ({
+    apiSku: p.sku || null,
+    prosolSku: p.prosol_sku || null,
+    name,
+    stock: p.stock_status || 'unknown',
+  }));
+}
+
+function renderSuggestLines(query, candidates) {
+  if (!candidates.length) return `\n\nProsol search ("${query}"): no candidates — map manually.`;
+  const lines = candidates.map((c, i) =>
+    `  ${i + 1}. ${c.name || '(no name)'}\n     api_sku=${c.apiSku || '?'}  prosol_sku=${c.prosolSku || '?'}  [${c.stock}]`);
+  return `\n\nProsol candidates for "${query}" (confirm SIZE/variant against the title before adding to sku-map):\n${lines.join('\n')}`;
+}
+
 // Pull a Schluter cable SKU straight out of the item name — Amazon titles
 // reliably end with the model number (e.g. "…120V, 35.3 Feet - DHEHK12011").
 // This is more reliable than sqft parsing since Amazon frequently prints
@@ -299,6 +379,11 @@ function resolveOrderItems(order) {
   const resolved = [];
   const fixedWarehouseItems = [];
   const failures = [];
+  // Structured subset of `failures`, for the Prosol suggest-step: only the
+  // SKU-bearing cases where a Prosol catalog search by title can surface the
+  // correct SKU. Each { sku, name } feeds buildSuggestQuery. Province/routing/
+  // mixed/HALT/bundle/cable failures are intentionally NOT collected here.
+  const failureItems = [];
   for (const item of (order.items || [])) {
     const sku = item.sku || 'UNKNOWN';
     const mapped = resolveMappedEntry(sku);
@@ -315,6 +400,7 @@ function resolveOrderItems(order) {
         continue;
       }
       failures.push(`No sku-map entry for ${sku} (${item.name || 'unnamed item'})`);
+      failureItems.push({ sku, name: item.name || null });
       continue;
     }
 
@@ -342,6 +428,7 @@ function resolveOrderItems(order) {
 
     if (mapped.api_sku === 'UNMAPPED' || mapped.api_sku === 'UNMAPPED_GROUT') {
       failures.push(`Manual lookup required for ${sku} (${mapped.product || item.name || sku})`);
+      failureItems.push({ sku, name: mapped.product || item.name || null });
       continue;
     }
 
@@ -398,12 +485,13 @@ function resolveOrderItems(order) {
     const mismatch = titleSkuMismatchReason(item.name, finalSku);
     if (mismatch) {
       failures.push(`${sku} title-vs-map mismatch: ${mismatch}`);
+      failureItems.push({ sku, name: item.name || null });
       continue;
     }
 
     resolved.push({ ...base, kind: 'prosol', apiSku: mapped.api_sku, prosolSku: mapped.prosol_sku || mapped.api_sku, label: mapped.product || item.name || sku });
   }
-  return { resolved, fixedWarehouseItems, failures };
+  return { resolved, fixedWarehouseItems, failures, failureItems };
 }
 
 // Province centroids for distance-based fallback sorting
@@ -694,9 +782,9 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
       continue;
     }
 
-    const { resolved, fixedWarehouseItems, failures } = resolveOrderItems(order);
+    const { resolved, fixedWarehouseItems, failures, failureItems } = resolveOrderItems(order);
     if (failures.length) {
-      rejected.push({ orderNumber: order.orderNumber, reason: failures.join('; ') });
+      rejected.push({ orderNumber: order.orderNumber, reason: failures.join('; '), _suggestInputs: failureItems });
       continue;
     }
     const fixedWarehouseIds = [...new Set(fixedWarehouseItems.map((item) => item.warehouseId))];
@@ -878,6 +966,35 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
 
     assignments.sort((a, b) => String(a.orderNumber).localeCompare(String(b.orderNumber)));
 
+    // ── SUGGEST-only: enrich SKU-bearing rejections with Prosol candidates ──
+    // Best-effort, reuses the already-authenticated `client` (still open here;
+    // closed in finally). Sequential with 5s spacing (shared Prosol account —
+    // protect it). Every failure is swallowed so the original rejection reason
+    // ships unchanged; staging/buying of good orders is never affected. Writes
+    // nothing and never feeds the buy/PO path.
+    try {
+      for (const row of rejected) {
+        if (!Array.isArray(row._suggestInputs) || !row._suggestInputs.length) continue;
+        const seenQueries = new Set();
+        for (const fi of row._suggestInputs) {
+          try {
+            const query = buildSuggestQuery(fi);
+            if (!query || seenQueries.has(query)) continue;
+            seenQueries.add(query);
+            onProgress({ type: 'status', message: `Prosol suggest search: ${query}` });
+            const candidates = await suggestProsolCandidates(client, query);
+            row.reason += renderSuggestLines(query, candidates);
+            await sleep(5000);
+          } catch (e) {
+            console.error(`[suggest] ${row.orderNumber} (${fi && fi.sku}): ${e.message}`);
+          }
+        }
+        delete row._suggestInputs;
+      }
+    } catch (e) {
+      console.error(`[suggest] pass failed, shipping original reasons: ${e.message}`);
+    }
+
     return {
       dryRun,
       summary: {
@@ -931,4 +1048,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource };
+module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines };
