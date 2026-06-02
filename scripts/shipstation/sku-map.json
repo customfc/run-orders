@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU \u2192 Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-05-20T14:00:00.000Z",
+  "_updated": "2026-06-02T00:00:00.000Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -789,18 +789,17 @@
     },
     "_section_schluter_ditra_heat_ps": "=== SCHLUTER - DITRA-HEAT-PS (PEEL & STICK) ===",
     "B0BN6Y63P6": {
-      "api_sku": "DHPS5MA",
-      "prosol_sku": "DHPS5MA",
-      "product": "Schluter DITRA-HEAT-PS Peel & Stick Membrane Sheet 8.4 sqft",
-      "package_shape": "heat_sheet",
-      "max_pkg_weight_lb": 50,
+      "api_sku": "DHPS512M",
+      "prosol_sku": "DHPS512M",
+      "product": "Schluter DITRA-HEAT-PS Peel & Stick Uncoupling Membrane 134.5 sqft Roll",
+      "package_shape": "solo",
       "verified": true,
+      "note": "Fixed 2026-06-02 — was incorrectly mapped to DHPS5MA (8.4 sqft PS sheet). DHPS512M is the 134.5 sqft peel-and-stick roll; the title-vs-map halt caught it (order 702-5737731). Prices from Prosol portal; Schluter MAP TBD.",
       "brand": "schluter",
-      "schluter_item": "DHPS5MA",
-      "map_cad": 33.37,
-      "retail_cad": 37.08,
-      "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "schluter_item": "DHPS512M",
+      "retail_cad": 572.86,
+      "prosol_cost_cad": 326.54,
+      "map_source": "prosol-portal-2026-06-02"
     },
     "_section_schluter_ditra_heat_membrane": "=== SCHLUTER - DITRA-HEAT MEMBRANE ===",
     "B018A2XNC6": {
@@ -1425,6 +1424,15 @@
     "_section_mbp": "=== MBP PRIMER ===",
     "_section_mapei": "=== MAPEI ===",
     "_section_mapei_grout_refresh": "=== MAPEI - ULTRACARE GROUT REFRESH (237 ml, 38 colors) ===",
+    "B0CS3VK9M8": {
+      "api_sku": "5LA522233",
+      "prosol_sku": "94385522221",
+      "product": "Mapei UltraCare Grout Refresh — Honey Butter (237 ml)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "Amazon ASIN alias; title Honey Butter → Grout Refresh 5LA522233 / prosol 94385522221 (added 2026-06-02, order 702-4021363)"
+    },
     "5LA000052": {
       "api_sku": "5LA000052",
       "prosol_sku": "943850021",
@@ -1852,6 +1860,16 @@
       "category": "Primer",
       "verified": true,
       "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+    },
+    "_section_mapei_eco_373_psa_pressure_sensitive_adhesive": "=== MAPEI - ECO 373 PSA (Pressure Sensitive Adhesive) ===",
+    "00438": {
+      "api_sku": "ECO373-01",
+      "prosol_sku": "ECO373-01",
+      "product": "Mapei ECO 373 Pressure Sensitive Adhesive — 1 Quart",
+      "brand": "mapei",
+      "category": "Other",
+      "verified": true,
+      "source": "Shopify SKU 00438 (SF item 00438) → Prosol ECO373-01 (added 2026-06-02, order 1277)"
     },
     "_section_mapei_eco307_adhesive_resilient_fl_15lt": "=== MAPEI - Eco307 Adhesive Resilient Fl. 15lt ===",
     "0745615": {
@@ -4141,6 +4159,24 @@
       "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
     },
     "_section_mapei_mapesil_t_plus_silicone_sealant": "=== MAPEI - Mapesil T Plus Silicone Sealant ===",
+    "B0B8F57G4B": {
+      "api_sku": "3BU003891",
+      "prosol_sku": "3BU003891",
+      "product": "Mapei Mapesil T Plus Silicone Sealant — Avalanche (10.1 oz)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "Amazon ASIN alias; title #38 Avalanche → Mapesil T Plus 3BU003891 (added 2026-06-02, order 701-1086212)"
+    },
+    "B0B5M85WVL": {
+      "api_sku": "3BU000691",
+      "prosol_sku": "3BU000691",
+      "product": "Mapei Mapesil T Plus Silicone Sealant — Harvest (10.1 oz)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "Amazon ASIN alias; title #06 Harvest → Mapesil T Plus 3BU000691 (added 2026-06-02, order 701-1178575)"
+    },
     "3BU000091": {
       "api_sku": "3BU000091",
       "prosol_sku": "3BU000091",
