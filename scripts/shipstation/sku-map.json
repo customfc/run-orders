@@ -8169,6 +8169,18 @@
       "retail_cad": 15.06,
       "cost_source": "prosol-portal-2026-05-11"
     },
+    "SES1D10TSI": {
+      "api_sku": "SES1D10TSI",
+      "prosol_sku": "SES1D10TSI",
+      "product": "Schluter SHELF-E Triangular Corner Shelf, Wave Design, Aluminum Ivory",
+      "category": "SHELF",
+      "verified": true,
+      "source": "prosol-portal-2026-06-03",
+      "brand": "schluter",
+      "schluter_item": "SES1D10TSI",
+      "note": "SHELF-E Triangular Corner Shelf, Wave Design, Aluminum Ivory. Added 2026-06-03 after Shopify order 1279 rejected 'No sku-map entry for SES1D10TSI'. Exact Prosol self-match (api_sku=prosol_sku=SES1D10TSI), available, confirmed via stage auto-suggest. Variant siblings stay manual: SES1D10TSSG (Stone Grey), SES1D10TSOB (Bronze), SES1D10TSC (Cream), SES1D10TSBG (Greige). cost_cad pending Prosol portal lookup.",
+      "cost_source": "prosol-portal-2026-06-03"
+    },
     "B07PYVMPJN": {
       "api_sku": "SWS1D5EB",
       "prosol_sku": "SWS1D5EB",
