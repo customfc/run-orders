@@ -2111,8 +2111,11 @@ schedule('0 15 * * 1-5', async () => {
   await telegram.notify(sev, `Daily digest — ${s.date}${attn}`, body);
 }, TZ);
 
-// Morning stale-tracker scan — alerts if anything stuck overnight
-const SERIOUS_HANGING_DAYS = 5;
+// Morning stale-tracker scan — alerts if anything stuck overnight.
+// Customers expect delivery within ~7 days, so we escalate hanging shipments at
+// 4 days (not 5) — that buffers against weekends eating the window before the
+// 5-day auto-rebooker (lib/auto-rebooker.js) kicks in.
+const SERIOUS_HANGING_DAYS = 4;
 async function morningStaleScan(source) {
   try {
     const { scanStaleShipments } = require('./lib/stale-tracker');
@@ -2171,6 +2174,36 @@ async function morningStaleScan(source) {
 schedule('0 8 * * 1-5', () => morningStaleScan('08:00 weekday'), TZ);
 schedule('0 10 * * 6', () => morningStaleScan('10:00 Saturday'), TZ);
 schedule('0 10 * * 0', () => morningStaleScan('10:00 Sunday'), TZ); // weekend pileups must not wait until Monday to surface
+
+// Auto-rebooker — rescues genuinely-stuck shipments (hanging >= 5 days) by
+// cancelling the spent pickup binding and rebooking a fresh pickup (zero-spend,
+// no ghost label). Order-aware guards skip phantom/leftover labels on already-
+// delivered orders. SHADOW by default: it Telegrams what it WOULD rebook and
+// executes nothing until AUTO_REBOOK_LIVE=1 — because our V2 tracking signal has
+// been caught disagreeing with the carrier, so the logic is validated against
+// reality first. See lib/auto-rebooker.js.
+async function autoRebookSweep(source) {
+  try {
+    const { runAutoRebooker } = require('./lib/auto-rebooker');
+    const r = await runAutoRebooker();
+    if (r.live) {
+      if (r.rebooked.length || r.failed.length) {
+        const body = [
+          ...r.rebooked.map(x => `✓ ${x.warehouseName} ${x.carrier} ×${x.count} (oldest ${x.oldest}d) → ${x.confirmation || x.pickupId}`),
+          ...r.failed.map(x => `✗ ${x.warehouseName} ${x.carrier} ×${x.count}: ${String(x.error).slice(0, 100)}`),
+        ].join('\n');
+        await telegram.notify(r.failed.length ? 'attn' : 'ok', `Auto-rebooker [LIVE] — ${r.rebooked.length} rebooked, ${r.failed.length} failed`, `${body}\n\nSkipped ${r.skipped.length} (delivered / phantom / 0-item).`);
+      }
+    } else if (r.wouldRebook.length || r.skipped.length) {
+      const wb = r.wouldRebook.map(x => `• ${x.warehouseName} ${x.carrier} ×${x.count} (oldest ${x.oldest}d): ${x.orders.slice(0, 4).join(', ')}${x.orders.length > 4 ? '…' : ''}`).join('\n');
+      const sk = r.skipped.slice(0, 10).map(x => `• ${x.order} (${x.age}d) — ${x.reason}`).join('\n');
+      await telegram.notify('debug', `Auto-rebooker [SHADOW] — would rebook ${r.wouldRebook.length} group(s)`, `${wb || '(none)'}\n\nGuard skipped ${r.skipped.length}:\n${sk}${r.skipped.length > 10 ? `\n…and ${r.skipped.length - 10} more` : ''}\n\nValidate, then set AUTO_REBOOK_LIVE=1 to act.`);
+    }
+  } catch (err) {
+    await telegram.notify('attn', `Auto-rebooker failed (${source})`, err.message);
+  }
+}
+schedule('30 8 * * *', () => autoRebookSweep('08:30 daily'), TZ); // after the morning scan; SHADOW until AUTO_REBOOK_LIVE=1
 
 // Buyer-cancellation poller — every 15 min, detects cancel requests on
 // unshipped MFN orders before they ship. See scripts/ops/poll-cancellations.js.
