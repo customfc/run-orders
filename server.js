@@ -2187,12 +2187,14 @@ async function autoRebookSweep(source) {
     const { runAutoRebooker } = require('./lib/auto-rebooker');
     const r = await runAutoRebooker();
     if (r.live) {
-      if (r.rebooked.length || r.failed.length) {
+      if (r.rebooked.length || r.locked.length || r.failed.length) {
         const body = [
-          ...r.rebooked.map(x => `✓ ${x.warehouseName} ${x.carrier} ×${x.count} (oldest ${x.oldest}d) → ${x.confirmation || x.pickupId}`),
-          ...r.failed.map(x => `✗ ${x.warehouseName} ${x.carrier} ×${x.count}: ${String(x.error).slice(0, 100)}`),
+          ...r.rebooked.map(x => `✓ ${x.warehouseName} ${x.carrier} → ${x.confirmation || x.pickupId}${x.lockedRiding ? ` (+${x.lockedRiding} locked riding along)` : ''}`),
+          ...r.locked.map(x => `🔒 ${x.warehouseName} ${x.carrier} ×${x.count} (oldest ${x.oldest}d): ${x.orders.slice(0, 3).join(', ')} — book a warehouse-level pickup`),
+          ...r.failed.map(x => `✗ ${x.warehouseName} ${x.carrier} ×${x.count}: ${String(x.error).slice(0, 90)}`),
         ].join('\n');
-        await telegram.notify(r.failed.length ? 'attn' : 'ok', `Auto-rebooker [LIVE] — ${r.rebooked.length} rebooked, ${r.failed.length} failed`, `${body}\n\nSkipped ${r.skipped.length} (delivered / phantom / 0-item).`);
+        const sev = (r.locked.length || r.failed.length) ? 'attn' : 'ok';
+        await telegram.notify(sev, `Auto-rebooker [LIVE] — ${r.rebooked.length} rebooked, ${r.locked.length} locked, ${r.failed.length} failed`, `${body}\n\nSkipped ${r.skipped.length} (delivered / phantom / 0-item).`);
       }
     } else if (r.wouldRebook.length || r.skipped.length) {
       const wb = r.wouldRebook.map(x => `• ${x.warehouseName} ${x.carrier} ×${x.count} (oldest ${x.oldest}d): ${x.orders.slice(0, 4).join(', ')}${x.orders.length > 4 ? '…' : ''}`).join('\n');
