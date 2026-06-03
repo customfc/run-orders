@@ -2116,7 +2116,11 @@ const SERIOUS_HANGING_DAYS = 5;
 async function morningStaleScan(source) {
   try {
     const { scanStaleShipments } = require('./lib/stale-tracker');
-    const scan = await scanStaleShipments({ days: 14 });
+    // 30-day window (not 14): a label that hangs past day 14 used to drop out of
+    // this scan entirely — no alert, no pickup attempt — so aged stranded
+    // shipments went invisible (this is how a 25-day WGRF shipment hid in June
+    // 2026 and had to be found by hand). 30 days covers the Amazon A-to-Z horizon.
+    const scan = await scanStaleShipments({ days: 30 });
     const needAction = scan.shipments.filter(s => s.movement === 'hanging' && (s.suggestedAction === 'book' || s.suggestedAction === 'rebook'));
     const stuck = scan.shipments.filter(s => s.movement === 'stuck-in-transit');
     // Hanging labels >= SERIOUS_HANGING_DAYS old, including 'monitor' so phantom
@@ -2166,6 +2170,7 @@ async function morningStaleScan(source) {
 }
 schedule('0 8 * * 1-5', () => morningStaleScan('08:00 weekday'), TZ);
 schedule('0 10 * * 6', () => morningStaleScan('10:00 Saturday'), TZ);
+schedule('0 10 * * 0', () => morningStaleScan('10:00 Sunday'), TZ); // weekend pileups must not wait until Monday to surface
 
 // Buyer-cancellation poller — every 15 min, detects cancel requests on
 // unshipped MFN orders before they ship. See scripts/ops/poll-cancellations.js.
