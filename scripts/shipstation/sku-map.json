@@ -8178,8 +8178,10 @@
       "source": "prosol-portal-2026-06-03",
       "brand": "schluter",
       "schluter_item": "SES1D10TSI",
-      "note": "SHELF-E Triangular Corner Shelf, Wave Design, Aluminum Ivory. Added 2026-06-03 after Shopify order 1279 rejected 'No sku-map entry for SES1D10TSI'. Exact Prosol self-match (api_sku=prosol_sku=SES1D10TSI), available, confirmed via stage auto-suggest. Variant siblings stay manual: SES1D10TSSG (Stone Grey), SES1D10TSOB (Bronze), SES1D10TSC (Cream), SES1D10TSBG (Greige). cost_cad pending Prosol portal lookup.",
-      "cost_source": "prosol-portal-2026-06-03"
+      "note": "SHELF-E Triangular Corner Shelf, Wave Design, Aluminum Ivory. Added 2026-06-03 after Shopify order 1279 rejected 'No sku-map entry for SES1D10TSI'. Exact Prosol self-match (api_sku=prosol_sku=SES1D10TSI), available, confirmed via stage auto-suggest. Variant siblings stay manual: SES1D10TSSG (Stone Grey), SES1D10TSOB (Bronze), SES1D10TSC (Cream), SES1D10TSBG (Greige). Prosol account cost $66.59 / list $116.81 (Burnaby) confirmed via shop.prosol.ca 2026-06-03.",
+      "cost_cad": 66.59,
+      "retail_cad": 116.81,
+      "cost_source": "prosol-shop-2026-06-03"
     },
     "B07PYVMPJN": {
       "api_sku": "SWS1D5EB",
