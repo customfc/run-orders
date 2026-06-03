@@ -226,6 +226,42 @@ class ProsolClientV2 {
 
     return { sku: prosolSku, productId, locationStock };
   }
+
+  /**
+   * Fetch the logged-in account's NET price (our cost) + list price for a product.
+   * The catalog and inventory endpoints only expose MSRP/list (e.g. $116.81); the
+   * per-account net price (e.g. $66.59) lives ONLY on /products/{id}/offers, field
+   * `current_price` (cents). Location-keyed, but wholesale cost is account-level so
+   * any active hub returns the same number — defaults to Burnaby (10010).
+   * Returns { cost_cad, retail_cad, costSource } in dollars, or null.
+   */
+  async getOfferPrice(productId, locationId = 10010) {
+    if (!productId) return null;
+    const res = await this.apiGet(
+      `/api/storefront/products/${productId}/offers?include=country,productInventoryItem&product_inventory_location_id=${locationId}`
+    );
+    if (res.status !== 200) { log(`  ⚠️  offers ${productId}@${locationId}: ${res.status}`); return null; }
+    let data; try { data = JSON.parse(res.body); } catch { return null; }
+    const arr = data.data || data;
+    const o = Array.isArray(arr) ? arr[0] : arr;
+    if (!o || typeof o !== 'object') return null;
+    const toDollars = (v) => (typeof v === 'number' ? Math.round(v) / 100 : null);
+    const cost = toDollars(o.current_price != null ? o.current_price : o.sale_price);
+    const retail = toDollars(o.regular_price != null ? o.regular_price : o.msrp_price);
+    if (cost == null) return null;
+    return { cost_cad: cost, retail_cad: retail, costSource: `prosol-offers-loc${locationId}` };
+  }
+
+  /**
+   * Convenience: SKU → our cost. Resolves the product id, then the offer price.
+   * Use when adding a sku-map entry so cost_cad is captured automatically instead
+   * of being left "pending" for a manual portal lookup.
+   */
+  async getCost(prosolSku, locationId = 10010) {
+    const productId = await this.getProductId(prosolSku);
+    if (!productId) return null;
+    return this.getOfferPrice(productId, locationId);
+  }
 }
 
 module.exports = { ProsolClientV2 };
