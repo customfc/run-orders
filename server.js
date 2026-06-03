@@ -2069,46 +2069,30 @@ schedule('0 15 * * 1-5', async () => {
     const overdueFlag = g.maxOverdue > 0 ? ` · ⚠ ${g.maxOverdue}d overdue` : '';
     ghostLine += ` (oldest ${oldestDate}, $${g.exposure.toFixed(2)} exposure${overdueFlag})`;
   }
-  // Per-order detail for daily digest
-  const LOC_MAP = require(path.join(__dirname, 'scripts', 'shipstation', 'prosol-location-map.json'));
-  const whById = {};
-  for (const loc of Object.values(LOC_MAP)) {
-    if (loc.shipstation_warehouse_id) whById[String(loc.shipstation_warehouse_id)] = loc;
-  }
-  const labels = Object.values(state.phases.buy.labels || {});
-  const orderLines = labels.map((l) => {
-    const carrier = String(l.carrierCode || '').replace(/_walleted$/, '').replace(/_/g, ' ');
-    const wh = whById[String(l.warehouseId)];
-    const whName = wh ? wh.code : `wh-${l.warehouseId}`;
-    const items = (l.packages || []).flatMap((p) => (p.items || []));
-    const itemStr = items.length
-      ? items.map((i) => `${i.name || i.sku}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join(', ')
-      : l.orderNumber || '?';
-    const itemShort = itemStr.length > 80 ? itemStr.slice(0, 77) + '...' : itemStr;
-    return `  ${l.orderNumber || '?'} → ${whName} ${carrier} $${(l.labelCost || 0).toFixed(2)}\n    ${itemShort}`;
-  });
-  const posByTracking = state.phases.pos.byTracking || {};
-  const poNumbers = [...new Set(Object.values(posByTracking).map((p) => p.poNumber))];
-  const emailsByWh = state.phases.email.byWarehouse || {};
-  const emailLines = Object.entries(emailsByWh).map(([wh, info]) => `  ${wh}: ${info.orderCount} order(s)`);
+  // Today's mismap/unshipped count from the stage audit (ops-state doesn't store
+  // the rejected list — the detail is in the real-time "NOT shipped" alerts).
+  let rejected = 0;
+  try {
+    const auditPath = path.join(__dirname, 'data', 'audit.jsonl');
+    const today = opsState.today();
+    for (const ln of fs.readFileSync(auditPath, 'utf8').split('\n')) {
+      if (!ln.trim()) continue;
+      try { const e = JSON.parse(ln); if (e.action === 'pipeline-stage' && String(e.timestamp || '').slice(0, 10) === today) rejected = e.manualReviewCount || 0; } catch {}
+    }
+  } catch {}
+  const poNumbers = [...new Set(Object.values(state.phases.pos.byTracking || {}).map((p) => p.poNumber))];
 
+  // Tight, human, no per-order product dump. Mismaps headlined; detail lives in
+  // the real-time consolidated "NOT shipped" alerts.
   const body = [
-    `Staged: ${s.staged}`,
-    `Labels: ${s.labelsBought}${s.totalLabelCost ? ` ($${s.totalLabelCost})` : ''}${s.costWarnings ? ` · ⚠${s.costWarnings} cost` : ''}`,
-    ...(orderLines.length ? ['', 'Orders:', ...orderLines, ''] : []),
-    `POs: ${s.posCreated}${poNumbers.length ? ` (${poNumbers.join(', ')})` : ''}`,
-    `Emails: ${s.emailsSent}`,
-    ...(emailLines.length ? emailLines : []),
-    `Pickups: ${s.pickupsBooked} (${s.totalPickedLabels} labels)`,
+    `Today — ${s.staged} shipped${s.totalLabelCost ? ` ($${s.totalLabelCost})` : ''}${s.costWarnings ? ` · ⚠${s.costWarnings} cost` : ''} · ${s.posCreated} POs${poNumbers.length ? ` (${poNumbers.join(', ')})` : ''} · ${s.emailsSent} emails · ${s.pickupsBooked} pickups`,
+    rejected ? `⚠️ ${rejected} order${rejected === 1 ? '' : 's'} NOT shipped — mismap/unmapped (see the NOT-shipped alerts)` : null,
     ghostLine,
-    s.errorCount ? `\nLast error: [${s.lastError?.phase}] ${s.lastError?.reason}` : null,
-    '',
+    s.errorCount ? `⚠ ${s.errorCount} error(s) — last: [${s.lastError?.phase}] ${s.lastError?.reason}` : null,
     'http://localhost:3456',
   ].filter(Boolean).join('\n');
-  // Bubble to attn if digest reveals ghost trouble (overdue > 0) — the 16:00 void cron has already alerted halt-level
-  // for same-day failures, but the digest is still the place to surface slow-burning accumulation.
-  const sev = s.errorCount > 0 || g.maxOverdue > 0 ? 'attn' : 'ok';
-  await telegram.notify(sev, `Daily digest — ${s.date}${attn}`, body);
+  const sev = (s.errorCount > 0 || g.maxOverdue > 0 || rejected > 0) ? 'attn' : 'ok';
+  await telegram.notify(sev, `Daily digest — ${s.date}`, body);
 }, TZ);
 
 // Morning stale-tracker scan — alerts if anything stuck overnight.
@@ -2152,12 +2136,9 @@ async function morningStaleScan(source) {
       await telegram.notify('attn', `Stuck in transit — ${stuck.length} shipment${stuck.length === 1 ? '' : 's'}`, stuckBody + extra + '\n\nRefund/contact carrier before buyer opens A-to-Z.\nhttp://localhost:3456#tab-tracking');
     }
 
-    if (!needAction.length) {
-      if (!stuck.length) {
-        await telegram.notify('ok', `Morning scan clean (${source})`, `${scan.summary.hanging} hanging, all covered by booked pickups.`);
-      }
-      return;
-    }
+    // Silent when there's nothing to act on — no "all clear" ping. The serious /
+    // stuck-in-transit alerts above already fired if anything needed eyes.
+    if (!needAction.length) return;
     const byGroup = {};
     for (const s of needAction) {
       const k = `${s.warehouseName} ${s.carrier}`;
