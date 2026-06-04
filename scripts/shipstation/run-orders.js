@@ -234,6 +234,30 @@ function resolveMappedEntry(rawSku) {
   return SKU_MAPPINGS[rawSku];
 }
 
+// Persist a new mapping into sku-map.json by inserting it at the top of
+// "mappings" as a new key — preserves the file's existing key order and \u
+// escaping (a full re-serialize would reorder numeric keys). Validates before write.
+function persistMappingToFile(key, entry) {
+  const MAP_PATH = path.join(__dirname, 'sku-map.json');
+  const raw = fs.readFileSync(MAP_PATH, 'utf8');
+  const anchor = '  "mappings": {\n';
+  const at = raw.indexOf(anchor);
+  if (at < 0) throw new Error('mappings anchor not found in sku-map.json');
+  const indented = JSON.stringify(entry, null, 2).split('\n').map((l, i) => (i === 0 ? l : '    ' + l)).join('\n');
+  let block = `    ${JSON.stringify(key)}: ${indented},\n`;
+  block = block.replace(/[-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
+  const out = raw.slice(0, at + anchor.length) + block + raw.slice(at + anchor.length);
+  JSON.parse(out); // throws if the insert produced invalid JSON — never write a broken map
+  fs.writeFileSync(MAP_PATH, out);
+}
+
+// Add a mapping LIVE: mutate the in-memory map (next staging run sees it without
+// a restart) AND persist to disk (survives restart). Used by /map + (future) auto-map.
+function liveAddMapping(key, entry) {
+  SKU_MAPPINGS[key] = entry;
+  persistMappingToFile(key, entry);
+}
+
 // Pull a SKU-shaped trailing token from an Amazon listing title.
 // Many Schluter / Mapei listings end with " - <SKU>" where SKU is the canonical
 // product code (e.g. "... - KL1V60E60", "... - DHEHK24043"). When present this
@@ -1048,4 +1072,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines };
+module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry };

@@ -262,6 +262,24 @@ class ProsolClientV2 {
     if (!productId) return null;
     return this.getOfferPrice(productId, locationId);
   }
+
+  /**
+   * Resolve a SKU to everything a sku-map entry needs: prosol_sku, product name,
+   * and our cost. EXACT filter[sku] match. Returns null if no hit, {ambiguous}
+   * if >1 hit (variant ambiguity — caller should refuse), else the full info.
+   */
+  async getMappingInfo(sku, locationId = 10010) {
+    const res = await this.apiGet(`/api/storefront/products?filter[sku]=${encodeURIComponent(sku)}&append=prosol_sku&limit=2`);
+    if (res.status !== 200) return null;
+    let d; try { d = JSON.parse(res.body); } catch { return null; }
+    const arr = d.data || d;
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    if (arr.length > 1) return { ambiguous: true, count: arr.length };
+    const p = arr[0];
+    const name = (typeof p.name === 'object' && p.name) ? (p.name.en || p.name.fr || '') : (p.name || '');
+    const offer = await this.getOfferPrice(p.id, locationId);
+    return { productId: p.id, sku: p.sku, prosol_sku: p.prosol_sku || null, name, cost_cad: offer ? offer.cost_cad : null, retail_cad: offer ? offer.retail_cad : null };
+  }
 }
 
 module.exports = { ProsolClientV2 };

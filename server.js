@@ -2826,6 +2826,7 @@ const COMMAND_HELP = `Commands:
 /ghost-pickup <WH_CODE> <ups|purolator> [--force] — trigger a carrier visit at a fringe warehouse (ghost label, auto-refunded). --force skips the "real shipments exist" guard.
 /ghost-track <trackingNumber> [WH_CODE] — rescue an orphan ghost (add to void ledger). Use when /ghosts doesn't show a Mac-Roy label that exists in SS.
 /ghosts — list pending ghost labels awaiting void
+/map <SKU> — add an unmapped SKU to the sku-map (resolves Prosol prosol_sku + cost; live next run)
 /pause — halt all pipeline runs until /resume
 /resume — clear pause
 /help — this help
@@ -2957,6 +2958,30 @@ async function handleTelegramCommand(command, args) {
         .catch((err) => telegram.notify('halt', `Pipeline via /${command} crashed`, err.message))
         .finally(() => { pipelineActive = false; });
       return `🚀 Started /${command}. Digest will arrive when done.`;
+    }
+
+    case 'map': {
+      const sku = (args[0] || '').trim();
+      if (!sku) return 'Usage: /map <SKU>\nResolves the SKU in Prosol (real prosol_sku + cost) and adds it to the sku-map, live for the next run.';
+      const { ProsolClientV2 } = require('./scripts/shipstation/prosol-client-v2');
+      const { liveAddMapping, resolveMappedEntry } = require('./scripts/shipstation/run-orders');
+      if (resolveMappedEntry(sku)) return `ℹ️ ${sku} is already mapped — nothing to do.`;
+      const c = new ProsolClientV2();
+      try {
+        await c.init();
+        const info = await c.getMappingInfo(sku);
+        if (!info) return `❌ ${sku} — no Prosol product found (check the exact SKU).`;
+        if (info.ambiguous) return `❌ ${sku} — ${info.count} Prosol matches (variant ambiguity); map it by hand.`;
+        if (!info.prosol_sku) return `❌ ${sku} — Prosol product has no prosol_sku; can't build a safe PO. Map by hand.`;
+        liveAddMapping(sku, {
+          api_sku: info.sku, prosol_sku: info.prosol_sku, product: info.name,
+          cost_cad: info.cost_cad, retail_cad: info.retail_cad,
+          source: 'telegram-/map', cost_source: 'prosol-offers-loc10010', added: new Date().toISOString().slice(0, 10),
+        });
+        return `✅ Mapped ${sku} → Prosol ${info.prosol_sku}\n${info.name}\ncost $${info.cost_cad} · list $${info.retail_cad}\nLive now — ships next run. (sku-map.json updated; commits on next deploy.)`;
+      } catch (e) {
+        return `❌ /map ${sku} failed: ${e.message}`;
+      } finally { try { await c.close(); } catch {} }
     }
 
     case 'ghost-pickup':
