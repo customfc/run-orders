@@ -14,6 +14,7 @@ const { scanStaleShipments } = require('./lib/stale-tracker');
 const { runPipeline, PHASES: PIPELINE_PHASES } = require('./lib/pipeline');
 const opsState = require('./lib/ops-state');
 const telegram = require('./lib/telegram');
+const heldRebuys = require('./lib/held-rebuys');
 const { createGhostPickup, trackOrphanGhost, processPendingVoids, loadPending: loadPendingVoids, ghostStatus, reconcileGhostLedger } = require('./lib/ghost-pickup');
 const fsRaw = require('fs');
 const httpsRaw = require('https');
@@ -321,105 +322,100 @@ app.post('/api/pipeline/test-telegram', async (req, res) => {
 
 // ── Buy Labels ───────────────────────────────────────────────────────────────
 
-app.post('/api/labels/buy', async (req, res) => {
-  const { orderId, carrierCode, serviceCode, packageCode, weight, estimatedCost, internalNotes } = req.body;
+// Core single-order label buy. Shared by the dashboard endpoint and the /buy
+// Telegram approve command. Returns a result object (never throws for expected
+// failures). Does NOT route through phaseBuy, so it never re-trips the
+// void→rebuy hold — that's intentional: this IS the approved-buy path.
+async function buyLabelForOrder({ orderId, carrierCode, serviceCode, packageCode, weight, estimatedCost, internalNotes, orderNumber }) {
   if (!orderId || !carrierCode || !serviceCode) {
-    return res.status(400).json({ success: false, error: 'orderId, carrierCode, serviceCode required' });
+    return { success: false, error: 'orderId, carrierCode, serviceCode required' };
+  }
+  const { v1Request, getLabelUrl, ensureValidShipTo } = require('./lib/shipstation-v2');
+  const { orderSource } = require('./scripts/shipstation/run-orders');
+
+  // Pre-buy address guard — without this a malformed CA province burns a UPS
+  // rejection. ensureValidShipTo throws a structured BAD_ADDRESS_* error.
+  try {
+    await ensureValidShipTo(orderId, orderNumber || `orderId=${orderId}`);
+  } catch (e) {
+    audit.log({ action: 'buy-label', orderId, success: false, error: `pre-buy guard: ${e.message}` });
+    return { success: false, error: e.message, code: e.code || 'BAD_ADDRESS' };
   }
 
+  const payload = {
+    orderId,
+    carrierCode,
+    serviceCode,
+    packageCode: packageCode || 'package',
+    confirmation: 'none',
+    shipDate: new Date().toISOString().slice(0, 10),
+    weight: weight || { value: 1, units: 'pounds' },
+  };
+
+  const labelRes = await v1Request('POST', '/orders/createlabelfororder', payload);
+  if (labelRes.status !== 200) {
+    const errBody = labelRes.body.slice(0, 500);
+    audit.log({ action: 'buy-label', orderId, success: false, error: `HTTP ${labelRes.status}: ${errBody}` });
+    return { success: false, error: `ShipStation ${labelRes.status}: ${errBody}` };
+  }
+
+  const data = JSON.parse(labelRes.body);
+  const shipmentId = data.shipmentId;
+  const trackingNumber = data.trackingNumber;
+  const labelCost = data.shipmentCost;
+
+  let labelUrl = null;
+  if (shipmentId) {
+    try { labelUrl = await getLabelUrl(shipmentId); } catch {}
+  }
+
+  const costWarning = estimatedCost && labelCost > estimatedCost * 1.5;
+
+  // Record into opsState so the email + pos phases pick this label up just like
+  // a cron-driven buy. Best-effort: a failure here doesn't roll back the label.
   try {
-    const { v1Request, getLabelUrl, ensureValidShipTo } = require('./lib/shipstation-v2');
-    const { orderSource } = require('./scripts/shipstation/run-orders');
-
-    // Pre-buy address guard. Same defense as the cron pipeline path — without
-    // this, an agent (or anything) hitting /api/labels/buy can still burn a
-    // UPS rejection on a malformed CA province. ensureValidShipTo throws a
-    // structured BAD_ADDRESS_* error with a clear remediation message.
-    try {
-      await ensureValidShipTo(orderId, req.body?.orderNumber || `orderId=${orderId}`);
-    } catch (e) {
-      audit.log({ action: 'buy-label', orderId, success: false, error: `pre-buy guard: ${e.message}` });
-      return res.json({ success: false, error: e.message, code: e.code || 'BAD_ADDRESS' });
-    }
-
-    const payload = {
-      orderId,
-      carrierCode,
-      serviceCode,
-      packageCode: packageCode || 'package',
-      confirmation: 'none',
-      shipDate: new Date().toISOString().slice(0, 10),
-      weight: weight || { value: 1, units: 'pounds' },
-    };
-
-    const labelRes = await v1Request('POST', '/orders/createlabelfororder', payload);
-    if (labelRes.status !== 200) {
-      const errBody = labelRes.body.slice(0, 500);
-      audit.log({ action: 'buy-label', orderId, success: false, error: `HTTP ${labelRes.status}: ${errBody}` });
-      return res.json({ success: false, error: `ShipStation ${labelRes.status}: ${errBody}` });
-    }
-
-    const data = JSON.parse(labelRes.body);
-    const shipmentId = data.shipmentId;
-    const trackingNumber = data.trackingNumber;
-    const labelCost = data.shipmentCost;
-
-    let labelUrl = null;
-    if (shipmentId) {
-      try { labelUrl = await getLabelUrl(shipmentId); } catch {}
-    }
-
-    const costWarning = estimatedCost && labelCost > estimatedCost * 1.5;
-
-    // Record into opsState so the email + pos phases pick this label up just
-    // like a cron-driven buy. Without this, manually-bought labels never reach
-    // Kaitlyn (no email) and never get a Salesforce PO. Best-effort: a failure
-    // here doesn't roll back the (already-paid-for) label.
-    try {
-      const orderRes = await v1Request('GET', `/orders/${orderId}`);
-      if (orderRes.status === 200) {
-        const order = JSON.parse(orderRes.body);
-        const state = opsState.load(opsState.today());
-        opsState.recordLabelBought(state, {
-          orderId,
-          orderNumber: order.orderNumber,
-          source: orderSource(order),
+    const orderRes = await v1Request('GET', `/orders/${orderId}`);
+    if (orderRes.status === 200) {
+      const order = JSON.parse(orderRes.body);
+      const state = opsState.load(opsState.today());
+      opsState.recordLabelBought(state, {
+        orderId,
+        orderNumber: order.orderNumber,
+        source: orderSource(order),
+        shipmentId,
+        trackingNumber,
+        labelCost,
+        costWarning,
+        carrierCode,
+        serviceCode,
+        estimatedCost,
+        warehouseId: order.advancedOptions?.warehouseId || null,
+        packages: [{
           shipmentId,
           trackingNumber,
           labelCost,
-          costWarning,
-          carrierCode,
-          serviceCode,
-          estimatedCost,
-          warehouseId: order.advancedOptions?.warehouseId || null,
-          packages: [{
-            shipmentId,
-            trackingNumber,
-            labelCost,
-            weight: payload.weight,
-            shape: null,
-            items: (order.items || []).map((it) => ({ sku: it.sku, name: it.name, quantity: it.quantity })),
-          }],
-          internalNotes: internalNotes || null,
-        });
-      }
-    } catch (e) {
-      console.error('[buy-label] opsState record failed (label still bought):', e.message);
-      audit.log({ action: 'buy-label-opsstate-fail', orderId, error: e.message });
+          weight: payload.weight,
+          shape: null,
+          items: (order.items || []).map((it) => ({ sku: it.sku, name: it.name, quantity: it.quantity })),
+        }],
+        internalNotes: internalNotes || null,
+      });
     }
+  } catch (e) {
+    console.error('[buy-label] opsState record failed (label still bought):', e.message);
+    audit.log({ action: 'buy-label-opsstate-fail', orderId, error: e.message });
+  }
 
-    audit.log({
-      action: 'buy-label',
-      orderId,
-      success: true,
-      shipmentId,
-      trackingNumber,
-      labelCost,
-      estimatedCost,
-      costWarning,
-    });
+  audit.log({ action: 'buy-label', orderId, success: true, shipmentId, trackingNumber, labelCost, estimatedCost, costWarning });
+  return { success: true, shipmentId, trackingNumber, labelCost, labelUrl, costWarning };
+}
 
-    res.json({ success: true, shipmentId, trackingNumber, labelCost, labelUrl, costWarning });
+app.post('/api/labels/buy', async (req, res) => {
+  const { orderId, carrierCode, serviceCode, packageCode, weight, estimatedCost, internalNotes, orderNumber } = req.body;
+  try {
+    const r = await buyLabelForOrder({ orderId, carrierCode, serviceCode, packageCode, weight, estimatedCost, internalNotes, orderNumber });
+    if (!r.success && r.error === 'orderId, carrierCode, serviceCode required') return res.status(400).json(r);
+    res.json(r);
   } catch (err) {
     audit.log({ action: 'buy-label', orderId, success: false, error: err.message });
     res.status(500).json({ success: false, error: err.message });
@@ -2081,6 +2077,7 @@ schedule('0 15 * * 1-5', async () => {
     }
   } catch {}
   const poNumbers = [...new Set(Object.values(state.phases.pos.byTracking || {}).map((p) => p.poNumber))];
+  const heldCount = heldRebuys.list().length;
 
   // Tight, human, no per-order product dump. Mismaps headlined; detail lives in
   // the real-time consolidated "NOT shipped" alerts.
@@ -2088,10 +2085,11 @@ schedule('0 15 * * 1-5', async () => {
     `Today — ${s.staged} shipped${s.totalLabelCost ? ` ($${s.totalLabelCost})` : ''}${s.costWarnings ? ` · ⚠${s.costWarnings} cost` : ''} · ${s.posCreated} POs${poNumbers.length ? ` (${poNumbers.join(', ')})` : ''} · ${s.emailsSent} emails · ${s.pickupsBooked} pickups`,
     rejected ? `⚠️ ${rejected} order${rejected === 1 ? '' : 's'} NOT shipped — mismap/unmapped (see the NOT-shipped alerts)` : null,
     ghostLine,
+    heldCount ? `⏸️ ${heldCount} held re-buy(s) awaiting /buy approval (see /held)` : null,
     s.errorCount ? `⚠ ${s.errorCount} error(s) — last: [${s.lastError?.phase}] ${s.lastError?.reason}` : null,
     'http://localhost:3456',
   ].filter(Boolean).join('\n');
-  const sev = (s.errorCount > 0 || g.maxOverdue > 0 || rejected > 0) ? 'attn' : 'ok';
+  const sev = (s.errorCount > 0 || g.maxOverdue > 0 || rejected > 0 || heldCount > 0) ? 'attn' : 'ok';
   await telegram.notify(sev, `Daily digest — ${s.date}`, body);
 }, TZ);
 
@@ -2827,6 +2825,8 @@ const COMMAND_HELP = `Commands:
 /ghost-track <trackingNumber> [WH_CODE] — rescue an orphan ghost (add to void ledger). Use when /ghosts doesn't show a Mac-Roy label that exists in SS.
 /ghosts — list pending ghost labels awaiting void
 /map <SKU> — add an unmapped SKU to the sku-map (resolves Prosol prosol_sku + cost; live next run)
+/held — list orders held from auto-rebuy after a void (duplicate-spend guard)
+/buy <orderId> — approve & ship a held re-buy (see /held)
 /pause — halt all pipeline runs until /resume
 /resume — clear pause
 /help — this help
@@ -2982,6 +2982,37 @@ async function handleTelegramCommand(command, args) {
       } catch (e) {
         return `❌ /map ${sku} failed: ${e.message}`;
       } finally { try { await c.close(); } catch {} }
+    }
+
+    case 'held': {
+      const items = heldRebuys.list();
+      if (!items.length) return '✅ No held re-buys.';
+      const lines = items.map((h) => {
+        const when = String(h.voidedAt || '').slice(0, 10);
+        return `• ${h.orderNumber}${h.customer ? ` (${h.customer})` : ''} — prior ${h.priorVoidedTracking || '?'} voided ${when}\n   ship: /buy ${h.orderId}   ·   drop: /held drop ${h.orderId}`;
+      });
+      if (args[0] === 'drop' && args[1]) {
+        return heldRebuys.remove(args[1]) ? `🗑️ Dropped held re-buy ${args[1]} (won't ship, won't re-alert).` : `Nothing held for ${args[1]}.`;
+      }
+      return `⏸️ ${items.length} held re-buy(s) — auto-rebuy blocked after a void:\n\n${lines.join('\n')}`;
+    }
+
+    case 'buy': {
+      const orderId = (args[0] || '').trim();
+      if (!orderId) return 'Usage: /buy <orderId>\nApproves & ships a held re-buy (see /held).';
+      const h = heldRebuys.get(orderId);
+      if (!h) return `Nothing held for orderId ${orderId}. Run /held to see what's waiting.`;
+      const a = h.assignment || {};
+      if (!a.carrierCode || !a.serviceCode) return `❌ Held entry for ${orderId} is missing carrier/service — buy it from the dashboard instead.`;
+      const r = await buyLabelForOrder({
+        orderId, orderNumber: h.orderNumber,
+        carrierCode: a.carrierCode, serviceCode: a.serviceCode,
+        packageCode: a.packageCode, weight: a.weight, estimatedCost: a.shipmentCost,
+      });
+      if (!r.success) return `❌ /buy ${orderId} failed: ${r.error}`;
+      heldRebuys.remove(orderId);
+      const warn = r.costWarning ? ` ⚠️ cost $${r.labelCost} >1.5× est` : '';
+      return `✅ Shipped ${h.orderNumber} — ${a.carrierCode}/${a.serviceCode}, tracking ${r.trackingNumber}, $${r.labelCost}${warn}\nEmail + PO follow on the next sweep. Removed from held.`;
     }
 
     case 'ghost-pickup':
