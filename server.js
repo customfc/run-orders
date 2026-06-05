@@ -2186,6 +2186,15 @@ async function autoRebookSweep(source) {
 }
 schedule('30 8 * * *', () => autoRebookSweep('08:30 daily'), TZ); // after the morning scan; SHADOW until AUTO_REBOOK_LIVE=1
 
+// Orphan-email sweep — hourly. Rescues bought-but-never-emailed labels from the
+// last 4 settled days (a cron run that died after pos). SHADOW until
+// ORPHAN_SWEEP_LIVE=1; alerts only when the finding set changes. See
+// lib/orphan-email-sweep.js.
+schedule('15 * * * *', () => {
+  const { orphanSweepTick } = require('./lib/orphan-email-sweep');
+  orphanSweepTick('hourly').catch((e) => console.error('[orphan-sweep] tick failed:', e.message));
+}, TZ);
+
 // Buyer-cancellation poller — every 15 min, detects cancel requests on
 // unshipped MFN orders before they ship. See scripts/ops/poll-cancellations.js.
 async function pollCancellations(source) {
@@ -2827,6 +2836,7 @@ const COMMAND_HELP = `Commands:
 /map <SKU> — add an unmapped SKU to the sku-map (resolves Prosol prosol_sku + cost; live next run)
 /held — list orders held from auto-rebuy after a void (duplicate-spend guard)
 /buy <orderId> — approve & ship a held re-buy (see /held)
+/orphans — show bought-but-never-emailed labels from the last 4 days (no-email strand)
 /pause — halt all pipeline runs until /resume
 /resume — clear pause
 /help — this help
@@ -2995,6 +3005,15 @@ async function handleTelegramCommand(command, args) {
         return heldRebuys.remove(args[1]) ? `🗑️ Dropped held re-buy ${args[1]} (won't ship, won't re-alert).` : `Nothing held for ${args[1]}.`;
       }
       return `⏸️ ${items.length} held re-buy(s) — auto-rebuy blocked after a void:\n\n${lines.join('\n')}`;
+    }
+
+    case 'orphans': {
+      const { runOrphanSweep, formatReport, LOOKBACK_DAYS } = require('./lib/orphan-email-sweep');
+      const report = await runOrphanSweep({ live: false }); // read-only — never sends from the command
+      const body = formatReport(report);
+      const liveFlag = process.env.ORPHAN_SWEEP_LIVE === '1' ? 'LIVE' : 'SHADOW';
+      if (!body) return `✅ No orphan emails — all bought labels in the last ${LOOKBACK_DAYS} days were emailed. (sweep: ${liveFlag})`;
+      return `📨 Orphan-email sweep (${liveFlag}, last ${LOOKBACK_DAYS}d):\n\n${body}`;
     }
 
     case 'buy': {
