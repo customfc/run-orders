@@ -681,14 +681,15 @@ async function getRates(order, fromPostalCode) {
 
   if (!ups && !purolator) throw new Error('No UPS or Purolator rate returned');
 
-  // Prefer Purolator over UPS unless UPS is at least $3 cheaper.
-  // Rationale: Purolator's domestic transit and pickup reliability beats UPS
-  // for our Prosol lanes; the small price premium is worth it. UPS only wins
-  // when the savings clearly justify it ($3+ cheaper).
+  // Prefer Purolator over UPS unless UPS is at least $4 cheaper.
+  // Rationale: Purolator's domestic transit + pickup reliability beats UPS for
+  // our Prosol lanes (busy depots run standing Purolator pickups; UPS has none
+  // at most depots and shipments get stuck). The small price premium is worth
+  // it — UPS only wins when the savings clearly justify it ($4+ cheaper).
   let bestNonCp;
   let nonCpNote = '';
   if (purolator && ups) {
-    if ((purolator.shipmentCost - ups.shipmentCost) >= 3) {
+    if ((purolator.shipmentCost - ups.shipmentCost) >= 4) {
       bestNonCp = ups;
       nonCpNote = `UPS chosen — saves $${(purolator.shipmentCost - ups.shipmentCost).toFixed(2)} vs Purolator`;
     } else {
@@ -697,14 +698,11 @@ async function getRates(order, fromPostalCode) {
   } else {
     bestNonCp = purolator || ups;
   }
-  if (!canadaPost) return { winner: bestNonCp, note: nonCpNote, compared: { ups, purolator, canadaPost } };
-
-  const cpBeatsUps = ups ? (ups.shipmentCost - canadaPost.shipmentCost) > 4 : false;
-  const cpBeatsPuro = purolator ? (purolator.shipmentCost - canadaPost.shipmentCost) > 4 : false;
-  if (cpBeatsUps && cpBeatsPuro) {
-    return { winner: canadaPost, note: 'Canada Post >$4 cheaper than UPS and Purolator', compared: { ups, purolator, canadaPost } };
-  }
-
+  // Canada Post is NEVER chosen on price — only via the cpHint (PO box / postal
+  // outlet) path above. Mac policy 2026-06-09: CP pickups are unreliable (no
+  // standing pickups; business-number/account issues — Ottawa wouldn't pick up
+  // and told us to switch to Purolator), so CP is limited to PO-box/postal
+  // destinations where UPS/Purolator can't deliver.
   return { winner: bestNonCp, note: nonCpNote, compared: { ups, purolator, canadaPost } };
 }
 
