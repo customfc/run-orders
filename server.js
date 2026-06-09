@@ -2195,6 +2195,16 @@ schedule('15 * * * *', () => {
   orphanSweepTick('hourly').catch((e) => console.error('[orphan-sweep] tick failed:', e.message));
 }, TZ);
 
+// Integration health monitor — 06:30 ET daily (before the 07:00 pipeline).
+// Probes the upstream pipes (ShipStation store syncs, PO/Salesforce, mail
+// watcher) and Telegrams LOUD on any failure, so a dead connection surfaces the
+// morning it breaks instead of by accident days later. Read-only. See
+// lib/integration-health.js.
+schedule('30 6 * * *', () => {
+  const { healthCheckTick } = require('./lib/integration-health');
+  healthCheckTick('06:30 daily').catch((e) => console.error('[integration-health] tick failed:', e.message));
+}, TZ);
+
 // Buyer-cancellation poller — every 15 min, detects cancel requests on
 // unshipped MFN orders before they ship. See scripts/ops/poll-cancellations.js.
 async function pollCancellations(source) {
@@ -2837,6 +2847,7 @@ const COMMAND_HELP = `Commands:
 /held — list orders held from auto-rebuy after a void (duplicate-spend guard)
 /buy <orderId> — approve & ship a held re-buy (see /held)
 /orphans — show bought-but-never-emailed labels from the last 4 days (no-email strand)
+/health — check integration health (store syncs, PO creation, mail watcher)
 /pause — halt all pipeline runs until /resume
 /resume — clear pause
 /help — this help
@@ -3005,6 +3016,12 @@ async function handleTelegramCommand(command, args) {
         return heldRebuys.remove(args[1]) ? `🗑️ Dropped held re-buy ${args[1]} (won't ship, won't re-alert).` : `Nothing held for ${args[1]}.`;
       }
       return `⏸️ ${items.length} held re-buy(s) — auto-rebuy blocked after a void:\n\n${lines.join('\n')}`;
+    }
+
+    case 'health': {
+      const { runHealthCheck, formatHealth } = require('./lib/integration-health');
+      const report = await runHealthCheck();
+      return formatHealth(report);
     }
 
     case 'orphans': {
