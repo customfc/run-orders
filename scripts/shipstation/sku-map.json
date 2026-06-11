@@ -13,6 +13,16 @@
     "max_pkg_weight_lb": "Max package weight in lb when combining (used with heat_sheet)"
   },
   "mappings": {
+    "B01060VUUW": {
+      "api_sku": "KEBA100/185",
+      "prosol_sku": "KEBA100185",
+      "product": "Schluter KERDI-BAND Waterproofing Strip 7-1/4 in x 98ft 5in",
+      "cost_cad": 112.79,
+      "retail_cad": 197.87,
+      "source": "claude-resolve-prosol",
+      "cost_source": "prosol-getMappingInfo",
+      "added": "2026-06-10"
+    },
     "1530": {
       "api_sku": "NON_PROSOL",
       "prosol_sku": "NON_PROSOL",
