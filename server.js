@@ -2218,6 +2218,36 @@ async function pollCancellations(source) {
 }
 schedule('*/15 * * * *', () => pollCancellations('15-min'), TZ);
 
+// Buy-box defender — daily 09:00 ET. Pulls competing offers for managed
+// Mapei FBM SKUs and undercuts by 2% (within margin floor + price band).
+// Config: data/buybox-defender-config.json. Log: data/buybox-defender-log.jsonl.
+//
+// SHADOW by default: runs --dry-run (logs + Telegram-reports what it WOULD do,
+// changes no prices). Flip BUYBOX_DEFENDER_LIVE=1 in .env to arm live repricing
+// — one env var + restart, no redeploy. Mirrors AUTO_REBOOK_LIVE / ORPHAN_SWEEP_LIVE.
+async function runBuyboxDefender(source) {
+  try {
+    const { spawnSync } = require('child_process');
+    const live = process.env.BUYBOX_DEFENDER_LIVE === '1';
+    const args = ['scripts/amazon-buybox-defender.js'];
+    if (!live) args.push('--dry-run');
+    // process.execPath = the exact node binary running this server — avoids any
+    // PATH ambiguity for the spawned child.
+    const r = spawnSync(process.execPath, args, {
+      cwd: __dirname,
+      env: process.env,
+      encoding: 'utf8',
+      timeout: 5 * 60 * 1000,
+    });
+    if (r.status !== 0) {
+      await telegram.notify('attn', `Buy-box defender failed (${source}${live ? '' : ', shadow'})`, (r.stderr || r.stdout || '').slice(-1500));
+    }
+  } catch (err) {
+    await telegram.notify('attn', `Buy-box defender error (${source})`, err.message);
+  }
+}
+schedule('0 9 * * *', () => runBuyboxDefender('09:00 daily'), TZ);
+
 // ── FBA morning pull — inventory planning → Buy Box → Prosol stock ─────────
 //
 // Runs 06:00 ET weekdays, sequentially so we don't collide with SP-API

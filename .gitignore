@@ -22,4 +22,6 @@ data/auto-reprice-state.json
 data/auto-restock-config.json
 data/auto-restock-state.json
 data/auto-restock-pending.json
+data/buybox-defender-config.json
+data/buybox-defender-log.jsonl
 
