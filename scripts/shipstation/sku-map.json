@@ -1650,10 +1650,23 @@
       "api_sku": "NON_PROSOL",
       "prosol_sku": "NON_PROSOL",
       "product": "Custom Flooring Centres Floor Protection",
-      "note": "CFC's own product - not sourced from Prosol",
+      "note": "CFC's own product - not sourced from Prosol. Ships from Sechelt. Floor protection rolls bundle 4-per-box (~4.85lb/roll); solo shape keeps them from mixing with other SKUs in a box. yourfloors Shopify SKU for the same product is 11239.",
       "source": "SECHELT_OR_FBA",
       "route_to": "CFC_SECHELT",
-      "shipstation_warehouse_id": 147654
+      "shipstation_warehouse_id": 147654,
+      "package_shape": "solo",
+      "max_per_pkg": 4
+    },
+    "11239": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Durable Floor Protection Roll (72ft x 3ft) 216sqft - REUSABLE",
+      "note": "yourfloors Shopify SKU for CFC's floor protection roll (same physical product as Amazon ASIN B08X225YBK). CFC's own product - not sourced from Prosol. Ships from Sechelt. Bundle 4 rolls per box (~4.85lb/roll); solo + max_per_pkg=4 splits a 16-roll order into 4 boxes of 4 and keeps other SKUs in their own boxes.",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "package_shape": "solo",
+      "max_per_pkg": 4
     },
     "_section_ardex": "=== ARDEX ===",
     "B0073IDMMA": {
