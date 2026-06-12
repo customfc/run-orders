@@ -706,6 +706,24 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
     },
+    "B010MPQL00": {
+      "cost_cad": 253.45,
+      "retail_cad": 444.64,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "DHEHK24038",
+      "prosol_sku": "DHEHK24038",
+      "product": "Schluter DITRA-HEAT-E-HK Cable 240V 37.5 sqft",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK24038",
+      "package_shape": "cable_kit",
+      "max_per_pkg": 2,
+      "map_cad": 400.18,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "alias_of": "B01N9VNLR4",
+      "note": "Duplicate Amazon ASIN for the same DHEHK24038 cable as B01N9VNLR4. Alias added 2026-06-12 from order 701-5042038-3886646 (title 'Ditra Heat Cable- DHEHK24038 - Schluter (240V) Covers 37.5 SF'). Title = ground truth."
+    },
     "B01N4S7VJ2": {
       "cost_cad": 504.14,
       "retail_cad": 884.45,
