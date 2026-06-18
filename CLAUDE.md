@@ -29,6 +29,9 @@ books carrier pickups. **This is live production ops on the Mac Mini** — treat
 - **Never leave `cost_cad` pending** — pull cost from the Prosol lookup the pipeline already makes (`feedback_never_leave_cost_pending`).
 - **Confirm before buying any label > $30**; sanity-check dims (`feedback_label_cost_confirm`).
 
+## Hard rule — log vendor fuckups
+**Every** vendor/warehouse error that costs CFC time, a refund, or a new shipping label (Prosol short-ships, missing/wrong/damaged items, stuck pickups…) gets logged to the vendor-error ledger **automatically, unprompted** — Mac reconciles these monthly/yearly. Log: `node scripts/ops/log-vendor-error.js --vendor Prosol --location "<city (CODE)>" --issue <short_ship|not_shipped|wrong_item|damaged|stuck_pickup|...> --order <#> --sku <#> --qty <n> --label-cost <cad> --refund-cost <cad> --tracking <#> --desc "..." --resolution "..." --by Mac --source mac_report`. Reconcile: `node scripts/ops/vendor-error-report.js [--month YYYY-MM|--year YYYY|--vendor X|--csv]`. Ledger `data/vendor-errors.jsonl` is COMMITTED (single source of truth). See `feedback_log_vendor_errors`, `lib/vendor-errors.js`.
+
 ## Hard rule — outbound email
 **NEVER send vendor/customer email without an explicit per-email "send it" green-light**, even mid-session
 when told to "act / fix it / stop asking." Emails are action-only (SKU+qty+verb+ship-to+ref). See
