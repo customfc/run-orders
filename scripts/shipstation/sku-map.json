@@ -940,21 +940,10 @@
     },
     "_section_schluter_cable_kits": "=== SCHLUTER - CABLE KITS WITH THERMOSTAT ===",
     "B010MQ7L9O": {
-      "bundle": true,
-      "components": [
-        {
-          "api_sku": "UNMAPPED_CABLE",
-          "prosol_sku": "UNMAPPED_CABLE",
-          "product": "DHEHK Cable - check order for sqft/voltage"
-        },
-        {
-          "api_sku": "DHERT103/BW",
-          "prosol_sku": "DHERT103BW",
-          "product": "Non-Programmable Thermostat"
-        }
-      ],
-      "product": "Schluter Cable Kit with Non-Programmable Thermostat",
-      "note": "Cable model varies by order. Kit includes cable + DHERT103/BW thermostat.",
+      "api_sku": "UNMAPPED_CABLE",
+      "prosol_sku": "UNMAPPED_CABLE",
+      "product": "Schluter DITRA-HEAT-E-HK Cable Kit (model varies by order)",
+      "note": "Cable-ONLY listing. The 'Cable Kit with Temperature Sensors' box is the DHEHK cable (E-HK cables ship with the floor sensors) — NO separate thermostat. Was mis-curated as a cable + DHERT103/BW bundle until 2026-06-22: order 702-3673087-6330606 paid $699.99 for DHEHK240103, below that cable's own MAP ($712.24 / list $791.38), leaving no room for a $222 thermostat. Title ends with DHEHK{voltage}{code}; extractCableSku pulls it at stage time. Same pattern as B018A2XQSC / B01MRNGVAY.",
       "verified": false,
       "needs_order_lookup": true
     },

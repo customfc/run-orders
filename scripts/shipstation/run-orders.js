@@ -6,6 +6,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { ProsolClientV2 } = require('./prosol-client-v2');
+const cableSku = require('../../lib/cable-sku');
 
 const SS_KEY = process.env.SHIPSTATION_API_KEY;
 const SS_SECRET = process.env.SHIPSTATION_API_SECRET;
@@ -375,29 +376,10 @@ function renderSuggestLines(query, candidates) {
   return `\n\nProsol candidates for "${query}" (confirm SIZE/variant against the title before adding to sku-map):\n${lines.join('\n')}`;
 }
 
-// Pull a Schluter cable SKU straight out of the item name — Amazon titles
-// reliably end with the model number (e.g. "…120V, 35.3 Feet - DHEHK12011").
-// This is more reliable than sqft parsing since Amazon frequently prints
-// "N Feet" (linear cable length) instead of "N sqft" (coverage area).
-function extractDhehkSkuFromName(name) {
-  const m = String(name || '').match(/\bDHEHK(120|240)(\d{2,3})\b/i);
-  if (!m) return null;
-  return `DHEHK${m[1]}${m[2]}`;
-}
-
-function extractCableSku(name) {
-  const text = String(name || '');
-  // Prefer the explicit model number if the title carries it.
-  const direct = extractDhehkSkuFromName(text);
-  if (direct) return direct;
-  const voltageMatch = text.match(/\b(120|240)\s*v\b/i);
-  const sqftMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:sq\.?\s*ft|square\s*feet|sqft)/i);
-  if (!voltageMatch || !sqftMatch) return null;
-  const voltage = voltageMatch[1];
-  const sqft = sqftMatch[1];
-  const table = voltage === '120' ? (SKU_MAP.cable_lookup?.sqft_to_sku_120v || {}) : (SKU_MAP.cable_lookup?.sqft_to_sku_240v || {});
-  return table[sqft] || null;
-}
+// Schluter DITRA-HEAT cable resolution now lives in lib/cable-sku.js so the
+// PO path shares it. These thin wrappers bind the sku-map's cable_lookup table.
+const extractDhehkSkuFromName = cableSku.extractDhehkSkuFromName;
+const extractCableSku = (name) => cableSku.extractCableSku(name, SKU_MAP.cable_lookup);
 
 function resolveOrderItems(order) {
   const resolved = [];
@@ -457,12 +439,12 @@ function resolveOrderItems(order) {
     }
 
     if (mapped.api_sku === 'UNMAPPED_CABLE') {
-      const cableSku = extractCableSku(item.name);
-      if (!cableSku) {
+      const cableModel = extractCableSku(item.name);
+      if (!cableModel) {
         failures.push(`Cable SKU unresolved from title for ${sku} (${item.name || sku})`);
         continue;
       }
-      resolved.push({ ...base, kind: 'prosol', apiSku: cableSku, label: `${mapped.product || item.name} → ${cableSku}` });
+      resolved.push({ ...base, kind: 'prosol', apiSku: cableModel, label: `${mapped.product || item.name} → ${cableModel}` });
       continue;
     }
 
@@ -472,11 +454,26 @@ function resolveOrderItems(order) {
         continue;
       }
       for (const comp of mapped.components) {
-        if (!comp.api_sku || String(comp.api_sku).startsWith('UNMAPPED')) {
+        let compSku = comp.api_sku;
+        let compProduct = comp.product;
+        // A kit's cable component is variant-specific (model varies by order),
+        // so it's flagged UNMAPPED_CABLE. Resolve it from the order title the
+        // same way the standalone cable listing does — the Amazon title ends
+        // with the DHEHK model number.
+        if (compSku === 'UNMAPPED_CABLE') {
+          const cableModel = extractCableSku(item.name);
+          if (!cableModel) {
+            failures.push(`Bundle cable unresolved from title for ${sku} (${item.name || sku})`);
+            continue;
+          }
+          compSku = cableModel;
+          compProduct = `Schluter cable ${cableModel}`;
+        }
+        if (!compSku || String(compSku).startsWith('UNMAPPED')) {
           failures.push(`Bundle component unresolved for ${sku} (${comp.product || comp.api_sku || 'unknown'})`);
           continue;
         }
-        resolved.push({ ...base, kind: 'prosol', apiSku: comp.api_sku, label: `${mapped.product || item.name} / ${comp.product || comp.api_sku}` });
+        resolved.push({ ...base, kind: 'prosol', apiSku: compSku, label: `${mapped.product || item.name} / ${compProduct || compSku}` });
       }
       continue;
     }
@@ -1070,4 +1067,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry };
+module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry, resolveOrderItems };
