@@ -1329,7 +1329,7 @@
         },
         {
           "api_sku": "KMS172/20",
-          "prosol_sku": "KMS172/20",
+          "prosol_sku": "KMS17220",
           "product": "Schluter KERDI-SEAL-PS Pipe Seal 3/4\""
         },
         {
@@ -1348,6 +1348,32 @@
       "needs_order_lookup": true
     },
     "_section_schluter_kerdi_pipe_seal": "=== SCHLUTER - KERDI-SEAL-PS PIPE SEAL ===",
+    "B003K1PP1U": {
+      "cost_cad": 5.85,
+      "retail_cad": 10.26,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KMS172/20",
+      "prosol_sku": "KMS17220",
+      "product": "Schluter - KERDI-SEAL-PS Pipe Seal with Over-Moulded Rubber Gasket 3/4\"",
+      "note": "Amazon ASIN, single 3/4\" Kerdi pipe seal (order item title 'Schluter Kerdi Pipe Seal 3/4'). Verified vs Prosol product id 79945. Added 2026-06-25 after order 701-3349809-5729830 (qty 2) sat ~45h on a missing ASIN mapping.",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KMS172/20",
+      "barcode": "4011832190414"
+    },
+    "KMS17220": {
+      "cost_cad": 5.85,
+      "retail_cad": 10.26,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KMS172/20",
+      "prosol_sku": "KMS17220",
+      "product": "Schluter - KERDI-SEAL-PS Pipe Seal with Over-Moulded Rubber Gasket 3/4\"",
+      "note": "Shopify/order SKU (no slash) == Prosol internal prosol_sku; mfg api_sku is KMS172/20 (with slash). Verified vs Prosol product id 79945.",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KMS172/20",
+      "barcode": "4011832190414"
+    },
     "B072J4C3KS": {
       "cost_cad": 5.85,
       "retail_cad": 10.26,
