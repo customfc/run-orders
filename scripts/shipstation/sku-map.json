@@ -434,6 +434,16 @@
       "note": "CSTM BLDG branded listing - same product",
       "verified": true
     },
+    "11566": {
+      "cost_cad": 146.7,
+      "retail_cad": 246.65,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "C030883",
+      "prosol_sku": "C030883-04",
+      "product": "Aqua Mix - Sealers Choice Gold 1 gal",
+      "note": "Shopify listing SKU (added for order 1297; product already mapped under ASINs B000GFPNG0/B09F5L14HN)",
+      "verified": true
+    },
     "_section_aqua_mix_stone_deep_clean": "=== AQUA MIX - STONE DEEP CLEAN ===",
     "B000GFUTWI": {
       "cost_cad": 8.92,
@@ -1388,6 +1398,19 @@
       "retail_cad": 10.26,
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
+    },
+    "KMS17220": {
+      "cost_cad": 5.85,
+      "retail_cad": 10.26,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KMS172/20",
+      "prosol_sku": "KMS17220",
+      "product": "Schluter - KERDI-SEAL-PS Pipe Seal with Over-Moulded Rubber Gasket 3/4\"",
+      "note": "Order/Shopify SKU 'KMS17220' (no slash) == Prosol internal prosol_sku (PO code); mfg SKU api_sku is 'KMS172/20' (with slash, live-API lookup). Verified vs Prosol product id 79945 on 2026-06-24. Single 3/4\" pipe seal previously existed ONLY as a bundle component (B09CW9ZTRX), so standalone orders failed with 'No sku-map entry for KMS17220'.",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KMS172/20",
+      "barcode": "4011832190414"
     },
     "B07289LVSQ": {
       "cost_cad": 52.69,
