@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { ProsolClientV2 } = require('./prosol-client-v2');
 const cableSku = require('../../lib/cable-sku');
+const { planPackages } = require('../../lib/package-split');
 const { validateMapping } = require('../../lib/mapping-guard');
 
 // Airtight mapping guard: before staging an order, confirm the Prosol code we
@@ -809,6 +810,36 @@ function renderTable(rows) {
 
 // ── Core exported function ───────────────────────────────────────────────────
 
+// ── Large-order review gate ──────────────────────────────────────────────────
+// A high-value / heavy / many-box order is held for human review on purpose,
+// before it ever hits the rate step, and pages Mac by URGENT email. Thresholds
+// are env-tunable so Mac can adjust without a deploy. See lib/pipeline.js
+// (phaseStage) for the email + project memory for the "I wasn't notified" fix.
+const LARGE_ORDER_VALUE_CAD = Number(process.env.LARGE_ORDER_VALUE_CAD || 2500);
+const LARGE_ORDER_WEIGHT_LB = Number(process.env.LARGE_ORDER_WEIGHT_LB || 150);
+const LARGE_ORDER_PACKAGES  = Number(process.env.LARGE_ORDER_PACKAGES  || 5);
+
+// Order $ value (orderTotal if ShipStation populated it, else sum of line
+// unitPrice*qty), total weight in lb, and how many physical boxes it splits to.
+function computeOrderProfile(order) {
+  const items = order.items || [];
+  const sumItems = items.reduce((s, i) => s + (Number(i.unitPrice) || 0) * (Number(i.quantity) || 0), 0);
+  const valueCad = Number(order.orderTotal) > 0 ? Number(order.orderTotal) : sumItems;
+  const weightLb = toLb(order.weight);
+  let packages = 1;
+  try { packages = planPackages(items, order.weight).length; } catch { packages = 1; }
+  return { valueCad, weightLb, packages };
+}
+
+// Returns the list of threshold reasons an order trips, or [] if it's normal-sized.
+function largeOrderReasons(profile) {
+  const r = [];
+  if (profile.valueCad >= LARGE_ORDER_VALUE_CAD) r.push(`$${Math.round(profile.valueCad).toLocaleString()} value`);
+  if (profile.weightLb >= LARGE_ORDER_WEIGHT_LB) r.push(`${Math.round(profile.weightLb)} lb`);
+  if (profile.packages >= LARGE_ORDER_PACKAGES)  r.push(`${profile.packages} boxes`);
+  return r;
+}
+
 async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress = () => {} } = {}) {
   onProgress({ type: 'status', message: filterOrderNumber ? `Fetching order ${filterOrderNumber}...` : 'Fetching awaiting_shipment orders from ShipStation...' });
   const allOrders = await fetchAwaitingOrders();
@@ -860,6 +891,31 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
       rejected.push({ orderNumber: order.orderNumber, reason: guardHalt });
       continue;
     }
+
+    // Large-order review gate: hold high-value/heavy/many-box orders for a human
+    // and page Mac by URGENT email (lib/pipeline.js). Intentional — a big order
+    // should be considered, not auto-shipped. Runs after mapping/routing checks
+    // so a normal-sized order with a mapping issue still alerts on that instead.
+    const profile = computeOrderProfile(order);
+    const bigReasons = largeOrderReasons(profile);
+    if (bigReasons.length) {
+      rejected.push({
+        orderNumber: order.orderNumber,
+        reason: `Large order held for review (${bigReasons.join(', ')})`,
+        large: true,
+        profile: {
+          valueCad: profile.valueCad,
+          weightLb: profile.weightLb,
+          packages: profile.packages,
+          customer: order.shipTo?.name || '',
+          destination: `${order.shipTo?.city || ''}, ${normalizeProvince(order.shipTo?.state) || order.shipTo?.state || ''}`.replace(/^, /, ''),
+          orderDate: order.orderDate || null,
+          source: orderSource(order),
+        },
+      });
+      continue;
+    }
+
     scopeOrders.push({
       ...order,
       source: orderSource(order),
