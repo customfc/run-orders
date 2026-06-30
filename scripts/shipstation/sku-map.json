@@ -5468,6 +5468,30 @@
       "verified": true,
       "source": "Amazon ASIN alias; title #38 Avalanche → Mapesil T Plus 3BU003891 (added 2026-06-02, order 701-1086212)"
     },
+    "B0B8F1F776": {
+      "cost_cad": 15.86,
+      "retail_cad": 24.4,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "3BU010391",
+      "prosol_sku": "3BU010391",
+      "product": "Mapei Mapesil T Plus Silicone Sealant — #5103 Cobblestone (10.1 oz)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "Amazon ASIN alias; listing title '103 pavers' resolves to our seller SKU 3BU010391 (Mapei #5103 Cobblestone, Prosol $15.86) — confirmed via SP-API listing + Prosol lookup (added 2026-06-30, order 701-4087616)"
+    },
+    "B0B8LLM4GL": {
+      "cost_cad": 15.86,
+      "retail_cad": 24.4,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "3BU004991",
+      "prosol_sku": "3BU004991",
+      "product": "Mapei Mapesil T Plus Silicone Sealant — Light Almond (10.1 oz)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "Amazon ASIN alias; our seller SKU 3BU004991 (Mapei Light Almond) — confirmed via SP-API listing (added 2026-06-30, order 702-6853207)"
+    },
     "B0B5M85WVL": {
       "cost_cad": 15.86,
       "retail_cad": 24.4,
