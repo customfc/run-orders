@@ -25,3 +25,17 @@ data/auto-restock-pending.json
 data/buybox-defender-config.json
 data/buybox-defender-log.jsonl
 
+
+# --- reconcile 2026-06-30: secrets / live DBs / transient state ---
+.env.bak*
+.env.pre-*
+data/vendor-availability.sqlite*
+data/held-rebuys.json
+data/*-state.json
+data/mail-watcher-state.json
+data/orphan-sweep-state.json
+data/cp-pickups.json.bak*
+logs/
+*.tmp.js
+_tmp_*
+*.bak[0-9]*

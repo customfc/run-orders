@@ -1,0 +1,32 @@
+{
+  "_doc": "Per-vendor feed config. key = short vendor handle. sf_vendor_name must match PBSI__Default_Vendor_Name__c so availability links to our catalog. columns maps OUR fields -> the vendor's header names (case-insensitive, fuzzy-contains); use a number for headerless column index. full=true means the feed is a COMPLETE availability list (enables drop-off => discontinued detection); set false for partial/delta feeds.",
+  "biyork": {
+    "name": "Biyork Materials Canada Inc.",
+    "sf_vendor_name": "Biyork Materials Canada Inc.",
+    "format": "csv",
+    "full": true,
+    "columns": { "sku": "Item", "qty": "Available", "description": "Description", "status": "Status" }
+  },
+  "prosol": {
+    "name": "Prosol",
+    "sf_vendor_name": "Prosol",
+    "format": "csv",
+    "full": false,
+    "note": "We already scrape Prosol live (check-prosol-price.js); this feed is a fallback/cross-check, treat as partial.",
+    "columns": { "sku": "Code", "qty": "Stock", "description": "Description" }
+  },
+  "buckwold": {
+    "name": "Buckwold Western",
+    "sf_vendor_name": "Buckwold Western",
+    "format": "csv",
+    "full": true,
+    "columns": { "sku": "SKU", "qty": "Qty", "description": "Product" }
+  },
+  "unifloor": {
+    "name": "Unifloor Trading Inc",
+    "sf_vendor_name": "Unifloor Trading Inc",
+    "format": "csv",
+    "full": true,
+    "columns": { "sku": "Item #", "qty": "On Hand", "description": "Name" }
+  }
+}

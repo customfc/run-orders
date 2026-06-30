@@ -442,7 +442,7 @@ app.post('/api/email/send-to-prosol', (req, res) => {
   (async () => {
     const { downloadLabelPdf } = require('./lib/shipstation-v2');
     const { generatePackingSlipPdf } = require('./lib/packing-slip');
-    const { sendWarehouseEmail } = require('./lib/emailer');
+    const { sendWarehouseEmail, PROSOL_CARRIER_PICKUP_LINE, prosolCarrierPickupShipTo } = require('./lib/emailer');
 
     // Group by warehouse
     const byWarehouse = {};
@@ -480,7 +480,7 @@ app.post('/api/email/send-to-prosol', (req, res) => {
                 orderNumber: o.orderNumber,
                 tracking: o.trackingNumber,
                 carrier: o.carrier,
-                shipTo: o.shipTo,
+                shipTo: prosolCarrierPickupShipTo(),
                 items: o.items || [],
               });
               if (slipPdf) attachments.push({ filename: `PackingSlip-${o.poNumber}.pdf`, content: slipPdf });
@@ -495,7 +495,7 @@ app.post('/api/email/send-to-prosol', (req, res) => {
           orders: whOrders.map(o => ({
             orderNumber: o.orderNumber,
             poNumber: o.poNumber || 'N/A',
-            shipTo: o.shipTo ? `${o.shipTo.name}, ${o.shipTo.city} ${o.shipTo.postalCode}` : 'N/A',
+            shipTo: PROSOL_CARRIER_PICKUP_LINE,
             carrier: o.carrier,
             tracking: o.trackingNumber,
           })),

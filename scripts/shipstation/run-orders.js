@@ -7,6 +7,38 @@ const fs = require('fs');
 const path = require('path');
 const { ProsolClientV2 } = require('./prosol-client-v2');
 const cableSku = require('../../lib/cable-sku');
+const { validateMapping } = require('../../lib/mapping-guard');
+
+// Airtight mapping guard: before staging an order, confirm the Prosol code we
+// resolved is the same product/size the customer actually ordered — comparing
+// the SF item description for the prosol_sku against the order line's name.
+// Returns a HALT reason on a genuine mismatch, else null. Fail-safe: any SF
+// error returns null so a transient issue never blocks the whole run. Built
+// after order 701-1443245 shipped a Quart of "Grout Haze Remover" for a Pint of
+// "Grout Haze Clean-Up" (sku-map mislabeled). See lib/mapping-guard.js.
+const _guardSfCache = new Map();
+async function checkMappingGuard(resolvedItems) {
+  try {
+    const sf = require('../../lib/salesforce');
+    let conn = null;
+    for (const item of resolvedItems) {
+      const code = String(item.prosolSku || '').trim();
+      if (!code) continue;
+      if (!_guardSfCache.has(code)) {
+        conn = conn || await sf.connect();
+        const recs = await sf.query(conn, `SELECT PBSI__description__c FROM PBSI__PBSI_Item__c WHERE PBSI__Vendor_Item_ID__c = '${code.replace(/'/g, '')}' LIMIT 1`);
+        _guardSfCache.set(code, recs[0] ? recs[0].PBSI__description__c : null);
+      }
+      const sfProduct = _guardSfCache.get(code);
+      if (!sfProduct) continue; // code not stocked in SF — can't verify here (Prosol-API pass covers these); don't block
+      const v = validateMapping(item.name, sfProduct);
+      if (!v.ok) return `Mapping guard HALT — ordered "${item.name}" but ${code} is "${sfProduct}": ${v.reason}`;
+    }
+    return null;
+  } catch (e) {
+    return null; // never block staging on a guard/SF error
+  }
+}
 
 const SS_KEY = process.env.SHIPSTATION_API_KEY;
 const SS_SECRET = process.env.SHIPSTATION_API_SECRET;
@@ -823,6 +855,11 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
       rejected.push({ orderNumber: order.orderNumber, reason: 'Contains flooring-style item outside Amazon/Prosol run scope' });
       continue;
     }
+    const guardHalt = await checkMappingGuard(resolved);
+    if (guardHalt) {
+      rejected.push({ orderNumber: order.orderNumber, reason: guardHalt });
+      continue;
+    }
     scopeOrders.push({
       ...order,
       source: orderSource(order),
@@ -850,6 +887,11 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
         let warehouseId;
         let warehouseLabel;
         let fromPostalCode;
+        // The exact Prosol branch (product_inventory_location_id) the router
+        // chose by stock — the branch the goods ship from, the label origin, and
+        // (for direct ordering) the branch the Prosol order is created at. Kept
+        // explicitly so direct-order placement can't drift from label/pickup.
+        let prosolLocId;
         const itemPool = order.resolvedItems.length ? order.resolvedItems : order.fixedWarehouseItems;
 
         if (order.fixedWarehouseId) {
@@ -858,6 +900,7 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
           warehouseId = Number(order.fixedWarehouseId);
           warehouseLabel = `${fixedWarehouse.city} (${fixedWarehouse.code})`;
           fromPostalCode = fixedWarehouse.postal_code;
+          prosolLocId = fixedWarehouse.id;
         } else {
           const inventoryBySku = {};
           // The Prosol storefront search API and the PO catalog use different
@@ -895,6 +938,7 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
           warehouseId = Number(warehouse.location.shipstation_warehouse_id);
           warehouseLabel = `${warehouse.location.city} (${warehouse.location.code})`;
           fromPostalCode = warehouse.location.postal_code;
+          prosolLocId = warehouse.prosolLocId;
         }
 
         onProgress({ type: 'rates', message: `Rate shopping for ${order.orderNumber}...`, orderNumber: order.orderNumber });
@@ -909,6 +953,7 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
           destination: orderDestination(order),
           warehouseId,
           warehouseLabel,
+          prosolLocId,
           carrierCode: rate.winner.carrierCode,
           serviceCode: rate.winner.serviceCode,
           packageCode: 'package',
