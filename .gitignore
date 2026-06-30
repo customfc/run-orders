@@ -37,5 +37,11 @@ data/orphan-sweep-state.json
 data/cp-pickups.json.bak*
 logs/
 *.tmp.js
+*.tmp.md
 _tmp_*
 *.bak[0-9]*
+# generated reports / one-off label PDFs (regenerable, never source)
+public/financial-report-*.html
+public/po-preview-*.html
+public/cost-review-*.csv
+public/replacement-label-*.pdf
