@@ -56,6 +56,10 @@ const LOCATION_MAP = JSON.parse(fs.readFileSync(path.join(__dirname, 'prosol-loc
 
 const NON_PROSOL_MARKERS = new Set(['NON_PROSOL', 'SKIP']);
 const PERFECT_LEVEL_RE = /perfect\s+level/i;
+// DEPRECATED 2026-06-30: MAIN_HUBS / DEPRIORITIZED_LOCS / REGION_TIER_OVERRIDES /
+// effectiveRegionForOrder no longer drive routing. determineWarehouse now ranks
+// branches by distance to the delivery postal (postalLatLng) and picks the
+// nearest in-stock one. Kept for reference/rollback; safe to remove later.
 const MAIN_HUBS = {
   BC: [10010, 10003, 10054, 10007, 10022, 10023, 10026, 10031, 10034, 10038, 10044, 10045, 10055],
   AB: [10054, 10010, 10003, 10049, 10011, 10018, 10019, 10036],
@@ -563,6 +567,24 @@ function haversineKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// Approx lat/lng by postal FSA (forward-sortation area). 2-char prefix wins over
+// 1-char; falls back to the province centroid. ShipStation doesn't geocode, so
+// this lets routing rank branches by distance to the actual delivery address.
+const FSA_LATLNG = {
+  A:[47.56,-52.71], B:[44.65,-63.60], C:[46.25,-63.13], E:[46.09,-64.77],
+  G:[46.81,-71.21], G4:[48.83,-64.49], G5:[48.45,-68.52], G7:[48.43,-71.07], G8:[48.43,-71.07],
+  H:[45.51,-73.59],
+  J:[45.55,-73.45], J1:[45.40,-71.89], J6:[45.78,-73.43], J7:[45.70,-73.95], J8:[45.48,-75.70], J9:[45.48,-75.70],
+  K:[45.42,-75.70], L:[43.50,-79.70], M:[43.70,-79.40], N:[43.00,-81.25], P:[46.50,-81.00],
+  R:[49.90,-97.14], S:[50.45,-104.62], S7:[52.13,-106.67],
+  T:[51.05,-114.07], T5:[53.55,-113.49], T6:[53.55,-113.49], T7:[53.55,-113.49], T8:[53.55,-113.49], T9:[53.55,-113.49],
+  V:[49.25,-123.10], X:[62.45,-114.37], Y:[60.72,-135.06],
+};
+function postalLatLng(postalCode, province) {
+  const p = String(postalCode || '').replace(/\s/g, '').toUpperCase();
+  return FSA_LATLNG[p.slice(0, 2)] || FSA_LATLNG[p[0]] || PROVINCE_LAT_LNG[province] || [45, -75];
+}
+
 // Minimum qty required at a preferred hub for it to be chosen. Avoids the
 // "phantom last unit" trap (2026-04-21 order 702-7750339 routed to BURN
 // because Prosol reported qty=1 of DHEHK24085 there; physically BURN had
@@ -583,81 +605,33 @@ function scoreWarehouseAgainstOrder(locId, inventoryBySku) {
   return minQty === Infinity ? 0 : minQty;
 }
 
-function determineWarehouse(region, inventoryBySku) {
-  const preferred = MAIN_HUBS[region] || [];
-  const override = REGION_TIER_OVERRIDES[region] || { promote: new Set(), demote: new Set() };
-  const isATier = (id) => {
-    if (override.promote.has(id)) return true;
-    if (override.demote.has(id))  return false;
-    return !DEPRIORITIZED_LOCS.has(id);
-  };
-  const aPreferred = preferred.filter(isATier);
-  const bPreferred = preferred.filter((id) => !isATier(id));
-  // BCI shares BC's province centroid since lat/lng-from-centroid distances
-  // already favor the island hubs over WCAS within the A-tier filter.
-  const centroidKey = region === 'BCI' ? 'BC' : region;
-  const [provLat, provLng] = PROVINCE_LAT_LNG[centroidKey] || [45, -75];
-  const candidates = Object.entries(LOCATION_MAP)
-    .map(([id, loc]) => ({ id: Number(id), ...loc }))
-    .filter((loc) => loc.shipstation_warehouse_id);
+// Customer-proximity routing (2026-06-30): rank every active Prosol branch by
+// distance to the delivery postal and pick the nearest one that has stock.
+// Replaces the province-centroid + A/B-tier scheme, which marked all QC/Atlantic
+// branches B-tier and so funneled the entire east to Ottawa (the nearest A-tier
+// Ontario hub) — one chokepoint. Keeps the qty>=2 phantom-stock guard, then
+// falls back to qty>=1 so low-stock orders still ship. NOTE: the legacy
+// MAIN_HUBS / DEPRIORITIZED_LOCS / REGION_TIER_OVERRIDES / effectiveRegionForOrder
+// tables above are retained for reference but NO LONGER drive routing.
+function determineWarehouse(order, inventoryBySku) {
+  const [lat, lng] = postalLatLng(order.shipTo?.postalCode, order.normalizedProvince);
+  // Active Prosol branches only (numeric ids; excludes non_prosol + the old_*
+  // deleted-warehouse duplicates), ranked nearest-first to the delivery address.
+  const branches = Object.entries(LOCATION_MAP)
+    .filter(([id, loc]) => /^\d+$/.test(id) && loc.active && !loc.non_prosol && loc.lat && loc.shipstation_warehouse_id)
+    .map(([id, loc]) => ({ prosolLocId: Number(id), location: loc, km: haversineKm(lat, lng, loc.lat, loc.lng) }))
+    .sort((a, b) => a.km - b.km);
 
-  // Distance-sort utility: order ids by haversine km from province centroid.
-  const sortByDistance = (ids) => ids
-    .map((id) => {
-      const loc = LOCATION_MAP[String(id)];
-      const km = haversineKm(provLat, provLng, loc?.lat || 0, loc?.lng || 0);
-      return { id, km };
-    })
-    .sort((a, b) => a.km - b.km)
-    .map((c) => c.id);
-
-  const aPreferredByDist = sortByDistance(aPreferred);
-  const bPreferredByDist = sortByDistance(bPreferred);
-
-  // Sort non-preferred candidates by distance to destination province
-  const fallback = candidates
-    .filter((c) => !preferred.includes(c.id))
-    .sort((a, b) => haversineKm(provLat, provLng, a.lat || 0, a.lng || 0) - haversineKm(provLat, provLng, b.lat || 0, b.lng || 0));
-  const fallbackA = fallback.filter((c) => isATier(c.id));
-  const fallbackB = fallback.filter((c) => !isATier(c.id));
-
-  // Iterate ids in given order, return the first one whose qty across all SKUs
-  // meets the minimum. The qty>=2 default protects against phantom-stock=1
-  // (2026-04-21 BURN/Terrace incident) without needing to re-sort by score.
-  const tryTier = (ids, minQty) => {
-    for (const id of ids) {
-      if (scoreWarehouseAgainstOrder(id, inventoryBySku) < minQty) continue;
-      const location = LOCATION_MAP[String(id)];
-      if (location && location.shipstation_warehouse_id) return { prosolLocId: id, location };
+  // Pass 1: nearest branch with qty >= MIN_QTY_PREFERRED (phantom-stock guard).
+  for (const b of branches) {
+    if (scoreWarehouseAgainstOrder(b.prosolLocId, inventoryBySku) >= MIN_QTY_PREFERRED) {
+      return { prosolLocId: b.prosolLocId, location: b.location };
     }
-    return null;
-  };
-
-  // Pass 1A: closest A-tier preferred hub with qty >= MIN_QTY_PREFERRED.
-  // Distance-first means QC orders try OTTA before WCON, ON orders try the
-  // hub nearest the province centroid first, etc.
-  const a = tryTier(aPreferredByDist, MIN_QTY_PREFERRED);
-  if (a) return a;
-
-  // Pass 1B: B-tier preferred hubs (operationally slow — see DEPRIORITIZED_LOCS).
-  // Only used when no A-tier hub has enough stock. Same MIN_QTY threshold.
-  const b = tryTier(bPreferredByDist, MIN_QTY_PREFERRED);
-  if (b) return b;
-
-  // Pass 2: distance-ranked fallback at qty >= 1 so low-stock items still ship.
-  // A-tier hubs (preferred + non-deprioritized fallback) come first; B-tier
-  // hubs are forced to the bottom regardless of distance.
-  const ranked = [
-    ...aPreferredByDist,
-    ...fallbackA.map((c) => c.id),
-    ...bPreferredByDist,
-    ...fallbackB.map((c) => c.id),
-  ];
-  for (const locId of ranked) {
-    const location = LOCATION_MAP[String(locId)];
-    if (!location || !location.shipstation_warehouse_id) continue;
-    if (scoreWarehouseAgainstOrder(locId, inventoryBySku) > 0) {
-      return { prosolLocId: locId, location };
+  }
+  // Pass 2: nearest branch with qty >= 1 so low-stock items still ship.
+  for (const b of branches) {
+    if (scoreWarehouseAgainstOrder(b.prosolLocId, inventoryBySku) >= 1) {
+      return { prosolLocId: b.prosolLocId, location: b.location };
     }
   }
   return null;
@@ -988,8 +962,7 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
             inventoryBySku[cacheKey] = inv;
           }
 
-          const region = effectiveRegionForOrder(order.normalizedProvince, order.shipTo?.postalCode);
-          const warehouse = determineWarehouse(region, inventoryBySku);
+          const warehouse = determineWarehouse(order, inventoryBySku);
           if (!warehouse) throw new Error('No single mapped Prosol warehouse has all required items');
           warehouseId = Number(warehouse.location.shipstation_warehouse_id);
           warehouseLabel = `${warehouse.location.city} (${warehouse.location.code})`;
