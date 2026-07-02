@@ -117,7 +117,11 @@ async function main() {
   }
 
   const planKey = `${args.draft}-${vendor}${bucket ? '-' + bucket : ''}-inbound`;
-  const name = `${vendor.toUpperCase()}${bucket ? ' ' + bucket.toUpperCase() : ''} — ${args.draft.replace('draft-', '')} — ${items.length} SKU`;
+  // Amazon caps the inbound plan name at 40 chars. Keep it compact: vendor +
+  // bucket + the draft's unique suffix + SKU count, then clamp defensively.
+  const draftTag = args.draft.replace('draft-', '').split('-').pop();
+  let name = `${vendor.toUpperCase()}${bucket ? ' ' + bucket.toUpperCase() : ''} ${draftTag} ${items.length}SKU`;
+  if (name.length > 40) name = name.slice(0, 40).trim();
 
   console.log(`Creating inbound plan for ${items.length} SKU(s) from ${sourceKey}...`);
   for (const it of items) console.log(`  ${it.msku}  ×${it.quantity}`);
