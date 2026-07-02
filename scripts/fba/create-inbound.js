@@ -125,6 +125,13 @@ async function main() {
 
   const state = plans.create({ planKey, sourceDraftId: args.draft, vendor, lines: items, sourceAddress, name });
 
+  // Carry vendor-confirmed carton dims from the draft line onto the plan state
+  // so step4 (transport/quote) declares the real carton instead of a fallback.
+  // (The orchestrator also re-stamps this, but the manual step-script path
+  // relies on it being here.)
+  const cartonDims = lines.find((l) => l.cartonDims)?.cartonDims || null;
+  if (cartonDims) state.cartonDims = cartonDims;
+
   try {
     const created = await inbound.createInboundPlan({
       name,
