@@ -52,11 +52,19 @@ async function main() {
   if (!shipmentIds.length) throw new Error('No shipments on plan — placement may not have confirmed');
   console.log(`  ${shipmentIds.length} shipment(s):`, shipmentIds.join(', '));
 
-  // Box split heuristic (MVP — Bona Mega EXTRA MATTE case pack).
-  // TODO: per-SKU case_pack + box_weight + box_dims fields in sku-map.
-  const itemsPerBox = 4;
-  const boxWeightLb = 42;
-  const boxDims = { length: 14, width: 12, height: 12 };
+  // Carton config: prefer the vendor-confirmed cartonDims recorded on the plan
+  // (confirm-dims → runForBucket stamps state.cartonDims: {count,L,W,H,weightLb}
+  // in INCHES/LB). Fall back to the legacy Bona Mega case-pack heuristic only
+  // when no dims were recorded, so existing SKUs keep working.
+  const cd = state.cartonDims;
+  const haveDims = cd && [cd.count, cd.L, cd.W, cd.H, cd.weightLb]
+    .every((n) => Number.isFinite(Number(n)) && Number(n) > 0);
+  const itemsPerBox = 4; // legacy fallback split only
+  const boxWeightLb = haveDims ? Number(cd.weightLb) : 42;
+  const boxDims = haveDims
+    ? { length: Number(cd.L), width: Number(cd.W), height: Number(cd.H) }
+    : { length: 14, width: 12, height: 12 };
+  const fixedBoxCount = haveDims ? Number(cd.count) : null;
 
   // Ready-to-ship window: start 3 days out, end 10 days out. Gives the
   // vendor a reasonable pickup buffer.
@@ -72,7 +80,7 @@ async function main() {
   const configs = [];
   for (const shipId of shipmentIds) {
     const totalUnits = state.lines.reduce((s, l) => s + l.quantity, 0);
-    const boxCount = Math.ceil(totalUnits / itemsPerBox);
+    const boxCount = fixedBoxCount || Math.ceil(totalUnits / itemsPerBox);
     const items = state.lines.map((l) => ({ msku: l.msku, quantity: Math.ceil(l.quantity / boxCount) }));
     configs.push({
       shipmentId: shipId,
@@ -92,7 +100,7 @@ async function main() {
       }],
     });
   }
-  console.log(`  box config: ${configs[0].boxes[0].quantity} × ${boxDims.length}×${boxDims.width}×${boxDims.height}in @ ${boxWeightLb}lb`);
+  console.log(`  box config: ${configs[0].boxes[0].quantity} × ${boxDims.length}×${boxDims.width}×${boxDims.height}in @ ${boxWeightLb}lb ${haveDims ? '(from recorded cartonDims)' : '(legacy heuristic — no cartonDims recorded)'}`);
 
   console.log('\n[1/3] generateTransportationOptions...');
   const gen = await inbound.generateTransportationOptions(state.inboundPlanId, {

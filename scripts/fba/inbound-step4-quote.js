@@ -40,15 +40,32 @@ function quoteOf(o) { const q = o.quote; return q ? { amount: q.cost?.amount || 
   const iso = (off) => { const x = new Date(d); x.setUTCDate(x.getUTCDate() + off); return `${x.getUTCFullYear()}-${pad(x.getUTCMonth() + 1)}-${pad(x.getUTCDate())}T00:00:00Z`; };
   const readyToShipWindow = { start: iso(3) };
 
+  // Prefer vendor-confirmed cartonDims recorded on the plan; fall back to the
+  // hardcoded PO15056 manifest above only when none were recorded.
+  const cd = state.cartonDims;
+  const haveDims = cd && [cd.count, cd.L, cd.W, cd.H, cd.weightLb]
+    .every((n) => Number.isFinite(Number(n)) && Number(n) > 0);
+  let boxes = BOXES;
+  if (haveDims) {
+    const count = Number(cd.count);
+    const items = state.lines.map((l) => ({ msku: l.msku, quantity: Math.ceil(l.quantity / count) }));
+    boxes = [{
+      weight: { unit: 'POUNDS', value: Number(cd.weightLb) },
+      dimensions: { unit: 'INCHES', length: Number(cd.L), width: Number(cd.W), height: Number(cd.H) },
+      quantity: count,
+      items,
+      contentInformationSource: 'BOX_CONTENT_PROVIDED',
+    }];
+  }
   const configs = shipmentIds.map((shipmentId) => ({
     shipmentId,
     contactInformation: { name: 'Mac Roy', phoneNumber: state.sourceAddress.phoneNumber, email: state.sourceAddress.email || 'mac@customfc.ca' },
     readyToShipWindow,
     pallets: [],
-    boxes: BOXES,
+    boxes,
   }));
-  const totalBoxes = BOXES.reduce((s, b) => s + b.quantity, 0);
-  const totalUnits = BOXES.reduce((s, b) => s + b.quantity * b.items.reduce((t, i) => t + i.quantity, 0), 0);
+  const totalBoxes = boxes.reduce((s, b) => s + b.quantity, 0);
+  const totalUnits = boxes.reduce((s, b) => s + b.quantity * b.items.reduce((t, i) => t + i.quantity, 0), 0);
   console.log(`box config: ${totalBoxes} cartons, ${totalUnits} units`);
 
   console.log('\n[1/2] generateTransportationOptions...');
