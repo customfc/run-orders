@@ -13,7 +13,10 @@
 
 require('dotenv').config();
 const inbound = require('../../lib/sp-api-inbound');
+const { spApiRequest } = require('../../lib/sp-api');
 const plans = require('../../lib/fba-inbound-plans');
+
+const BASE = '/inbound/fba/2024-03-20';
 
 function parseArgs() {
   const args = {};
@@ -86,6 +89,41 @@ async function main() {
 
   state.status = 'packing-confirmed';
   plans.record(state, { step: 'confirm-packing', ok: true, data: { packingOptionId: picked.packingOptionId } });
+
+  // Sub-step 2d: setPackingInformation — REQUIRED before placement for the UPS
+  // AMAZON_PARTNERED_CARRIER (SPD) option to be offered. Skipping it (as this
+  // script used to) leaves only LTL / USE_YOUR_OWN_CARRIER. Must run BEFORE
+  // step 3 — Amazon rejects it once a placement option is confirmed.
+  // Uses the vendor-confirmed cartonDims stamped on the plan.
+  const cd = state.cartonDims;
+  const haveDims = cd && [cd.count, cd.L, cd.W, cd.H, cd.weightLb]
+    .every((n) => Number.isFinite(Number(n)) && Number(n) > 0);
+  if (haveDims) {
+    const packingGroupId = (picked.packingGroups || [])[0];
+    if (!packingGroupId) throw new Error('No packingGroupId on confirmed option — cannot set packing information');
+    const count = Number(cd.count);
+    const items = state.lines.map((l) => ({ msku: l.msku, quantity: Math.ceil(l.quantity / count), prepOwner: 'SELLER', labelOwner: 'SELLER' }));
+    const box = {
+      weight: { unit: 'LB', value: Number(cd.weightLb) },
+      dimensions: { unitOfMeasurement: 'IN', length: Number(cd.L), width: Number(cd.W), height: Number(cd.H) },
+      quantity: count,
+      items,
+      contentInformationSource: 'BOX_CONTENT_PROVIDED',
+    };
+    console.log('\n[4/4] setPackingInformation (enables UPS SPD partnered carrier)...');
+    const spi = await spApiRequest('POST', `${BASE}/inboundPlans/${state.inboundPlanId}/packingInformation`, { body: { packageGroupings: [{ packingGroupId, boxes: [box] }] } });
+    if (spi.status !== 200 && spi.status !== 202) throw new Error(`setPackingInformation failed ${spi.status}: ${spi.body.slice(0, 300)}`);
+    const spiB = JSON.parse(spi.body || '{}');
+    if (spiB.operationId) await inbound.waitForOperation(spiB.operationId, { onPoll: (op) => process.stdout.write(`  ${op.operationStatus}...\r`) });
+    state.packingGroupId = packingGroupId;
+    state.packingInformationSet = true;
+    plans.record(state, { step: 'set-packing-information', ok: true, data: { packingGroupId, box } });
+    console.log('  ✓ packing information set');
+  } else {
+    console.log('\n  ⚠ no cartonDims on plan — skipping setPackingInformation; transport will be LTL-only. Record dims via confirm-dims first.');
+    plans.save(state);
+  }
+
   console.log(`\n✓ step 2 complete. Plan is now ready for placement (step 3).`);
   console.log(`  state → data/fba/inbound-plans/${state.planKey}.json`);
 }
