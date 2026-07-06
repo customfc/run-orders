@@ -159,6 +159,12 @@ async function main() {
     if (!forceOwn && !q) {
       throw new Error(`${shipmentId}: selected partnered option has no quote — refusing to confirm.`);
     }
+    // Cost cap: never confirm a partnered label above --max-cost (Mac's $30
+    // label-spend rule). Default is uncapped for --mode=own / manual use.
+    const maxCost = args['max-cost'] != null ? Number(args['max-cost']) : Infinity;
+    if (!forceOwn && q && q.amount > maxCost) {
+      throw new Error(`${shipmentId}: cheapest partnered ($${q.amount.toFixed(2)} ${q.code}) exceeds --max-cost=$${maxCost} — refusing to confirm.`);
+    }
     console.log(`\n  → ${shipmentId}: ${picked.transportationOptionId}  ${picked.shippingSolution}  ${picked.carrier?.name || '?'}  ${q ? '$' + q.amount.toFixed(2) : 'no quote'}`);
     selected.push(picked);
   }
