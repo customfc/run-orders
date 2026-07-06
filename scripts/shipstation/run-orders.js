@@ -135,6 +135,14 @@ function effectiveRegionForOrder(province, postalCode) {
 // in address2 (customer ended up chasing the package at a Purolator depot).
 const CP_HINT_RE = /\b(?:p\.?\s*o\.?\s*box|post\s+office\s+box|canada\s+post|postal\s+(?:box|outlet)|rpo|bo[iî]te\s+postale)\b/i;
 
+// UPS routing kill-switch (Mac, 2026-07-06): UPS-from-ShipStation pickups have
+// been dead since 2026-06-19 (UPS billing error 9500782 on every booking —
+// ShipStation case open), so every UPS label strands at the Prosol branch
+// until someone books a pickup manually on ups.com. Route everything Purolator
+// until the wallet is fixed or we have our own UPS account for pickups.
+// UPS remains the fallback ONLY when Purolator returns no rate at all.
+const UPS_ROUTING_DISABLED = true;
+
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
 function httpsRequest(options, body = null, timeoutMs = 30000) {
@@ -693,7 +701,7 @@ async function getRates(order, fromPostalCode) {
   let bestNonCp;
   let nonCpNote = '';
   if (purolator && ups) {
-    if ((purolator.shipmentCost - ups.shipmentCost) >= 4) {
+    if (!UPS_ROUTING_DISABLED && (purolator.shipmentCost - ups.shipmentCost) >= 4) {
       bestNonCp = ups;
       nonCpNote = `UPS chosen — saves $${(purolator.shipmentCost - ups.shipmentCost).toFixed(2)} vs Purolator`;
     } else {
@@ -701,6 +709,9 @@ async function getRates(order, fromPostalCode) {
     }
   } else {
     bestNonCp = purolator || ups;
+    if (bestNonCp === ups && UPS_ROUTING_DISABLED) {
+      nonCpNote = 'UPS fallback — no Purolator rate; UPS pickups are DOWN, needs manual ups.com pickup';
+    }
   }
   // Canada Post is NEVER chosen on price — only via the cpHint (PO box / postal
   // outlet) path above. Mac policy 2026-06-09: CP pickups are unreliable (no
