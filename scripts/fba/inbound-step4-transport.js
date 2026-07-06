@@ -66,8 +66,10 @@ async function main() {
     : { length: 14, width: 12, height: 12 };
   const fixedBoxCount = haveDims ? Number(cd.count) : null;
 
-  // Ready-to-ship window: start 3 days out, end 10 days out. Gives the
-  // vendor a reasonable pickup buffer.
+  // Ready-to-ship window: START ONLY. Sending an `end` date suppresses the
+  // AMAZON_PARTNERED_CARRIER (UPS SPD) offer — Amazon returns only LTL /
+  // USE_YOUR_OWN_CARRIER. The proven fba-inbound-spd.js uses start-only and
+  // reliably surfaces partnered UPS. Do NOT re-add an end date.
   const d = new Date();
   const pad = (n) => String(n).padStart(2, '0');
   const isoDate = (offsetDays) => {
@@ -75,7 +77,7 @@ async function main() {
     x.setUTCDate(x.getUTCDate() + offsetDays);
     return `${x.getUTCFullYear()}-${pad(x.getUTCMonth() + 1)}-${pad(x.getUTCDate())}T00:00:00Z`;
   };
-  const readyWindow = { start: isoDate(3), end: isoDate(10) };
+  const readyWindow = { start: isoDate(3) };
 
   const configs = [];
   for (const shipId of shipmentIds) {
