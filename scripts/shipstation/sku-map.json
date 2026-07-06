@@ -325,6 +325,28 @@
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654
     },
+    "B006SM5WHK": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Mega Wood Floor Finish Gloss 1 Gallon",
+      "note": "Ships from CFC Sechelt own stock (Mac confirmed 2026-07-06, order 701-2463708-9341031) - no Prosol PO",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
+    "B0DJG4R1NW": {
+      "cost_cad": 462.45,
+      "retail_cad": 811.31,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "DITRAPS25M",
+      "prosol_sku": "DITRAPS25M",
+      "product": "Schluter - DITRA-PS Uncoupling Membrane Peel & Stick Roll 3'2-3/4\" x 83'4\" - 1/8\" (3.5mm) (269 sqft)",
+      "package_shape": "solo",
+      "brand": "schluter",
+      "schluter_item": "DITRAPS25M",
+      "verified": true,
+      "note": "Added 2026-07-06 for order 702-9965798-9383445 (Prosol product id 86560); full 25M roll ships alone"
+    },
     "13572": {
       "cost_cad": 2.21,
       "retail_cad": 3.87,
