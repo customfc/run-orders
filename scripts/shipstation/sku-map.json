@@ -334,6 +334,15 @@
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654
     },
+    "11058": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "2 in 1 Foam Underlayment (200 sq/ft) 2mm",
+      "note": "CFC own stock - Shopify shows Sechelt Warehouse 99 avail (verified 2026-07-06, order 1300) - no Prosol PO",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
     "B0DJG4R1NW": {
       "cost_cad": 462.45,
       "retail_cad": 811.31,
