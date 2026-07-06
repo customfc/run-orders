@@ -140,6 +140,14 @@ async function main() {
     const candidates = forceOwn
       ? shipOpts.filter((o) => o.shippingSolution === 'USE_YOUR_OWN_CARRIER')
       : shipOpts.filter((o) => o.shippingSolution === 'AMAZON_PARTNERED_CARRIER');
+    // Guard: never silently confirm a non-partnered / no-quote option when we
+    // intended Amazon-partnered freight. Partnered SPD only appears on the FIRST
+    // generateTransportationOptions after packing info is set — do NOT generate
+    // transport twice (e.g. running the quote script first) or it drops to
+    // LTL/own-carrier and we'd confirm a no-quote self-ship by accident.
+    if (!forceOwn && !candidates.length) {
+      throw new Error(`${shipmentId}: no AMAZON_PARTNERED_CARRIER offered — refusing to confirm own-carrier/LTL. Ensure step 2 set packing info and that transport was not already generated once. Use --mode=own only to deliberately self-ship.`);
+    }
     const pool = candidates.length ? candidates : shipOpts;
     const picked = pool.reduce((best, o) => {
       const bQ = quoteOf(best); const oQ = quoteOf(o);
@@ -148,6 +156,9 @@ async function main() {
       return oQ.amount < bQ.amount ? o : best;
     }, pool[0]);
     const q = quoteOf(picked);
+    if (!forceOwn && !q) {
+      throw new Error(`${shipmentId}: selected partnered option has no quote — refusing to confirm.`);
+    }
     console.log(`\n  → ${shipmentId}: ${picked.transportationOptionId}  ${picked.shippingSolution}  ${picked.carrier?.name || '?'}  ${q ? '$' + q.amount.toFixed(2) : 'no quote'}`);
     selected.push(picked);
   }
