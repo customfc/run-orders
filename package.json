@@ -7,7 +7,8 @@
     "start": "node server.js",
     "run-orders": "node scripts/shipstation/run-orders.js",
     "run-orders:dry": "node scripts/shipstation/run-orders.js --dry-run",
-    "book-cp": "node scripts/shipstation/book-cp-pickup.js"
+    "book-cp": "node scripts/shipstation/book-cp-pickup.js",
+    "test": "node --test scripts/shipstation/*.test.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.9.0",
