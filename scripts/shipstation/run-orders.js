@@ -593,35 +593,70 @@ function postalLatLng(postalCode, province) {
   return FSA_LATLNG[p.slice(0, 2)] || FSA_LATLNG[p[0]] || PROVINCE_LAT_LNG[province] || [45, -75];
 }
 
-// Minimum qty required at a preferred hub for it to be chosen. Avoids the
-// "phantom last unit" trap (2026-04-21 order 702-7750339 routed to BURN
-// because Prosol reported qty=1 of DHEHK24085 there; physically BURN had
-// none — likely a reserved/allocated unit reported as available).
-// Tier-down to >= 1 in the fallback tier so low-stock items still ship.
-const MIN_QTY_PREFERRED = 2;
-
-function scoreWarehouseAgainstOrder(locId, inventoryBySku) {
-  // Returns the min qty across all SKUs at this warehouse, or 0 if any SKU
-  // has no stock there. Higher = more stock for the whole order.
-  let minQty = Infinity;
-  for (const entry of Object.values(inventoryBySku)) {
-    const stock = entry.locationStock?.[locId];
-    const q = (stock && stock.available) ? (Number(stock.quantity) || 0) : 0;
-    if (q === 0) return 0;
-    if (q < minQty) minQty = q;
+// Units this order needs per SKU, keyed exactly like inventoryBySku
+// (cacheKey = api_sku || prosol_sku). Summed across line items and bundle
+// components so multi-line and multi-qty orders count correctly.
+function requiredQtyBySku(order) {
+  const req = {};
+  for (const item of (order.resolvedItems || [])) {
+    const key = item.apiSku || item.prosolSku;
+    if (!key) continue;
+    req[key] = (req[key] || 0) + (Number(item.qty) || 1);
   }
-  return minQty === Infinity ? 0 : minQty;
+  return req;
+}
+
+// Quantity-aware branch scoring. Returns the branch's SURPLUS beyond what the
+// order needs (min over SKUs of have - need), or -Infinity if the branch can't
+// fully cover any single SKU's required qty. surplus >= 0 => branch can fulfill
+// the whole order; higher = more headroom.
+//
+// Before 2026-07-09 this only checked qty >= 2 (then >= 1) and ignored the order
+// quantity entirely, so a 5-roll order routed to the nearest branch holding a
+// single unit (order 701-2156847 -> Richmond). The old qty>=2 "phantom last
+// unit" guard (added for the 2026-04-21 702-7750339 -> Burnaby incident) was
+// necessary but insufficient: it never scaled with order size.
+function scoreWarehouseAgainstOrder(locId, inventoryBySku, requiredBySku) {
+  let minSurplus = Infinity;
+  for (const [key, entry] of Object.entries(inventoryBySku)) {
+    const need = requiredBySku[key] || 0;
+    const stock = entry.locationStock?.[locId];
+    const have = (stock && stock.available) ? (Number(stock.quantity) || 0) : 0;
+    if (have < need) return -Infinity; // can't cover this SKU's full quantity
+    const surplus = have - need;
+    if (surplus < minSurplus) minSurplus = surplus;
+  }
+  return minSurplus === Infinity ? 0 : minSurplus;
+}
+
+// Human-readable coverage summary, surfaced in the planning error when no single
+// branch can fulfill the whole order so a person can split or source manually.
+function summarizeCoverage(order, inventoryBySku) {
+  const req = requiredQtyBySku(order);
+  return Object.entries(req).map(([key, need]) => {
+    const entry = inventoryBySku[key];
+    let best = 0, total = 0;
+    for (const s of Object.values(entry?.locationStock || {})) {
+      const q = (s && s.available) ? (Number(s.quantity) || 0) : 0;
+      total += q; if (q > best) best = q;
+    }
+    return `${key}: need ${need}, best branch ${best}, total ${total}`;
+  }).join('; ');
 }
 
 // Customer-proximity routing (2026-06-30): rank every active Prosol branch by
-// distance to the delivery postal and pick the nearest one that has stock.
-// Replaces the province-centroid + A/B-tier scheme, which marked all QC/Atlantic
-// branches B-tier and so funneled the entire east to Ottawa (the nearest A-tier
-// Ontario hub) — one chokepoint. Keeps the qty>=2 phantom-stock guard, then
-// falls back to qty>=1 so low-stock orders still ship. NOTE: the legacy
-// MAIN_HUBS / DEPRIORITIZED_LOCS / REGION_TIER_OVERRIDES / effectiveRegionForOrder
-// tables above are retained for reference but NO LONGER drive routing.
+// distance to the delivery postal and pick the nearest one that can fulfill the
+// ENTIRE order. Replaces the province-centroid + A/B-tier scheme, which funneled
+// the whole east to Ottawa. Quantity-aware since 2026-07-09: pass 1 wants the
+// nearest branch that covers every SKU's required qty plus a 1-unit buffer (the
+// phantom-last-unit guard, now scaled to order size); pass 2 falls back to exact
+// coverage. If no single branch can cover the full quantity, returns null and the
+// caller surfaces it for manual split/sourcing rather than mis-routing to a
+// branch that is short. NOTE: the legacy MAIN_HUBS / DEPRIORITIZED_LOCS /
+// REGION_TIER_OVERRIDES / effectiveRegionForOrder tables above are retained for
+// reference but NO LONGER drive routing.
 function determineWarehouse(order, inventoryBySku) {
+  const requiredBySku = requiredQtyBySku(order);
   const [lat, lng] = postalLatLng(order.shipTo?.postalCode, order.normalizedProvince);
   // Active Prosol branches only (numeric ids; excludes non_prosol + the old_*
   // deleted-warehouse duplicates), ranked nearest-first to the delivery address.
@@ -630,15 +665,16 @@ function determineWarehouse(order, inventoryBySku) {
     .map(([id, loc]) => ({ prosolLocId: Number(id), location: loc, km: haversineKm(lat, lng, loc.lat, loc.lng) }))
     .sort((a, b) => a.km - b.km);
 
-  // Pass 1: nearest branch with qty >= MIN_QTY_PREFERRED (phantom-stock guard).
+  // Pass 1: nearest branch that covers the whole order with >= 1 spare per SKU
+  // (phantom-last-unit guard, scaled to the order quantity).
   for (const b of branches) {
-    if (scoreWarehouseAgainstOrder(b.prosolLocId, inventoryBySku) >= MIN_QTY_PREFERRED) {
+    if (scoreWarehouseAgainstOrder(b.prosolLocId, inventoryBySku, requiredBySku) >= 1) {
       return { prosolLocId: b.prosolLocId, location: b.location };
     }
   }
-  // Pass 2: nearest branch with qty >= 1 so low-stock items still ship.
+  // Pass 2: nearest branch that exactly covers the whole order.
   for (const b of branches) {
-    if (scoreWarehouseAgainstOrder(b.prosolLocId, inventoryBySku) >= 1) {
+    if (scoreWarehouseAgainstOrder(b.prosolLocId, inventoryBySku, requiredBySku) >= 0) {
       return { prosolLocId: b.prosolLocId, location: b.location };
     }
   }
@@ -974,7 +1010,7 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
           }
 
           const warehouse = determineWarehouse(order, inventoryBySku);
-          if (!warehouse) throw new Error('No single mapped Prosol warehouse has all required items');
+          if (!warehouse) throw new Error(`No single Prosol branch can fulfill the full order quantity (${summarizeCoverage(order, inventoryBySku)}) — needs manual split or alternate sourcing`);
           warehouseId = Number(warehouse.location.shipstation_warehouse_id);
           warehouseLabel = `${warehouse.location.city} (${warehouse.location.code})`;
           fromPostalCode = warehouse.location.postal_code;
@@ -1152,4 +1188,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry, resolveOrderItems };
+module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage };
