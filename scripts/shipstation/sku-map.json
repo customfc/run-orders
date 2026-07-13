@@ -5751,6 +5751,18 @@
       "verified": true,
       "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
     },
+    "B0B8F2F2HV": {
+      "cost_cad": 15.86,
+      "retail_cad": 24.4,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "3BU004491",
+      "prosol_sku": "3BU004491",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 Pale Umber (10.1 oz)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "Amazon ASIN alias; title #44 Pale Omber 10oz \u2192 Mapesil T Plus 3BU004491 (added 2026-07-13, order 701-5786410)"
+    },
     "3BU004491": {
       "cost_cad": 15.86,
       "retail_cad": 24.4,
@@ -10990,6 +11002,20 @@
       "api_sku": "CLLQWAF1",
       "prosol_sku": "CLQWAF1-2",
       "product": "Custom Building Products - RedGard Waterproofing Membrane 1 gal",
+      "verified": true
+    },
+    "B096WNW3KF": {
+      "bundle": true,
+      "components": [
+        {
+          "api_sku": "CLLQWAF1",
+          "prosol_sku": "CLQWAF1-2",
+          "product": "Custom Building Products - RedGard Waterproofing Membrane 1 gal",
+          "qty": 2
+        }
+      ],
+      "product": "Custom Building Products - RedGard Waterproofing Membrane 1 gal (Two-Pack Bundle & Save)",
+      "note": "Amazon FBM listing 'REDGARD WATERPROOFING AND CRACK PREVENTION MEMBRANE (1 Gal / 3.78L) Two-Pack Bundle & Save' — one sellable unit = 2x the same B000NZ73SE 1-gal RedGard. Added after order 701-2015884-4515451 sat unmapped ('No sku-map entry for RP-B49Z-3XGM'). Same qty-multiplier convention as B0073IDMMA (Ardex Feather Finish 4-pack).",
       "verified": true
     },
     "B00JU7JV6S": {

@@ -518,7 +518,11 @@ function resolveOrderItems(order) {
           failures.push(`Bundle component unresolved for ${sku} (${comp.product || comp.api_sku || 'unknown'})`);
           continue;
         }
-        resolved.push({ ...base, kind: 'prosol', apiSku: compSku, label: `${mapped.product || item.name} / ${compProduct || compSku}` });
+        // comp.qty is a per-bundle multiplier (e.g. a 2-pack bundle needs 2x the
+        // component per unit ordered) — matches resolveSkuForPO's qty handling
+        // in lib/amazon-po.js so PO quantity and Prosol inventory/routing agree.
+        const compQty = (Number(comp.qty) || 1) * (Number(base.qty) || 1);
+        resolved.push({ ...base, kind: 'prosol', apiSku: compSku, qty: compQty, label: `${mapped.product || item.name} / ${compProduct || compSku}` });
       }
       continue;
     }
