@@ -11050,10 +11050,13 @@
       "prosol_sku": "NON_PROSOL",
       "product": "Bona Mega Wood Floor Finish EXTRA MATTE 1 GALLON",
       "verified": true,
-      "source": "treeco-invoice-ingest-2026-04-17",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
       "treeco_sku": "WT133918001",
       "brand": "bona",
-      "verified_source": "invoice 2602-766984 (BONA MEGA XMATTE 3.79L)"
+      "verified_source": "invoice 2602-766984 (BONA MEGA XMATTE 3.79L)",
+      "note": "Ships from CFC Sechelt own stock (Shopify SKU 11759; 29 avail at Sechelt 2026-07-16). Warehouse route added 2026-07-16 - was missing, caused order 701-3685399-9925822 to stick. Sibling Mega variants all route CFC_SECHELT/147654. Treeco fallback: treeco_sku WT133918001."
     },
     "B09254K17R": {
       "api_sku": "NON_PROSOL",
