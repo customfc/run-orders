@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU \u2192 Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-06-02T00:00:00.000Z",
+  "_updated": "2026-07-20T00:00:00.000Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -13,6 +13,26 @@
     "max_pkg_weight_lb": "Max package weight in lb when combining (used with heat_sheet)"
   },
   "mappings": {
+    "B071NNSPC4": {
+      "cost_cad": 540.66,
+      "retail_cad": 948.53,
+      "cost_source": "sf-item-02240 2026-07-20; sits on the prosol-offers cost ladder (57% of retail, same as sibling DHEHK sizes)",
+      "api_sku": "DHEHK120113",
+      "prosol_sku": "DHEHK120113",
+      "product": "DITRA-HEAT CABLE 120V 372.2 FT",
+      "category": "DITRA",
+      "barcode": "4011832146299",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "DHEHK120113",
+      "package_shape": "cable_kit",
+      "max_per_pkg": 2,
+      "sf_item_name": "02240",
+      "map_cad": 853.68,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "note": "Added 2026-07-20 from orders 701-0919466-6717043 / 701-4322114-8293826 (title: 'DHEHK120113 120V (112.6 Ft\u00b2) 1425W'). Title = ground truth. 112.6 sqft = 372.2 linear ft."
+    },
     "B01060VUUW": {
       "api_sku": "KEBA100/185",
       "prosol_sku": "KEBA100185",
