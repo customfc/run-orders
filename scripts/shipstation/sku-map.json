@@ -13,6 +13,52 @@
     "max_pkg_weight_lb": "Max package weight in lb when combining (used with heat_sheet)"
   },
   "mappings": {
+    "KD4GRKAMGB": {
+      "cost_cad": 55.97,
+      "retail_cad": 98.19,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KD4GRKAMGB",
+      "prosol_sku": "KD4GRKAMGB",
+      "product": "Schluter KERDI-DRAIN Contour Grate Kit 4in Brushed Brass",
+      "category": "KERDI",
+      "barcode": "4011832168758",
+      "verified": true,
+      "source": "schluter-reference",
+      "brand": "schluter",
+      "schluter_item": "KD4GRKAMGB",
+      "map_cad": 88.37,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "note": "Added 2026-07-21 for YourFloors Shopify order #1313 (Contour Grate Kit 4in / Brushed Brass). Shopify SKU = Prosol SKU. Verified live Prosol 2026-07-21: cost $55.97, stocked at 13 locations. Clone of verified ASIN entry B07PNJX29J."
+    },
+    "KDIF4GRKEBVGD5": {
+      "cost_cad": 113.23,
+      "retail_cad": 198.64,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KDIF4GRKEBVGD5",
+      "prosol_sku": "KDIF4GRKEBVGD5",
+      "product": "Schluter KERDI-DRAIN Grate Kit Floral SS (V2) Brushed Vintage Gold 4in",
+      "category": "KERDI",
+      "verified": true,
+      "source": "prosol-live-lookup",
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKEBVGD5",
+      "note": "Added 2026-07-21 for YourFloors Shopify order #1315 (Trendline Grate Kit 4in Floral / Brushed Vintage Gold). Shopify SKU = Prosol SKU. Verified live Prosol 2026-07-21: KDIF4GRKEBVGD5 = Floral Brushed Vintage Gold 4in, cost $113.23, 9 locs. YourFloors Trendline = Prosol Square Grate Kit Floral V2."
+    },
+    "KL1DRE70": {
+      "cost_cad": 110.17,
+      "retail_cad": 193.28,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KL1DRE70",
+      "prosol_sku": "KL1DRE70",
+      "product": "Schluter KERDI-LINE Linear Floor Drain Frameless Tileable Grate SS (V4) 1-1/8in x 27-9/16in (70cm)",
+      "category": "KERDI",
+      "verified": true,
+      "source": "prosol-live-lookup",
+      "brand": "schluter",
+      "schluter_item": "KL1DRE70",
+      "note": "Added 2026-07-21 for YourFloors Shopify order #1316 (KERDI-LINE Linear Drain TILEABLE Grate Kit / 70 cm (28in)). Shopify SKU = Prosol SKU. Verified live Prosol 2026-07-21: KL1DRE70 = frameless tileable 27-9/16in (=70cm), cost $110.17, 36 locs. NOT the off-set KL1DROE70."
+    },
     "B071NNSPC4": {
       "cost_cad": 540.66,
       "retail_cad": 948.53,
