@@ -159,6 +159,15 @@
       "cost_source": "prosol-getMappingInfo",
       "added": "2026-06-10"
     },
+    "1529": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Armstrong New Beginning Resilient Deep Cleaning Floor Stripper 64oz (1.9L)",
+      "note": "Not available through Prosol (SF vendor = Buckwold Western); SF item Name=1529. Added 2026-07-23 — sibling of 1530/1531. Was unmapped, so Shopify order 1317 defaulted Prosol-eligible and shipped with no SF SO.",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654
+    },
     "1530": {
       "api_sku": "NON_PROSOL",
       "prosol_sku": "NON_PROSOL",
