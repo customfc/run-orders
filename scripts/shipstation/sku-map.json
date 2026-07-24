@@ -6016,6 +6016,18 @@
       "verified": true,
       "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
     },
+    "B0B8KMML24": {
+      "cost_cad": 15.86,
+      "retail_cad": 24.4,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "3BU010491",
+      "prosol_sku": "3BU010491",
+      "product": "Mapei Mapesil T Plus Silicone Sealant \u2014 #5104 Timberwolf (10.1 oz)",
+      "brand": "mapei",
+      "category": "Grout / Sealant",
+      "verified": true,
+      "source": "Amazon ASIN alias; our seller SKU on ASIN B0B8KMML24 IS 3BU010491 \u2014 confirmed via SP-API searchListingsItems + Amazon getOrderItems SellerSKU (added 2026-07-24, order 701-8990901-2664222). Size checks: title 10.1 fl oz = 298.7 ml vs Prosol 299 ml. Colour code #5104 = Timberwolf, consistent with siblings #5103 Cobblestone / #5101 Rain. Prosol cost re-pulled live 2026-07-24."
+    },
     "3BU010491": {
       "cost_cad": 15.86,
       "retail_cad": 24.4,
