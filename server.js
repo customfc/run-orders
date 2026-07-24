@@ -330,13 +330,14 @@ async function buyLabelForOrder({ orderId, carrierCode, serviceCode, packageCode
   if (!orderId || !carrierCode || !serviceCode) {
     return { success: false, error: 'orderId, carrierCode, serviceCode required' };
   }
-  const { v1Request, getLabelUrl, ensureValidShipTo } = require('./lib/shipstation-v2');
+  const { v1Request, getLabelUrl, ensureValidShipTo, toInchDimensions } = require('./lib/shipstation-v2');
   const { orderSource } = require('./scripts/shipstation/run-orders');
 
   // Pre-buy address guard — without this a malformed CA province burns a UPS
   // rejection. ensureValidShipTo throws a structured BAD_ADDRESS_* error.
+  let shipToInfo;
   try {
-    await ensureValidShipTo(orderId, orderNumber || `orderId=${orderId}`);
+    shipToInfo = await ensureValidShipTo(orderId, orderNumber || `orderId=${orderId}`);
   } catch (e) {
     audit.log({ action: 'buy-label', orderId, success: false, error: `pre-buy guard: ${e.message}` });
     return { success: false, error: e.message, code: e.code || 'BAD_ADDRESS' };
@@ -351,6 +352,14 @@ async function buyLabelForOrder({ orderId, carrierCode, serviceCode, packageCode
     shipDate: new Date().toISOString().slice(0, 10),
     weight: weight || { value: 1, units: 'pounds' },
   };
+  // Same cm→inch dimension fix as the cron buy path (lib/pipeline.js). Without
+  // this, createlabelfororder rates Amazon.ca cm dims as inches → wild dim-weight
+  // over-charges (the $66 KERDI niche). Pass explicit inch dims to override.
+  const inchDims = toInchDimensions(shipToInfo && shipToInfo.dimensions);
+  if (inchDims) {
+    payload.dimensions = inchDims;
+    console.log(`[buy-label] ${orderNumber || orderId}: dims ${JSON.stringify(shipToInfo.dimensions)} → ${inchDims.length}×${inchDims.width}×${inchDims.height} in`);
+  }
 
   const labelRes = await v1Request('POST', '/orders/createlabelfororder', payload);
   if (labelRes.status !== 200) {
