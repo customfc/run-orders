@@ -143,6 +143,12 @@ const CP_HINT_RE = /\b(?:p\.?\s*o\.?\s*box|post\s+office\s+box|canada\s+post|pos
 // UPS remains the fallback ONLY when Purolator returns no rate at all.
 const UPS_ROUTING_DISABLED = true;
 
+// Canada Post price-override threshold (Mac, 2026-07-24). CP is PO-box-only by
+// default (unreliable depot pickups), but when Purolator/UPS beat CP by less
+// than nothing — i.e. CP is this many dollars CHEAPER — the rural-surcharge gap
+// is too big to ignore and we route CP despite the manual-handoff cost. Tune here.
+const CP_PRICE_OVERRIDE_GAP = 20;
+
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
 function httpsRequest(options, body = null, timeoutMs = 30000) {
@@ -753,11 +759,22 @@ async function getRates(order, fromPostalCode) {
       nonCpNote = 'UPS fallback — no Purolator rate; UPS pickups are DOWN, needs manual ups.com pickup';
     }
   }
-  // Canada Post is NEVER chosen on price — only via the cpHint (PO box / postal
-  // outlet) path above. Mac policy 2026-06-09: CP pickups are unreliable (no
-  // standing pickups; business-number/account issues — Ottawa wouldn't pick up
-  // and told us to switch to Purolator), so CP is limited to PO-box/postal
-  // destinations where UPS/Purolator can't deliver.
+  // Canada Post price override for EGREGIOUS rural gouging (Mac 2026-07-24).
+  // Normally CP is PO-box-only — CP pickups are unreliable at Prosol depots (no
+  // standing pickups; Ottawa refused pickup and told us to use Purolator), so we
+  // don't route to CP on price for routine orders. But rural extended-area
+  // Purolator surcharges get absurd (Oak Bay NB: Puro $50 vs CP $5 for the same
+  // 3 lb box). When the gap is this large the savings clearly justify the manual
+  // CP handoff, so route CP. High threshold ($20) keeps it to the egregious
+  // cases only; flagged via cpPriceOverride so the warehouse hands it off.
+  if (canadaPost && bestNonCp && (bestNonCp.shipmentCost - canadaPost.shipmentCost) >= CP_PRICE_OVERRIDE_GAP) {
+    return {
+      winner: canadaPost,
+      note: `Canada Post chosen on price — $${(bestNonCp.shipmentCost - canadaPost.shipmentCost).toFixed(2)} cheaper than ${formatCarrier(bestNonCp.carrierCode)} (rural surcharge). ⚠ needs manual CP handoff at the warehouse.`,
+      compared: { ups, purolator, canadaPost },
+      cpPriceOverride: true,
+    };
+  }
   return { winner: bestNonCp, note: nonCpNote, compared: { ups, purolator, canadaPost } };
 }
 
