@@ -54,17 +54,33 @@ function parseArgs(argv) {
   return out;
 }
 
+// A parcel can be physically collected while ShipStation's top-level status_code
+// still reads AC — seen on 520644250356, which had a "Picked up by Purolator"
+// event on Jul 27 and was still reporting AC. Trusting status_code alone keeps
+// reporting tendered parcels as stranded, so the events are the truth.
+const PHYSICAL_RE = /picked up|in transit|on vehicle|out for delivery|arrived|departed|sort facility|depot|delivered|customs/i;
+
+function firstPhysicalScan(events) {
+  return events.find((e) => PHYSICAL_RE.test(String(e.description || ''))) || null;
+}
+
 async function trackOne(tracking) {
-  if (!tracking || !V2_KEY) return { code: '??', label: 'no tracking', events: 0 };
+  if (!tracking || !V2_KEY) return { code: '??', label: 'no tracking', events: 0, moved: false };
   const lr = await v2(`/v2/labels?tracking_number=${encodeURIComponent(tracking)}&page_size=5`);
   const lab = (lr.j.labels || []).find((l) => !l.voided) || (lr.j.labels || [])[0];
-  if (!lab) return { code: '??', label: 'not found in ShipStation', events: 0 };
+  if (!lab) return { code: '??', label: 'not found in ShipStation', events: 0, moved: false };
   const tr = await v2(`/v2/labels/${lab.label_id}/track`);
   const code = tr.j.status_code || '??';
   const events = (tr.j.events || []);
+  const physical = firstPhysicalScan(events);
+  const moved = Boolean(physical) || ['IT', 'AT', 'DE', 'EX'].includes(code);
   return {
     code,
-    label: CODE[code] || tr.j.status_description || code,
+    moved,
+    tenderedAt: physical ? (physical.occurred_at || null) : null,
+    label: moved && ['NY', 'AC'].includes(code)
+      ? `moving (${(physical.description || 'scanned').toLowerCase()}) — ShipStation status still ${code}`
+      : (CODE[code] || tr.j.status_description || code),
     events: events.length,
     lastEvent: events.length ? `${(events[events.length - 1].occurred_at || '').slice(0, 16).replace('T', ' ')} ${events[events.length - 1].description || ''}` : null,
   };
@@ -100,8 +116,8 @@ const money = (n) => `$${Number(n || 0).toFixed(2)}`;
 
   if (a.json) { console.log(JSON.stringify(rows.map(({ e, t }) => ({ id: e.id, order: e.order_ref, status: t.code, ...e })), null, 2)); return; }
 
-  const moved = rows.filter(({ t }) => !['NY', 'AC', '??'].includes(t.code));
-  const stuck = rows.filter(({ t }) => ['NY', 'AC', '??'].includes(t.code));
+  const moved = rows.filter(({ t }) => t.moved);
+  const stuck = rows.filter(({ t }) => !t.moved);
 
   console.log(`\nOPEN DELAYED-SHIPMENT CASES: ${rows.length}\n${'='.repeat(96)}`);
 
@@ -114,7 +130,9 @@ const money = (n) => `$${Number(n || 0).toFixed(2)}`;
   if (moved.length) {
     console.log(`\nMOVED SINCE LOGGING — ${moved.length}   (close these: delivered_late, or refunded/returned if the sale was lost)\n`);
     for (const { e, t } of moved) {
+      const dt = t.tenderedAt ? Math.round((new Date(t.tenderedAt) - new Date(String(e.date).slice(0,10)+'T12:00:00Z')) / 86400000) : null;
       console.log(`  ${e.id}  ${String(e.location || '').padEnd(22)} ${String(e.order_ref || '').padEnd(22)} ${t.label}`);
+      if (dt != null) console.log(`      sat ${dt} day(s) before the vendor tendered it (first scan ${String(t.tenderedAt).slice(0,16).replace('T',' ')})`);
       if (t.lastEvent) console.log(`      last: ${t.lastEvent}`);
       console.log(`      close: node scripts/ops/delayed-shipment-followup.js --close ${e.id} --outcome delivered_late`);
     }
