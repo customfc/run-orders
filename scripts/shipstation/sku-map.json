@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU \u2192 Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-07-20T00:00:00.000Z",
+  "_updated": "2026-07-27T00:00:00.000Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -1969,6 +1969,39 @@
       "treeco_sku": "WT155618003",
       "brand": "bona",
       "verified_source": "inferred from Mega sheen-slot pattern (\u20266\u2026 = Satin) \u2014 needs user confirm"
+    },
+    "71": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Professional - Microfiber Cleaning Pad",
+      "note": "Ships from CFC Sechelt own stock; Treeco is the restock vendor if Sechelt is out (Mac 2026-07-27, order 1322). Key is the legacy/Shopify numeric SKU, not a vendor SKU.",
+      "source": "SECHELT_OR_TREECO",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "brand": "bona",
+      "verified_source": "Shopify inventory 2026-07-27: Sechelt available=28, Powell River=10"
+    },
+    "2891": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Pro Series - Stone, Tile and Laminate Cleaner Cartridge (1 litre)",
+      "note": "Ships from CFC Sechelt own stock; Treeco is the restock vendor if Sechelt is out (Mac 2026-07-27, order 1322). Key is the legacy/Shopify numeric SKU, not a vendor SKU.",
+      "source": "SECHELT_OR_TREECO",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "brand": "bona",
+      "verified_source": "Shopify inventory 2026-07-27: Sechelt available=29, Powell River=10"
+    },
+    "2892": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Bona Pro Series - Hardwood Floor Cleaner Cartridge (1 litre)",
+      "note": "Ships from CFC Sechelt own stock; Treeco is the restock vendor if Sechelt is out (Mac 2026-07-27, order 1322). Key is the legacy/Shopify numeric SKU, not a vendor SKU.",
+      "source": "SECHELT_OR_TREECO",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "brand": "bona",
+      "verified_source": "Shopify inventory 2026-07-27: Sechelt available=19, Powell River=10"
     },
     "_section_tibet_almond": "=== TIBET ALMOND STICK ===",
     "00488": {
