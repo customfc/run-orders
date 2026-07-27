@@ -2202,6 +2202,18 @@ async function autoRebookSweep(source) {
 }
 schedule('30 8 * * *', () => autoRebookSweep('08:30 daily'), TZ); // after the morning scan; SHADOW until AUTO_REBOOK_LIVE=1
 
+// Stale-parcel reminder — 09:30 ET weekdays. Asks a Prosol branch to confirm a
+// PUROLATOR parcel that has a paid label and still no carrier scan after 4
+// business days. Purolator only: Puro collects from every Prosol branch daily,
+// so 4 business days means 4 trucks it could have gone on — which is what makes
+// the ask fair. CP has no scan visibility at all and walleted UPS is dead.
+// One email per branch, each parcel raised ONCE, then escalated to Mac.
+// SHADOW until STALE_REMINDER_LIVE=1. See lib/stale-parcel-reminder.js.
+schedule('30 9 * * 1-5', () => {
+  const { runReminderSweep } = require('./lib/stale-parcel-reminder');
+  runReminderSweep().catch((e) => console.error('[stale-reminder] tick failed:', e.message));
+}, TZ);
+
 // Orphan-email sweep — hourly. THE BACKSTOP for bought-but-never-emailed
 // labels, whatever the cause: a run that died after pos, or a label bought
 // outside an email tick. It covers every buy path, including /api/labels/buy
@@ -3285,6 +3297,7 @@ app.listen(PORT, () => {
   console.log(`  07:00 / 10:00 / 12:00 / 13:30 weekdays — stage + buy + POs`);
   console.log(`  14:00 + 20:00 daily — email Kaitlyn sweep (2nd tick catches late buys)`);
   console.log(`  :15 hourly — orphan-email sweep (backstop; ${process.env.ORPHAN_SWEEP_LIVE === '1' ? 'LIVE' : 'SHADOW'})`);
+  console.log(`  09:30 weekdays — stale-parcel reminder, Purolator only (${process.env.STALE_REMINDER_LIVE === '1' ? 'LIVE' : 'SHADOW'})`);
   console.log(`  14:30 weekdays — pickup sweep (next biz day)`);
   console.log(`  15:00 weekdays — daily digest Telegram`);
   console.log(`  06:00 weekdays — FBA morning pull (inventory planning + Buy Box + Prosol stock) + auto-reprice`);
