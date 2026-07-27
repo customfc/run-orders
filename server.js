@@ -2012,7 +2012,9 @@ app.get('/api/health', (req, res) => {
 //
 // Replaces the old 10-min dry-run interval with purposeful phase-specific ticks:
 //   07:00, 10:00, 12:00, 13:30 ET — stage + buy + POs (idempotent, skips no-ops)
-//   14:00 ET — email Kaitlyn sweep (one email per warehouse)
+//   14:00 + 20:00 ET DAILY — email Kaitlyn sweep (one email per warehouse).
+//     Two ticks, and daily rather than weekdays-only, because a label bought
+//     after the day's only tick used to never be emailed at all (2026-07-21).
 //   14:30 ET — pickup sweep (one pickup per warehouse+carrier for next biz day)
 //   15:00 ET — daily digest Telegram
 //   08:00 ET — morning stale-tracker scan (alerts if anything needs attention)
@@ -2049,8 +2051,20 @@ schedule('0 10 * * 1-5', () => runCronPipeline('10:00-stage', ['stage', 'buy', '
 schedule('0 12 * * 1-5', () => runCronPipeline('12:00-stage', ['stage', 'buy', 'pos']), TZ);
 schedule('30 13 * * 1-5', () => runCronPipeline('13:30-stage', ['stage', 'buy', 'pos']), TZ);
 
-// Email sweep — after last stage tick
-schedule('0 14 * * 1-5', () => runCronPipeline('14:00-email', ['email']), TZ);
+// Email sweep — after last stage tick.
+// DAILY, not weekdays-only: labels get bought on weekends by manual/telegram
+// runs, and a weekend buy used to have no email tick until Monday.
+schedule('0 14 * * *', () => runCronPipeline('14:00-email', ['email']), TZ);
+
+// Second email tick. THE 2026-07-21 BUG: the 14:00 tick was the day's ONLY
+// email run, so any label bought after it (manual catch-up runs, /buy,
+// /api/labels/buy, a late `claude:save-stuck-orders` run) was never emailed to
+// the warehouse — and the next day loads a fresh state file that doesn't
+// contain yesterday's labels, so it was never emailed at all. Five orders on
+// 2026-07-21 alone; order 1316 sat unshipped for six days.
+// phaseEmail is per-order idempotent (ops-state email.byOrder), so a second
+// tick can only pick up what the first one genuinely missed.
+schedule('0 20 * * *', () => runCronPipeline('20:00-email-catchup', ['email']), TZ);
 
 // Pickup sweep — books one pickup per (warehouse,carrier) for next biz day
 schedule('30 14 * * 1-5', () => runCronPipeline('14:30-pickups', ['pickups']), TZ);
@@ -2188,10 +2202,14 @@ async function autoRebookSweep(source) {
 }
 schedule('30 8 * * *', () => autoRebookSweep('08:30 daily'), TZ); // after the morning scan; SHADOW until AUTO_REBOOK_LIVE=1
 
-// Orphan-email sweep — hourly. Rescues bought-but-never-emailed labels from the
-// last 4 settled days (a cron run that died after pos). SHADOW until
-// ORPHAN_SWEEP_LIVE=1; alerts only when the finding set changes. See
-// lib/orphan-email-sweep.js.
+// Orphan-email sweep — hourly. THE BACKSTOP for bought-but-never-emailed
+// labels, whatever the cause: a run that died after pos, or a label bought
+// outside an email tick. It covers every buy path, including /api/labels/buy
+// and telegram /buy which bypass runPipeline entirely.
+// Auto-sends within ORPHAN_SWEEP_SEND_DAYS (14), reports out to
+// ORPHAN_SWEEP_DETECT_DAYS (60) so nothing ages out silently, and keeps
+// re-alerting daily while anything is outstanding. SHADOW until
+// ORPHAN_SWEEP_LIVE=1. See lib/orphan-email-sweep.js.
 schedule('15 * * * *', () => {
   const { orphanSweepTick } = require('./lib/orphan-email-sweep');
   orphanSweepTick('hourly').catch((e) => console.error('[orphan-sweep] tick failed:', e.message));
@@ -3057,12 +3075,13 @@ async function handleTelegramCommand(command, args) {
     }
 
     case 'orphans': {
-      const { runOrphanSweep, formatReport, LOOKBACK_DAYS } = require('./lib/orphan-email-sweep');
+      const { runOrphanSweep, formatReport, outstanding, SEND_LOOKBACK_DAYS, DETECT_LOOKBACK_DAYS } = require('./lib/orphan-email-sweep');
       const report = await runOrphanSweep({ live: false }); // read-only — never sends from the command
       const body = formatReport(report);
-      const liveFlag = process.env.ORPHAN_SWEEP_LIVE === '1' ? 'LIVE' : 'SHADOW';
-      if (!body) return `✅ No orphan emails — all bought labels in the last ${LOOKBACK_DAYS} days were emailed. (sweep: ${liveFlag})`;
-      return `📨 Orphan-email sweep (${liveFlag}, last ${LOOKBACK_DAYS}d):\n\n${body}`;
+      const liveFlag = process.env.ORPHAN_SWEEP_LIVE === '1' ? 'LIVE' : '🟡 SHADOW (not sending)';
+      const n = outstanding(report).length;
+      if (!body) return `✅ No orphans — every bought label in the last ${DETECT_LOOKBACK_DAYS} days reached its warehouse. (sweep: ${liveFlag})`;
+      return `📨 Orphan-email sweep — ${n} outstanding\nsweep: ${liveFlag} · auto-send ≤${SEND_LOOKBACK_DAYS}d · detect ≤${DETECT_LOOKBACK_DAYS}d\n\n${body}`;
     }
 
     case 'buy': {
@@ -3264,7 +3283,8 @@ app.listen(PORT, () => {
   console.log(`YourFloors ops UI running at http://localhost:${PORT}`);
   console.log(`Cron schedule (America/Toronto):`);
   console.log(`  07:00 / 10:00 / 12:00 / 13:30 weekdays — stage + buy + POs`);
-  console.log(`  14:00 weekdays — email Kaitlyn sweep`);
+  console.log(`  14:00 + 20:00 daily — email Kaitlyn sweep (2nd tick catches late buys)`);
+  console.log(`  :15 hourly — orphan-email sweep (backstop; ${process.env.ORPHAN_SWEEP_LIVE === '1' ? 'LIVE' : 'SHADOW'})`);
   console.log(`  14:30 weekdays — pickup sweep (next biz day)`);
   console.log(`  15:00 weekdays — daily digest Telegram`);
   console.log(`  06:00 weekdays — FBA morning pull (inventory planning + Buy Box + Prosol stock) + auto-reprice`);
