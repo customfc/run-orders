@@ -2117,51 +2117,23 @@ const SERIOUS_HANGING_DAYS = 4;
 async function morningStaleScan(source) {
   try {
     const { scanStaleShipments } = require('./lib/stale-tracker');
+    const { buildDigest, loadState, saveState } = require('./lib/stale-digest');
     // 30-day window (not 14): a label that hangs past day 14 used to drop out of
     // this scan entirely — no alert, no pickup attempt — so aged stranded
     // shipments went invisible (this is how a 25-day WGRF shipment hid in June
     // 2026 and had to be found by hand). 30 days covers the Amazon A-to-Z horizon.
     const scan = await scanStaleShipments({ days: 30 });
-    const needAction = scan.shipments.filter(s => s.movement === 'hanging' && (s.suggestedAction === 'book' || s.suggestedAction === 'rebook'));
-    const stuck = scan.shipments.filter(s => s.movement === 'stuck-in-transit');
-    // Hanging labels >= SERIOUS_HANGING_DAYS old, including 'monitor' so phantom
-    // pickup bindings (carrier says scheduled but never picks up) surface here.
-    const serious = scan.shipments
-      .filter(s => s.movement === 'hanging' && (s.age || 0) >= SERIOUS_HANGING_DAYS)
-      .filter(s => ['book', 'rebook', 'monitor'].includes(s.suggestedAction))
-      .sort((a, b) => (b.age || 0) - (a.age || 0));
 
-    // Per-shipment escalation — names every laggard so age and warehouse don't
-    // get rolled into a count. Fires above the grouped 'needAction' alert.
-    if (serious.length) {
-      const body = serious.slice(0, 15).map(s => {
-        const tag = s.suggestedAction === 'monitor' ? ' [phantom pickup]' : ` [${s.suggestedAction}]`;
-        return `• ${s.age}d — ${s.orderNumber || s.trackingNumber} @ ${s.warehouseName || '?'} (${s.carrier})${tag}`;
-      }).join('\n');
-      const extra = serious.length > 15 ? `\n…and ${serious.length - 15} more` : '';
-      await telegram.notify('attn', `🚨 ${serious.length} shipment${serious.length === 1 ? '' : 's'} hanging ${SERIOUS_HANGING_DAYS}+ days`, body + extra + '\n\nTake action: rebook, contact warehouse, or void & reship.\nhttp://localhost:3456#tab-tracking');
-    }
-
-    // Stuck-in-transit alert — A-to-Z "item not received" risk zone.
-    // Fires even if nothing else needs booking; these are the most urgent items.
-    if (stuck.length) {
-      const stuckBody = stuck.slice(0, 12).map(s => `• ${s.orderNumber || s.trackingNumber} (${s.carrier}, ${s.age}d, ${s.shipToCity || '?'}) — ${s.latestEvent || 'no recent event'}`).join('\n');
-      const extra = stuck.length > 12 ? `\n…and ${stuck.length - 12} more` : '';
-      await telegram.notify('attn', `Stuck in transit — ${stuck.length} shipment${stuck.length === 1 ? '' : 's'}`, stuckBody + extra + '\n\nRefund/contact carrier before buyer opens A-to-Z.\nhttp://localhost:3456#tab-tracking');
-    }
-
-    // Silent when there's nothing to act on — no "all clear" ping. The serious /
-    // stuck-in-transit alerts above already fired if anything needed eyes.
-    if (!needAction.length) return;
-    const byGroup = {};
-    for (const s of needAction) {
-      const k = `${s.warehouseName} ${s.carrier}`;
-      byGroup[k] = (byGroup[k] || 0) + 1;
-    }
-    const body = Object.entries(byGroup)
-      .map(([k, n]) => `• ${k}: ${n}`)
-      .join('\n');
-    await telegram.notify('attn', `Morning scan — ${needAction.length} need pickup`, body + '\n\nhttp://localhost:3456#tab-tracking');
+    // ONE digest, not the three separate messages this used to send. The scan was
+    // always correct; the problem was that it re-listed the same ~30 parcels every
+    // weekday, so a genuinely new strand had no way to stand out and order 1316
+    // sat six days until the customer chased it. buildDigest names what is NEW,
+    // collapses what is already known to a count, and stays quiet when nothing
+    // changed — with a floor so a standing problem still resurfaces.
+    const d = buildDigest({ scan, state: loadState(), now: new Date(), seriousDays: SERIOUS_HANGING_DAYS });
+    saveState(d.state);
+    if (!d.shouldSend) return;
+    await telegram.notify(d.severity, d.subject, d.body);
   } catch (err) {
     await telegram.notify('attn', `Morning stale scan failed (${source})`, err.message);
   }
