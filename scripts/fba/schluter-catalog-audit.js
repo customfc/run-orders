@@ -130,7 +130,12 @@ function main() {
     demandGaps = amazon.items
       .filter((i) => !anyListingAsins.has(i.asin) && i.cat_rank)
       .map((i) => {
-        const hit = (i.codes || i.eans || []).map(ean).map((c) => byEan[c]).find(Boolean);
+        // EAN match first; fall back to the sku-map, which already carries a
+        // Prosol SKU for ASINs we sold before but never (re)listed.
+        const mapped = map[i.asin];
+        const mappedSku = mapped && (mapped.prosol_sku || mapped.api_sku || mapped.schluter_item);
+        const hit = (i.codes || i.eans || []).map(ean).map((c) => byEan[c]).find(Boolean)
+          || (mappedSku ? bySku[norm(mappedSku)] : null);
         return {
           asin: i.asin,
           title: i.title,
