@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU \u2192 Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-07-27T00:00:00.000Z",
+  "_updated": "2026-07-30T00:00:00.000Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -11257,6 +11257,25 @@
       "treeco_sku": "WM700051215",
       "brand": "bona",
       "verified_source": "invoice 2109-721140 (BONA PRO LUX.VINYL CLNR 32OZ)"
+    },
+    "B07PRYTPSJ": {
+      "cost_cad": 537.74,
+      "retail_cad": 943.4,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KSK12201830",
+      "prosol_sku": "KSK12201830",
+      "product": "Schluter KERDI-SHOWER-KIT 48in x 72in Center Outlet, no drain (tray, curb, membrane, strips, seals)",
+      "category": "KERDI",
+      "barcode": "4011832168499",
+      "verified": true,
+      "source": "prosol-live-lookup",
+      "brand": "schluter",
+      "schluter_item": "KSK12201830",
+      "package_shape": "solo",
+      "map_cad": 849.06,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "note": "Added 2026-07-30 for order 701-2414938-7751422 (Ryan Salzman, Terrace BC). Title = ground truth: trailing SKU 'KSK12201830' exact-matches plain kit (no ABS/PVC flange suffix, no drain/grate), 48x72 center outlet. Cost from live Prosol offers same day. MAP row barcode 4011832168499."
     }
   },
   "cable_lookup": {
