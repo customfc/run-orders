@@ -34,6 +34,10 @@ const SELLER = (process.env.AMAZON_SELLER_ID || '').replace(/"/g, '');
 
 const arg = (k, d = null) => { const a = process.argv.find((x) => x.startsWith('--' + k + '=')); return a ? a.split('=').slice(1).join('=') : d; };
 const COMMIT = process.argv.includes('--commit');
+// Re-PUT offers that already exist. Needed when a previously created offer has
+// a bad attribute (e.g. the legacy-template-id shipping group) — PUT is
+// idempotent, so this rewrites it correctly.
+const FORCE = process.argv.includes('--force');
 const TOP = arg('top') ? Number(arg('top')) : null;
 const MAX_RANK = arg('max-rank') ? Number(arg('max-rank')) : null;
 const QTY = Number(arg('qty', 10));
@@ -87,12 +91,14 @@ const offerSku = (prosolSku) => `${String(prosolSku).replace(/[^A-Za-z0-9]/g, ''
     const cost = null;   // cost lives in sku-map/item_costs; margin sanity below uses MSRP
     const sku = offerSku(c.prosol_sku);
 
-    // Never create a duplicate offer.
-    try {
-      const ex = await sp.getListingsItem(sku, { includedData: 'summaries' });
-      if (ex?.summaries?.length) { skipped.push({ ...c, why: `offer SKU ${sku} already exists` }); await sleep(250); continue; }
-    } catch { /* 404 = good */ }
-    await sleep(250);
+    // Never create a duplicate offer, unless we're deliberately rewriting one.
+    if (!FORCE) {
+      try {
+        const ex = await sp.getListingsItem(sku, { includedData: 'summaries' });
+        if (ex?.summaries?.length) { skipped.push({ ...c, why: `offer SKU ${sku} already exists` }); await sleep(250); continue; }
+      } catch { /* 404 = good */ }
+      await sleep(250);
+    }
 
     plan.push({ ...c, offer_sku: sku, price: map, map, retail: rec.retailCad, prosol_qty: pc ? pc.available_quantity : c.prosol_qty });
   }
