@@ -1,0 +1,50 @@
+{
+  "payload_version": "2026-07-30",
+  "message_type": "order.create",
+  "sender": {
+    "company": "Custom Flooring Centres Ltd.",
+    "prosol_customer_number": "55010180",
+    "contact": { "name": "Mac Roy", "email": "mac@customfc.ca" }
+  },
+  "order": {
+    "reference": "CFC-SAMPLE-0001",
+    "po_number": "PO-90001",
+    "placed_at": "2026-07-30T16:00:00Z",
+    "branch": { "code": "WCAS", "city": "Calgary" },
+    "lines": [
+      {
+        "prosol_sku": "KERDIFIX/BW",
+        "description": "Schluter KERDI-FIX Sealing/Bonding Compound Bright White 290ml",
+        "qty": 2
+      }
+    ],
+    "ship_to": {
+      "name": "Sample Customer",
+      "address1": "100 Test Ave NW",
+      "address2": null,
+      "city": "Calgary",
+      "province": "AB",
+      "postal_code": "T2N 0Z9",
+      "country": "CA",
+      "phone": "403-555-0100"
+    },
+    "shipping": {
+      "mode": "label_provided",
+      "carrier": "Purolator",
+      "service": "Ground",
+      "packages": [
+        {
+          "tracking_number": "520600000001",
+          "weight_kg": 1.2,
+          "dims_cm": { "l": 25, "w": 15, "h": 12 }
+        }
+      ],
+      "documents": {
+        "waybill_pdf": "attached-or-url",
+        "packing_slip_pdf": "attached-or-url"
+      },
+      "instructions": "Apply the enclosed waybill and tender to the scheduled Purolator pickup. No BOL."
+    },
+    "notes": "SAMPLE PAYLOAD for field mapping — not a live order. Production payloads carry the real customer ship-to."
+  }
+}

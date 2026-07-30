@@ -1,0 +1,63 @@
+{
+  "payload_version": "2026-07-30",
+  "message_type": "order.create",
+  "sender": {
+    "company": "Custom Flooring Centres Ltd.",
+    "prosol_customer_number": "55010180",
+    "contact": { "name": "Mac Roy", "email": "mac@customfc.ca" }
+  },
+  "order": {
+    "reference": "CFC-SAMPLE-0002",
+    "po_number": "PO-90002",
+    "placed_at": "2026-07-30T16:00:00Z",
+    "branch": { "code": "WGRF", "city": "Saint-Laurent" },
+    "lines": [
+      {
+        "prosol_sku": "DITRAPS25M",
+        "description": "Schluter DITRA-PS Uncoupling Membrane Peel & Stick Roll 269 sqft",
+        "qty": 3
+      }
+    ],
+    "ship_to": {
+      "name": "Sample Customer Two",
+      "address1": "200 Test Blvd",
+      "address2": "Unit 5",
+      "city": "Québec",
+      "province": "QC",
+      "postal_code": "G1A 0A2",
+      "country": "CA",
+      "phone": "418-555-0100"
+    },
+    "shipping": {
+      "mode": "label_provided",
+      "carrier": "Purolator",
+      "service": "Ground",
+      "packages": [
+        {
+          "tracking_number": "520600000002",
+          "weight_kg": 20.0,
+          "dims_cm": { "l": 96, "w": 20, "h": 20 },
+          "contents": [{ "prosol_sku": "DITRAPS25M", "qty": 1 }]
+        },
+        {
+          "tracking_number": "520600000003",
+          "weight_kg": 20.0,
+          "dims_cm": { "l": 96, "w": 20, "h": 20 },
+          "contents": [{ "prosol_sku": "DITRAPS25M", "qty": 1 }]
+        },
+        {
+          "tracking_number": "520600000004",
+          "weight_kg": 20.0,
+          "dims_cm": { "l": 96, "w": 20, "h": 20 },
+          "contents": [{ "prosol_sku": "DITRAPS25M", "qty": 1 }]
+        }
+      ],
+      "documents": {
+        "waybill_pdf": "attached-or-url (one per package)",
+        "packing_slip_pdf": "attached-or-url"
+      },
+      "instructions": "Three packages, one roll each, one waybill per package. Apply the matching waybill to each roll and tender all three to the scheduled Purolator pickup. No BOL."
+    },
+    "notes": "SAMPLE PAYLOAD for field mapping — not a live order. Shows the multi-package case: one order line split across several waybills."
+  }
+}
