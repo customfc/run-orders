@@ -38,6 +38,12 @@ const TOP = arg('top') ? Number(arg('top')) : null;
 const MAX_RANK = arg('max-rank') ? Number(arg('max-rank')) : null;
 const QTY = Number(arg('qty', 10));
 const MIN_PROSOL = Number(arg('min-prosol', 5));
+// Without an explicit shipping group Amazon assigns "legacy-template-id"
+// ("Migrated Template"), which leaves the listing stuck at Missing Offer with
+// no price and zero quantity — created but not sellable. FREE SHIPPING is our
+// dominant template (113 of 202 active MFN listings) and matches how the
+// competition ships these.
+const SHIPPING_GROUP = arg('shipping-group', '9c07060c-5452-430c-9fd7-da0139cce6a4');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const newest = (dir, p) => {
@@ -122,6 +128,7 @@ const offerSku = (prosolSku) => `${String(prosolSku).replace(/[^A-Za-z0-9]/g, ''
         merchant_suggested_asin: [{ value: p.asin, marketplace_id: MP }],
         fulfillment_availability: [{ fulfillment_channel_code: 'DEFAULT', quantity: QTY, marketplace_id: MP }],
         purchasable_offer: [{ marketplace_id: MP, currency: 'CAD', our_price: [{ schedule: [{ value_with_tax: p.price }] }] }],
+        merchant_shipping_group: [{ value: SHIPPING_GROUP, marketplace_id: MP }],
         batteries_required: [{ value: false, marketplace_id: MP }],
         supplier_declared_dg_hz_regulation: [{ value: 'not_applicable', marketplace_id: MP }],
       },
