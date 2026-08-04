@@ -102,10 +102,18 @@ const NEVER_ARRIVED_TEXT = /n.?ai pas re[çc]u|never (arrived|received)|not rece
     const payer = g(r, 'Label to be paid by');
     const qty = Number(g(r, 'Return quantity', 'quantity') || 1);
     const reqDate = g(r, 'Return request date', 'return-request-date');
+    // Amazon tracks money already returned on this line. Recommending a refund
+    // for something already refunded is the one mistake this tool must never
+    // make, and Seller Central surfaces it as "Prior refund: Applied".
+    const refunded = Number(g(r, 'Refunded Amount') || 0);
+    const orderAmount = Number(g(r, 'Order Amount') || 0);
+    const resolution = g(r, 'Resolution');
+    const inPolicy = g(r, 'In policy');
     const days = reqDate ? Math.round((Date.now() - Date.parse(reqDate)) / 864e5) : null;
 
     const oi = priceByOrderSku[`${order}|${norm(sku)}`];
-    const value = oi ? Number(oi.price) : null;
+    // Amazon's own Order Amount is authoritative; the DB join is the fallback.
+    const value = orderAmount > 0 ? orderAmount : (oi ? Number(oi.price) : null);
     const entry = skuMap[asin];
     const ps = entry?.prosol_sku || entry?.api_sku;
     const cost = ps ? (costBySku[norm(ps)] ?? null) : (costBySku[norm(sku)] ?? null);
@@ -122,7 +130,8 @@ const NEVER_ARRIVED_TEXT = /n.?ai pas re[çc]u|never (arrived|received)|not rece
     const worthRecovering = recover != null && recover > RETURN_COST * 1.5;
 
     let bucket, why;
-    if (String(atoz).toUpperCase() === 'Y') { bucket = 'ESCALATED'; why = 'A-to-Z claim filed — handle first'; }
+    if (refunded > 0) { bucket = 'ALREADY_REFUNDED'; why = `${money(refunded)} already refunded — do NOT refund again`; }
+    else if (String(atoz).toUpperCase() === 'Y') { bucket = 'ESCALATED'; why = 'A-to-Z claim filed — handle first'; }
     else if (neverArrived) { bucket = 'REFUND_NOW_NO_RETURN'; why = 'buyer never received it — there is no item to wait for'; }
     else if (needsReview) { bucket = 'NEEDS_REVIEW'; why = `${code} — possible fraud/chargeback, decide by hand`; }
     else if (!costKnown) { bucket = 'NEEDS_COST'; why = 'no cost on file — cannot judge recovery, and value may be high'; }
@@ -132,13 +141,14 @@ const NEVER_ARRIVED_TEXT = /n.?ai pas re[çc]u|never (arrived|received)|not rece
     else { bucket = 'AWAIT_ITEM'; why = `remorse (${code}); recovery ${money(recover)} beats ${money(RETURN_COST)}`; }
 
     rows.push({ order, sku, asin, reason, comment, status, atoz, payer, qty, days, value, cost, recover, bucket, why,
+      refunded, resolution, inPolicy,
       item: g(r, 'Item Name', 'item-name').slice(0, 60) });
   }
 
   rows.sort((a, b) => (b.days ?? 0) - (a.days ?? 0));
   if (AS_JSON) { console.log(JSON.stringify(rows, null, 1)); return; }
 
-  const B = ['ESCALATED', 'REFUND_NOW_NO_RETURN', 'NEEDS_REVIEW', 'NEEDS_COST', 'REFUND_NOW_RECOVER', 'REFUNDLESS', 'AWAIT_ITEM'];
+  const B = ['ALREADY_REFUNDED', 'ESCALATED', 'REFUND_NOW_NO_RETURN', 'NEEDS_REVIEW', 'NEEDS_COST', 'REFUND_NOW_RECOVER', 'REFUNDLESS', 'AWAIT_ITEM'];
   console.log(`OPEN RETURNS: ${rows.length}   (return cost assumption ${money(RETURN_COST)})\n`);
   for (const b of B) {
     const set = rows.filter((r) => r.bucket === b);
