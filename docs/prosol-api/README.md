@@ -42,6 +42,9 @@ Both are fictional samples for mapping. Production payloads carry real ship-to.
    ignored? What's missing?
 2. Acknowledgement: what does the webhook return (order id? error shape?), and is
    there a status callback (accepted / picked / tendered) or do we poll?
+   If Prosol ever generates the waybill (Eric's shipping-takeover track), the
+   tracking number must come back the moment the label exists — Amazon's ship-by
+   promise breaks on any delay. Instant tracking-back is the gate for that model.
 3. How do documents travel — base64 in the payload, URLs we host, or keep
    emailing PDFs alongside for now?
 4. Idempotency: if we retry a POST after a timeout, does `order.reference`
