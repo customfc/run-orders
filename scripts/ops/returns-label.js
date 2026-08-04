@@ -12,11 +12,19 @@
  * prosol-location-map.json, and the label carries a reference the branch can
  * match against.
  *
- * WHY THIS IS GATED ON THE TRIAGE: issuing a label for every return destroys
- * value. Roughly a third of ours are items where the freight costs more than
- * the goods are worth — a $46 grout cleaner recovering $7.77 against a $16
- * label. Those get a refund and keep the item. Only AWAIT_ITEM and
- * REFUND_NOW_RECOVER are worth paying to recover.
+ * WHO PAYS IS AMAZON'S CALL, NOT OURS. The returns report carries "Label to be
+ * paid by", set from the return reason: seller-fault codes (DEFECTIVE,
+ * SWITCHEROO, MISSING_PARTS, MISSED_ESTIMATED_DELIVERY) bill the seller;
+ * remorse codes (UNWANTED_ITEM, NOT_COMPATIBLE, QUALITY_UNACCEPTABLE) bill the
+ * customer. On the current queue that is 4 seller vs 12 customer.
+ *
+ * We only owe a label on the SELLER-pays ones. Buying labels for customer-pays
+ * returns would be paying freight the buyer already owes — so payer is the
+ * gate, ahead of any triage bucket or economics.
+ *
+ * Even inside seller-pays, recovery still has to be worth it: a return can cost
+ * more than the goods (one here is 207% of item value), and a never-received
+ * parcel has nothing to send back at all.
  *
  * Data note: SP-API redacts what this needs (order address returns city and
  * postal only, buyerInfo is empty, messaging permits no actions). ShipStation
@@ -51,7 +59,8 @@ const SEND_EMAIL = process.argv.includes('--email');
 // caps apply; whichever is tighter wins.
 const MAX_PCT = Number(arg('max-pct', 40));
 const MAX_ABS = Number(arg('max-abs', 45));
-const ELIGIBLE = new Set(['AWAIT_ITEM', 'REFUND_NOW_RECOVER']);
+// Never worth shipping back regardless of who pays.
+const NO_ITEM_TO_RETURN = new Set(['REFUND_NOW_NO_RETURN', 'ALREADY_REFUNDED']);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const money = (n) => '$' + (Number(n) || 0).toFixed(2);
 // v2Request hands back {status, headers, body} with body as a RAW STRING.
@@ -105,8 +114,14 @@ async function rateReturn({ from, to, weightLb, reference }) {
 
 (async () => {
   const state = loadState();
-  const rows = triage().filter((r) => ELIGIBLE.has(r.bucket));
-  console.log(`returns eligible for a label: ${rows.length}  (caps: <=${MAX_PCT}% of value, <=${money(MAX_ABS)})\n`);
+  const all = triage();
+  const sellerPays = all.filter((r) => /seller/i.test(r.payer || ''));
+  const rows = sellerPays.filter((r) => !NO_ITEM_TO_RETURN.has(r.bucket));
+  console.log(`open returns: ${all.length}  ·  seller-pays: ${sellerPays.length}  ·  customer-pays (Amazon's label, not our cost): ${all.length - sellerPays.length}`);
+  console.log(`eligible for a label from us: ${rows.length}  (caps: <=${MAX_PCT}% of value, <=${money(MAX_ABS)})\n`);
+  for (const r of sellerPays.filter((r) => NO_ITEM_TO_RETURN.has(r.bucket))) {
+    console.log(`  ⏭  ${r.order}  seller-pays but nothing to ship back (${r.bucket}) — refund only`);
+  }
 
   const results = [];
   for (const r of rows) {
