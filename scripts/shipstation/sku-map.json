@@ -13,6 +13,26 @@
   "max_pkg_weight_lb": "Max package weight in lb when combining (used with heat_sheet)"
  },
  "mappings": {
+  "32014": {
+   "cost_cad": 43.12,
+   "retail_cad": 61.6,
+   "cost_source": "prosol-offers-loc10010",
+   "api_sku": "32014",
+   "prosol_sku": "Q32014QC",
+   "product": "QEP - Xtreme 8.25\" Glass Tile Nipper with Pro Control Settings",
+   "note": "Shopify SKU equals QEP mfg SKU; exact Prosol filter[sku] hit (product id 82685). Added 2026-08-05, order 1329.",
+   "verified": true
+  },
+  "B007PS2IR8": {
+   "cost_cad": 23.65,
+   "retail_cad": 44.65,
+   "cost_source": "prosol-offers-loc10010",
+   "api_sku": "CARL40001-2",
+   "prosol_sku": "CARL40001",
+   "product": "Custom Building - AcrylPro Tile Adhesive 1 gal",
+   "note": "Amazon listing titled 'CBP 4000 Acrylic Ceramic Tile Mastic, 1-Gallon' — same ARL4000-1gal product as B094JW5VTX/B00DD1I2SA (mfg SKU embeds 4000). Added 2026-08-05, order 702-1145389-6497821.",
+   "verified": true
+  },
   "71": {
    "api_sku": "NON_PROSOL",
    "prosol_sku": "NON_PROSOL",

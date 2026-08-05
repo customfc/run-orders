@@ -48,3 +48,39 @@ test('missing/empty postal code does not trigger composite (avoids false positiv
   const issues = assessCarrierAddress({ name: 'Jane Doe', street1: '525 8 Avenue SW', postalCode: '' });
   assert.deepEqual(issues, []);
 });
+
+// ── splitLongReceiverName (auto-heal for NAME_TOO_LONG) ────────────────────────
+const { splitLongReceiverName } = require('../../lib/shipstation-v2');
+
+test('splits the real 701-9959811-7549839 name at a word boundary', () => {
+  const s = splitLongReceiverName('Blue Opal Recovery and Wellness', '');
+  assert.deepEqual(s, { name: 'Blue Opal Recovery and', company: 'Wellness' });
+  assert.ok(s.name.length <= 30 && s.company.length <= 30);
+});
+
+test('splits the real 702-1145389-6497821 name (31 chars, lowercase)', () => {
+  const s = splitLongReceiverName('north of 53 industrial supplies', null);
+  assert.deepEqual(s, { name: 'north of 53 industrial', company: 'supplies' });
+});
+
+test('null when name already fits (30 chars exactly)', () => {
+  assert.equal(splitLongReceiverName('A'.repeat(30), ''), null);
+});
+
+test('null when company is already occupied (nowhere to spill)', () => {
+  assert.equal(splitLongReceiverName('Blue Opal Recovery and Wellness', 'Existing Co'), null);
+});
+
+test('null when a single token exceeds 30 (no boundary to split at)', () => {
+  assert.equal(splitLongReceiverName('A'.repeat(31), ''), null);
+});
+
+test('null when the remainder itself exceeds 30', () => {
+  const s = splitLongReceiverName('Short ' + 'B'.repeat(35), '');
+  assert.equal(s, null);
+});
+
+test('collapses interior whitespace before measuring', () => {
+  const s = splitLongReceiverName('Blue  Opal   Recovery and Wellness', '');
+  assert.deepEqual(s, { name: 'Blue Opal Recovery and', company: 'Wellness' });
+});
