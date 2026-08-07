@@ -11202,6 +11202,23 @@
    "source": "map-gap-asins.js PART#",
    "note": "Auto-mapped 2026-07-30 from part number KB12SN305305AF in title. Amazon title: \"Schluter KERDI-Board-SN Shower Niche - Waterproof and Ready-to-Tile, Easy Installation - 1\". Not yet order-verified."
   },
+  "B0BN8YQRP1": {
+   "cost_cad": 381.64,
+   "retail_cad": 669.54,
+   "cost_source": "prosol-offers-loc10010",
+   "api_sku": "DHDPS810M",
+   "prosol_sku": "DHDPS810M",
+   "product": "Schluter DITRA-HEAT-DUO-PS Peel & Stick Roll 108 sqft 3'3\" x 33'",
+   "package_shape": "solo",
+   "verified": true,
+   "brand": "schluter",
+   "schluter_item": "DHDPS810M",
+   "map_cad": 602.59,
+   "map_effective": "2025-10-01",
+   "map_source": "schluter-map-2025-10-01.csv",
+   "note": "Added 2026-08-07 for order 701-2514292-8729805 (2 rolls to Quebec City), which sat in manual review as unmapped. Title trailing SKU DHDPS810M matches Prosol api_sku and the Schluter MAP list item — three-way identity. Prosol's own product name says 2'7\" width, which is the DUO-PS panel width, not the roll's; Schluter's list (3'3\" x 33' = 108 SF) is authoritative and both agree on 108 sqft. Sibling B0BNC92H74 is the 8.4 sqft panel of the same product.",
+   "package_shape_note": "solo, same as the DHD810M roll (B079ZC1FWT) — 32 lb per roll, ships alone."
+  },
   "B0BNC92H74": {
    "api_sku": "DHDPS8MA",
    "prosol_sku": "DHDPS8MA",
