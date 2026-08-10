@@ -13,6 +13,23 @@
   "max_pkg_weight_lb": "Max package weight in lb when combining (used with heat_sheet)"
  },
  "mappings": {
+  "DHDPS8MA": {
+   "cost_cad": 31.65,
+   "retail_cad": 55.52,
+   "cost_source": "prosol-offers-loc10010",
+   "api_sku": "DHDPS8MA",
+   "prosol_sku": "DHDPS8MA",
+   "product": "Schluter - DITRA-HEAT-DUO-PS Uncoupling Membrane Peel & Stick 2' 7\" x 3' 3\" - 5/16\" (8 mm) (Panel of 8.4 sqft)",
+   "package_shape": "heat_sheet",
+   "max_pkg_weight_lb": 50,
+   "brand": "schluter",
+   "schluter_item": "DHDPS8MA",
+   "map_cad": 49.97,
+   "map_effective": "2025-10-01",
+   "map_source": "schluter-map-2025-10-01.csv",
+   "note": "Shopify SKU = Schluter item = Prosol api_sku, exact filter[sku] hit (product id 80648), and the Shopify title 'DITRA-HEAT-DUO-PS SHEET 3'3\" X 2'7\" = 8.4 SF' is the Schluter MAP list line verbatim — four-way identity. Added 2026-08-10 for order 1334, which sat 45h in manual review: the product existed ONLY under the ASIN key B0BNC92H74, so the Shopify line SKU matched nothing. Sibling 00843 is the non-PS DHD8MA sheet.",
+   "verified": true
+  },
   "32014": {
    "cost_cad": 43.12,
    "retail_cad": 61.6,
@@ -11220,14 +11237,23 @@
    "package_shape_note": "solo, same as the DHD810M roll (B079ZC1FWT) — 32 lb per roll, ships alone."
   },
   "B0BNC92H74": {
+   "cost_cad": 31.65,
+   "retail_cad": 55.52,
+   "cost_source": "prosol-offers-loc10010",
    "api_sku": "DHDPS8MA",
    "prosol_sku": "DHDPS8MA",
    "product": "Schluter - DITRA-HEAT-DUO-PS Uncoupling Membrane Peel & Stick 2' 7\" x 3' 3\" - 5/16\" (8 mm) (Panel of 8.4 sqft)",
+   "package_shape": "heat_sheet",
+   "max_pkg_weight_lb": 50,
    "brand": "schluter",
+   "schluter_item": "DHDPS8MA",
    "msrp_cad": 55.52,
-   "verified": false,
+   "map_cad": 49.97,
+   "map_effective": "2025-10-01",
+   "map_source": "schluter-map-2025-10-01.csv",
+   "verified": true,
    "source": "map-gap-asins.js PART#",
-   "note": "Auto-mapped 2026-07-30 from part number DHDPS8MA in title. Amazon title: \"Schluter Systems Self-Adhesive Peel and Stick Ditra Heat Duo Membrane 8.4 Sq Ft (0.78 Sq M\". Not yet order-verified."
+   "note": "Auto-mapped 2026-07-30 from part number DHDPS8MA in title. Amazon title: \"Schluter Systems Self-Adhesive Peel and Stick Ditra Heat Duo Membrane 8.4 Sq Ft (0.78 Sq M\". Cost/MAP filled and verified 2026-08-10 against the live Prosol offer (product id 80648, loc 10010) and the Schluter MAP list; same product as the Shopify-keyed DHDPS8MA entry."
   },
   "B07KWFC734": {
    "api_sku": "KSLT1395S",
