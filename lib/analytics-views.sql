@@ -654,7 +654,8 @@ FROM shopify_refunds;
 -- writeoff_cost is the money the P&L is currently missing. Multiply nothing,
 -- estimate nothing: unmatched-but-recent refunds stay in 'pending' rather than
 -- being smeared across a recovery rate.
-CREATE VIEW IF NOT EXISTS v_refund_recovery AS
+DROP VIEW IF EXISTS v_refund_recovery;
+CREATE VIEW v_refund_recovery AS
 WITH refunds AS (
   SELECT
     e.amazon_order_id,
