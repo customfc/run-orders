@@ -693,15 +693,32 @@ SELECT
     WHEN m.disposition = 'SELLABLE' AND m.return_status = 'Unit returned to inventory' THEN 'recovered'
     WHEN m.disposition IS NOT NULL AND m.return_channel = 'fba' THEN 'written_off'
     WHEN m.return_channel = 'mfn' THEN 'unknown_grade'
+    -- Absence of a return row only means "never came back" INSIDE the window we
+    -- actually pulled returns for. Outside it, absence means we never looked.
+    -- The first build of this view ignored that and reported 131 no-returns
+    -- worth $12,812, when 123 of them simply predated the 60-day pull. Anything
+    -- older than our earliest held return is 'no_data' and costs nothing.
+    WHEN m.posted_at < (SELECT MIN(return_date) FROM amazon_returns) THEN 'no_data'
+    WHEN (SELECT COUNT(*) FROM amazon_returns) = 0 THEN 'no_data'
     WHEN m.age_days > 45 THEN 'no_return'
     ELSE 'pending'
   END                                                  AS outcome,
   COALESCE(sm.cost_cad, ic.cost_cad, 0) * COALESCE(sm.qty_per_unit, 1) AS unit_cost,
   CASE
-    WHEN (m.disposition = 'SELLABLE' AND m.return_status = 'Unit returned to inventory')
-      OR (m.disposition IS NULL AND m.return_channel IS NULL AND m.age_days <= 45)
-    THEN 0
-    ELSE COALESCE(sm.cost_cad, ic.cost_cad, 0) * COALESCE(sm.qty_per_unit, 1)
+    -- Only a proven loss costs money here: graded non-sellable, or matured past
+    -- the return window with nothing back INSIDE a period we have data for.
+    -- recovered / pending / no_data all cost zero, so the view under-reports
+    -- rather than inventing write-offs it cannot evidence.
+    WHEN m.disposition = 'SELLABLE' AND m.return_status = 'Unit returned to inventory' THEN 0
+    WHEN m.disposition IS NOT NULL AND m.return_channel = 'fba'
+      THEN COALESCE(sm.cost_cad, ic.cost_cad, 0) * COALESCE(sm.qty_per_unit, 1)
+    WHEN m.return_channel = 'mfn'
+      THEN COALESCE(sm.cost_cad, ic.cost_cad, 0) * COALESCE(sm.qty_per_unit, 1)
+    WHEN m.posted_at < (SELECT MIN(return_date) FROM amazon_returns) THEN 0
+    WHEN (SELECT COUNT(*) FROM amazon_returns) = 0 THEN 0
+    WHEN m.age_days > 45
+      THEN COALESCE(sm.cost_cad, ic.cost_cad, 0) * COALESCE(sm.qty_per_unit, 1)
+    ELSE 0
   END                                                  AS writeoff_cost
 FROM matched m
 LEFT JOIN sku_map_canonical sm ON sm.amazon_msku = m.sku

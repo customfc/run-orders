@@ -40,11 +40,30 @@ function isoDaysAgo(days, now) {
   return new Date(now.getTime() - days * 86400000).toISOString();
 }
 
+const MONTHS = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+                 Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
+
+/**
+ * Amazon returns two different date formats depending on the report: FBA gives
+ * ISO ("2026-06-13T23:38:44+00:00"), MFN gives "01-Aug-2026". Stored side by
+ * side in one column they sort and compare as nonsense, which silently breaks
+ * every window filter over the table. Normalise to ISO on the way in.
+ */
+function toIso(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s;
+  const m = s.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+  if (m && MONTHS[m[2]]) return `${m[3]}-${MONTHS[m[2]]}-${m[1].padStart(2, '0')}T00:00:00Z`;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 /** Amazon's column names differ per report; normalise to our schema. */
 function normaliseFba(r) {
   return {
     channel: 'fba',
-    return_date: r['return-date'] || null,
+    return_date: toIso(r['return-date']),
     amazon_order_id: r['order-id'] || null,
     seller_sku: r['sku'] || null,
     asin: r['asin'] || null,
@@ -68,7 +87,7 @@ function normaliseMfn(r) {
   // as unknown so the gap stays visible instead of flattering the margin.
   return {
     channel: 'mfn',
-    return_date: r['return-date'] || r['Return request date'] || r['order-date'] || null,
+    return_date: toIso(r['return-date'] || r['Return request date'] || r['order-date']),
     amazon_order_id: r['order-id'] || r['Order ID'] || null,
     seller_sku: r['sku'] || r['Merchant SKU'] || null,
     asin: r['asin'] || r['ASIN'] || null,
