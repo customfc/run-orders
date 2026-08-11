@@ -631,3 +631,78 @@ SELECT
   amount AS refund_amount,
   reason AS description
 FROM shopify_refunds;
+
+-- ── v_refund_recovery ────────────────────────────────────────────────────────
+-- What a refund actually cost us, as opposed to what the P&L assumes.
+--
+-- v_sku_monthly_pnl removes COGS for every refunded unit (net qty), which is
+-- only correct when the goods came back AND were resellable. Amazon's returns
+-- report says that is roughly half the time on FBA: 30 of 55 units SELLABLE
+-- over 2026-05..08, with 23 donated and 2 destroyed on arrival.
+--
+-- Each refunded unit lands in one of four buckets:
+--   recovered   — a matching return, graded SELLABLE. COGS credit is correct.
+--   written_off — a matching return graded damaged/defective, or donated or
+--                 destroyed. Goods are gone; the COGS credit is wrong.
+--   no_return   — no matching return and the refund is older than 45 days.
+--                 The customer kept it. Total loss of the goods.
+--   pending     — no matching return but the refund is recent. Returns lag, so
+--                 this is genuinely unknown rather than a write-off.
+-- MFN rows carry no disposition from Amazon, so a matched MFN return counts as
+-- 'unknown_grade' — it came back, but nobody graded it. Never assume sellable.
+--
+-- writeoff_cost is the money the P&L is currently missing. Multiply nothing,
+-- estimate nothing: unmatched-but-recent refunds stay in 'pending' rather than
+-- being smeared across a recovery rate.
+CREATE VIEW IF NOT EXISTS v_refund_recovery AS
+WITH refunds AS (
+  SELECT
+    e.amazon_order_id,
+    e.seller_sku                                     AS sku,
+    substr(e.posted_at, 1, 7)                        AS month,
+    e.posted_at,
+    ABS(e.amount_cad)                                AS refund_amount,
+    julianday('now') - julianday(substr(e.posted_at, 1, 10)) AS age_days
+  FROM amazon_financial_events e
+  WHERE e.fee_type = 'ItemPrice:Principal'
+    AND e.transaction_type = 'Refund'
+    AND e.seller_sku IS NOT NULL
+),
+matched AS (
+  SELECT
+    r.*,
+    (SELECT ret.detailed_disposition FROM amazon_returns ret
+      WHERE ret.amazon_order_id = r.amazon_order_id AND ret.seller_sku = r.sku
+      ORDER BY ret.return_date LIMIT 1)                AS disposition,
+    (SELECT ret.status FROM amazon_returns ret
+      WHERE ret.amazon_order_id = r.amazon_order_id AND ret.seller_sku = r.sku
+      ORDER BY ret.return_date LIMIT 1)                AS return_status,
+    (SELECT ret.channel FROM amazon_returns ret
+      WHERE ret.amazon_order_id = r.amazon_order_id AND ret.seller_sku = r.sku
+      ORDER BY ret.return_date LIMIT 1)                AS return_channel
+  FROM refunds r
+)
+SELECT
+  m.month,
+  m.sku,
+  m.amazon_order_id,
+  m.refund_amount,
+  m.disposition,
+  m.return_status,
+  CASE
+    WHEN m.disposition = 'SELLABLE' AND m.return_status = 'Unit returned to inventory' THEN 'recovered'
+    WHEN m.disposition IS NOT NULL AND m.return_channel = 'fba' THEN 'written_off'
+    WHEN m.return_channel = 'mfn' THEN 'unknown_grade'
+    WHEN m.age_days > 45 THEN 'no_return'
+    ELSE 'pending'
+  END                                                  AS outcome,
+  COALESCE(sm.cost_cad, ic.cost_cad, 0) * COALESCE(sm.qty_per_unit, 1) AS unit_cost,
+  CASE
+    WHEN (m.disposition = 'SELLABLE' AND m.return_status = 'Unit returned to inventory')
+      OR (m.disposition IS NULL AND m.return_channel IS NULL AND m.age_days <= 45)
+    THEN 0
+    ELSE COALESCE(sm.cost_cad, ic.cost_cad, 0) * COALESCE(sm.qty_per_unit, 1)
+  END                                                  AS writeoff_cost
+FROM matched m
+LEFT JOIN sku_map_canonical sm ON sm.amazon_msku = m.sku
+LEFT JOIN item_costs ic ON ic.sku = m.sku;

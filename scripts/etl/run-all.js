@@ -32,6 +32,7 @@ const STEPS = [
   { name: 'item-costs',            mod: './sync-item-costs',            supportsBackfill: false },
   { name: 'sku-map-canonical',     mod: './sync-sku-map',               supportsBackfill: false },
   { name: 'shipping-labels',       mod: './sync-shipping-labels',       supportsBackfill: true },
+  { name: 'amazon-returns',        mod: './sync-amazon-returns',        supportsBackfill: true },
   { name: 'snapshots',             mod: './sync-snapshots',             supportsBackfill: false },
 ];
 

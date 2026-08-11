@@ -359,3 +359,42 @@ CREATE TABLE IF NOT EXISTS inventory_daily (
 );
 CREATE INDEX IF NOT EXISTS idx_inv_sku ON inventory_daily(sku);
 CREATE INDEX IF NOT EXISTS idx_inv_tier ON inventory_daily(snapshot_date, tier);
+
+-- ── Amazon customer returns ──────────────────────────────────────────────────
+-- Why this exists: v_sku_monthly_pnl credits COGS back on every refunded unit,
+-- which silently assumes the goods came back AND were resellable. Amazon's own
+-- returns report says otherwise — over 2026-05..08, 55 FBA units came back and
+-- only 30 were SELLABLE; 23 were donated and 2 destroyed on arrival. The other
+-- 45% is product we paid for and will never sell, currently invisible in the
+-- P&L. Some refunds have no return at all, which this table also lets us see
+-- (a refund with no matching row, once mature, is a total write-off).
+--
+-- disposition is Amazon's, not ours: SELLABLE | CUSTOMER_DAMAGED | DEFECTIVE |
+-- CARRIER_DAMAGED. status carries the fate: 'Unit returned to inventory',
+-- 'IMMEDIATE_DONATION', 'IMMEDIATE_DISPOSAL'.
+CREATE TABLE IF NOT EXISTS amazon_returns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,                  -- 'fba' | 'mfn'
+  return_date TEXT NOT NULL,
+  amazon_order_id TEXT,
+  seller_sku TEXT,
+  asin TEXT,
+  fnsku TEXT,
+  product_name TEXT,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  fulfillment_center TEXT,
+  detailed_disposition TEXT,              -- SELLABLE | CUSTOMER_DAMAGED | DEFECTIVE | …
+  reason TEXT,
+  status TEXT,                            -- 'Unit returned to inventory' | IMMEDIATE_DONATION | …
+  license_plate TEXT,
+  customer_comments TEXT,
+  raw TEXT NOT NULL,
+  ingested_at TEXT NOT NULL
+);
+-- license_plate is unique per physical unit for FBA; fall back to the natural
+-- key for MFN rows which have no plate.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_amazon_returns
+  ON amazon_returns(channel, return_date, amazon_order_id, seller_sku, COALESCE(license_plate, ''));
+CREATE INDEX IF NOT EXISTS idx_returns_order ON amazon_returns(amazon_order_id);
+CREATE INDEX IF NOT EXISTS idx_returns_sku ON amazon_returns(seller_sku);
+CREATE INDEX IF NOT EXISTS idx_returns_date ON amazon_returns(return_date);
