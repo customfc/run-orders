@@ -156,6 +156,19 @@ async function main() {
        @raw, @ingested_at)`);
 
   try {
+    // Self-heal rows written before return_date was normalised. Mixed formats
+    // in one column are not merely untidy: v_refund_recovery's coverage guard
+    // compares a refund date against MIN(return_date), and a single legacy
+    // '01-Aug-2026' string sorts below every ISO date, pinning the floor at a
+    // bogus value and silently disabling the guard.
+    const legacy = db.prepare("SELECT id, return_date FROM amazon_returns WHERE return_date NOT LIKE '____-__-__%'").all();
+    if (legacy.length) {
+      const upd = db.prepare('UPDATE amazon_returns SET return_date = ? WHERE id = ?');
+      let fixed = 0;
+      tx(() => { for (const r of legacy) { const iso = toIso(r.return_date); if (iso) { upd.run(iso, r.id); fixed++; } } });
+      console.log(`[returns] normalised ${fixed} legacy date(s) to ISO`);
+    }
+
     const fba = await pullFba(now);
     const mfn = await pullMfn(now);
     const all = [...fba, ...mfn.rows].filter((r) => r.return_date && r.seller_sku);
