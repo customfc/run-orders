@@ -161,12 +161,28 @@ async function main() {
     // compares a refund date against MIN(return_date), and a single legacy
     // '01-Aug-2026' string sorts below every ISO date, pinning the floor at a
     // bogus value and silently disabling the guard.
-    const legacy = db.prepare("SELECT id, return_date FROM amazon_returns WHERE return_date NOT LIKE '____-__-__%'").all();
+    const legacy = db.prepare(`SELECT id, channel, return_date, amazon_order_id, seller_sku, license_plate
+      FROM amazon_returns WHERE return_date NOT LIKE '____-__-__%'`).all();
     if (legacy.length) {
       const upd = db.prepare('UPDATE amazon_returns SET return_date = ? WHERE id = ?');
-      let fixed = 0;
-      tx(() => { for (const r of legacy) { const iso = toIso(r.return_date); if (iso) { upd.run(iso, r.id); fixed++; } } });
-      console.log(`[returns] normalised ${fixed} legacy date(s) to ISO`);
+      const del = db.prepare('DELETE FROM amazon_returns WHERE id = ?');
+      // A legacy row often has an ISO twin already — the same return re-pulled
+      // after normalisation landed. Rewriting its date would collide with the
+      // unique index, so the twin wins and the legacy row goes.
+      const twin = db.prepare(`SELECT id FROM amazon_returns
+        WHERE channel = ? AND return_date = ? AND COALESCE(amazon_order_id,'') = COALESCE(?,'')
+          AND COALESCE(seller_sku,'') = COALESCE(?,'') AND COALESCE(license_plate,'') = COALESCE(?,'')
+          AND id <> ?`);
+      let fixed = 0, dropped = 0;
+      tx(() => {
+        for (const r of legacy) {
+          const iso = toIso(r.return_date);
+          if (!iso) continue;
+          if (twin.get(r.channel, iso, r.amazon_order_id, r.seller_sku, r.license_plate, r.id)) { del.run(r.id); dropped++; }
+          else { upd.run(iso, r.id); fixed++; }
+        }
+      });
+      console.log(`[returns] legacy dates: ${fixed} normalised, ${dropped} dropped as duplicates`);
     }
 
     const fba = await pullFba(now);
