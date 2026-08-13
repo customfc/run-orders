@@ -58,5 +58,16 @@ Both are fictional samples for mapping. Production payloads carry real ship-to.
 - [x] Call done, draft-webhook promised (Leo)
 - [ ] Leo sends draft URL
 - [ ] We POST `example-order-single.json`, then the multi-package one
+
+  The moment the URL lands, one command sends both:
+
+  ```
+  node scripts/prosol-post-sample-order.js --url=<endpoint>
+  ```
+
+  Add `--dry` to print without sending, `--which=single|multi` to send one,
+  `-H 'X-Api-Key: …'` if they issue a key. The full request + response is
+  written to `data/prosol-api-responses/` so their reply is on the record.
+
 - [ ] Prosol returns required-field verdict; we adjust
 - [ ] Wire into pipeline behind a flag (shadow: POST alongside the email flow)
