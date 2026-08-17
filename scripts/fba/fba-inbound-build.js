@@ -101,11 +101,13 @@ async function resolvePrep(mskus) {
     // these seven SKUs carry MUST_MATCH and one does not.
     const needsOwner = d.allOwnersConstraint === 'MUST_MATCH';
     out[d.msku] = {
-      // FC_PROVIDED means the fulfilment centre performs the physical prep
-      // (KERDIFIXBW needs polybagging), so Amazon owns it and bills per unit.
-      // Claiming SELLER there would send unprepped cartridges and get them
-      // flagged at receiving.
-      prepOwner: !needsOwner ? 'NONE' : (d.prepCategory === 'FC_PROVIDED' ? 'AMAZON' : 'SELLER'),
+      // Always SELLER when an owner is required. AMAZON is not selectable in
+      // this marketplace: 'Amazon prep and labeling service is discontinued in
+      // the destination region for mskus:[KERDIFIXBW-FBA] and ownerType:
+      // PREP_OWNER'. So even FC_PROVIDED prep has to be done before it ships —
+      // for KERDIFIXBW that means the 18 sealant cartridges must be polybagged
+      // at the vendor, or they get flagged at receiving.
+      prepOwner: needsOwner ? 'SELLER' : 'NONE',
       labelOwner: 'SELLER',
       why: `${d.prepCategory}/${(d.prepTypes || []).join('+') || 'none'}/${d.allOwnersConstraint || 'no-constraint'}`,
     };
