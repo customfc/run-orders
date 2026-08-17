@@ -91,11 +91,23 @@ async function resolvePrep(mskus) {
   if (res.status !== 200) throw new Error(`getPrepDetails ${res.status}: ${String(res.body).slice(0, 300)}`);
   const out = {};
   for (const d of (JSON.parse(res.body).mskuPrepDetails || [])) {
-    const physical = (d.prepTypes || []).filter((t) => t !== 'ITEM_LABELING' && t !== 'ITEM_NO_PREP');
+    // allOwnersConstraint is the discriminator, NOT prepCategory. Amazon
+    // rejected both of my earlier readings and the messages pin it exactly:
+    //   SES2D6MGS  allOwnersConstraint ''           -> "does not require
+    //              prepCategory UNKNOWN                prepOwner ... [NONE]"
+    //   SES3D5MGS  allOwnersConstraint 'MUST_MATCH' -> "requires prepOwner
+    //              prepCategory NONE                   ... [AMAZON, SELLER]"
+    // prepCategory NONE therefore does not mean "no owner needed" — six of
+    // these seven SKUs carry MUST_MATCH and one does not.
+    const needsOwner = d.allOwnersConstraint === 'MUST_MATCH';
     out[d.msku] = {
-      prepOwner: physical.length ? (d.prepCategory === 'FC_PROVIDED' ? 'AMAZON' : 'SELLER') : 'NONE',
+      // FC_PROVIDED means the fulfilment centre performs the physical prep
+      // (KERDIFIXBW needs polybagging), so Amazon owns it and bills per unit.
+      // Claiming SELLER there would send unprepped cartridges and get them
+      // flagged at receiving.
+      prepOwner: !needsOwner ? 'NONE' : (d.prepCategory === 'FC_PROVIDED' ? 'AMAZON' : 'SELLER'),
       labelOwner: 'SELLER',
-      why: `${d.prepCategory}/${(d.prepTypes || []).join('+') || 'none'}`,
+      why: `${d.prepCategory}/${(d.prepTypes || []).join('+') || 'none'}/${d.allOwnersConstraint || 'no-constraint'}`,
     };
   }
   const missing = mskus.filter((m) => !out[m]);
