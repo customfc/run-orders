@@ -44,11 +44,17 @@ const quoteOf = (o) => (o.quote ? { amount: o.quote.cost?.amount || 0, code: o.q
 // setPackingInformation wants LB/IN and per-item prepOwner+labelOwner;
 // the transportation endpoint wants POUNDS/INCHES and neither. Same carton,
 // two shapes — built from one definition so they can't drift apart.
-const packingBox = (b, expiration) => ({
+const packingBox = (b, expiration, prep = {}) => ({
   weight: { unit: 'LB', value: b.lb },
   dimensions: { unitOfMeasurement: 'IN', length: b.l, width: b.w, height: b.h },
   quantity: b.qty || 1,
-  items: b.units.map((u) => ({ ...u, prepOwner: 'SELLER', labelOwner: 'SELLER', ...(expiration ? { expiration } : {}) })),
+  items: b.units.map((u) => ({
+    msku: u.msku,
+    quantity: u.quantity,
+    prepOwner: prep[u.msku]?.prepOwner || 'NONE',
+    labelOwner: prep[u.msku]?.labelOwner || 'SELLER',
+    ...(expiration ? { expiration } : {}),
+  })),
   contentInformationSource: 'BOX_CONTENT_PROVIDED',
 });
 const transportBox = (b) => ({
@@ -58,6 +64,44 @@ const transportBox = (b) => ({
   items: b.units.map((u) => ({ msku: u.msku, quantity: u.quantity })),
   contentInformationSource: 'BOX_CONTENT_PROVIDED',
 });
+
+
+/**
+ * Who owns prep, per SKU, straight from Amazon rather than assumed.
+ *
+ * fba-inbound-spd.js hard-coded prepOwner:'SELLER' for every item. That worked
+ * for the two Sealers Gold SKUs and fails on a mixed PO: createInboundPlan
+ * rejected PO-15904 with "SES2D6MGS-FBA does not require prepOwner but SELLER
+ * was assigned. Accepted values: [NONE]". getPrepDetails shows why the rule
+ * cannot be uniform — of these 7 SKUs, five need no prep, one (SES2D6MGS) has
+ * prepCategory UNKNOWN with labeling only, and KERDIFIXBW needs ITEM_POLYBAGGING
+ * with prepCategory FC_PROVIDED, meaning the fulfilment centre performs it.
+ *
+ * Rule: strip labeling and the explicit no-prep marker; if nothing physical is
+ * left, nobody owns prep (NONE). If something is, the owner is AMAZON when the
+ * FC provides it, otherwise us.
+ *
+ * labelOwner stays SELLER — applying our own FNSKU labels is the entire point
+ * of the X00 relist; letting Amazon label costs per unit.
+ */
+async function resolvePrep(mskus) {
+  const mp = (process.env.AMAZON_SP_MARKETPLACE_ID || '').replace(/"/g, '');
+  const p = new URLSearchParams({ marketplaceId: mp, mskus: mskus.join(',') });
+  const res = await spApiRequest('GET', `${BASE}/items/prepDetails?${p}`, {});
+  if (res.status !== 200) throw new Error(`getPrepDetails ${res.status}: ${String(res.body).slice(0, 300)}`);
+  const out = {};
+  for (const d of (JSON.parse(res.body).mskuPrepDetails || [])) {
+    const physical = (d.prepTypes || []).filter((t) => t !== 'ITEM_LABELING' && t !== 'ITEM_NO_PREP');
+    out[d.msku] = {
+      prepOwner: physical.length ? (d.prepCategory === 'FC_PROVIDED' ? 'AMAZON' : 'SELLER') : 'NONE',
+      labelOwner: 'SELLER',
+      why: `${d.prepCategory}/${(d.prepTypes || []).join('+') || 'none'}`,
+    };
+  }
+  const missing = mskus.filter((m) => !out[m]);
+  if (missing.length) throw new Error(`no prep details returned for: ${missing.join(', ')}`);
+  return out;
+}
 
 function loadSpec(p) {
   const spec = JSON.parse(fs.readFileSync(p, 'utf8'));
@@ -114,15 +158,19 @@ async function groupItems(planId, packingOptionId, packingGroupId) {
 
   if (!COMMIT) {
     console.log('\n--- setPackingInformation payload (first grouping) ---');
-    console.log(JSON.stringify({ packageGroupings: [{ packingGroupId: '<resolved at run time>', boxes: spec.boxes.map((b) => packingBox(b, spec.expiration)) }] }, null, 1).slice(0, 1400));
+    console.log(JSON.stringify({ packageGroupings: [{ packingGroupId: '<resolved at run time>', boxes: spec.boxes.map((b) => packingBox(b, spec.expiration, {})) }] }, null, 1).slice(0, 1400));
     console.log('\nDRY RUN — nothing created. Re-run with --commit to create the inbound plan.');
     return;
   }
 
+  const prep = await resolvePrep(spec.items.map((i) => i.msku));
+  console.log('\nprep ownership (from Amazon getPrepDetails):');
+  for (const i of spec.items) console.log(`  ${i.msku.padEnd(20)} prepOwner=${prep[i.msku].prepOwner.padEnd(6)} labelOwner=${prep[i.msku].labelOwner}  (${prep[i.msku].why})`);
+
   const created = await inbound.createInboundPlan({
     name: spec.name,
     sourceAddress: src,
-    items: spec.items.map((i) => ({ msku: i.msku, quantity: i.qty, prepOwner: 'SELLER', labelOwner: 'SELLER', ...(spec.expiration ? { expiration: spec.expiration } : {}) })),
+    items: spec.items.map((i) => ({ msku: i.msku, quantity: i.qty, prepOwner: prep[i.msku].prepOwner, labelOwner: prep[i.msku].labelOwner, ...(spec.expiration ? { expiration: spec.expiration } : {}) })),
   });
   await inbound.waitForOperation(created.operationId);
   const planId = created.inboundPlanId;
@@ -143,7 +191,7 @@ async function groupItems(planId, packingOptionId, packingGroupId) {
     const mine = spec.boxes.filter((b) => b.units.every((u) => mskus.has(u.msku)));
     mine.forEach((b) => assigned.add(b));
     console.log(`   group ${gid}: ${mskus.size} sku(s) → ${mine.length} carton(s)`);
-    if (mine.length) groupings.push({ packingGroupId: gid, boxes: mine.map((b) => packingBox(b, spec.expiration)) });
+    if (mine.length) groupings.push({ packingGroupId: gid, boxes: mine.map((b) => packingBox(b, spec.expiration, prep)) });
   }
   const orphan = spec.boxes.filter((b) => !assigned.has(b));
   if (orphan.length) {
