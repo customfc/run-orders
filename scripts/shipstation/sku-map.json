@@ -1,6 +1,6 @@
 {
  "_comment": "ShipStation SKU → Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
- "_updated": "2026-07-30T18:08:09.996Z",
+ "_updated": "2026-08-18T16:12:00.000Z",
  "_notes": {
   "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
   "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -445,6 +445,16 @@
    "prosol_sku": "C050231-01",
    "product": "Aqua Mix - Sulfamic Acid Crystals 1 lb",
    "verified": true
+  },
+  "11551": {
+   "cost_cad": 7.77,
+   "retail_cad": 13.5,
+   "cost_source": "prosol-offers-loc10010",
+   "api_sku": "C010461",
+   "prosol_sku": "C010461-05",
+   "product": "Aqua Mix - Grout Haze Cleaner 473 ml",
+   "verified": true,
+   "note": "Shopify/YF SKU 11551 = AQUA MIX Grout Haze Clean Up (473 ml). Added 2026-08-18 after order 1345 rejected with No sku-map entry. Verified vs live Prosol product id 17803 (stocked 27 locations); cost/retail from offers endpoint same day."
   },
   "11571": {
    "cost_cad": 16.6,
