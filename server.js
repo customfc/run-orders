@@ -398,7 +398,7 @@ async function buyLabelForOrder({ orderId, carrierCode, serviceCode, packageCode
           labelCost,
           weight: payload.weight,
           shape: null,
-          items: (order.items || []).map((it) => ({ sku: it.sku, name: it.name, quantity: it.quantity })),
+          items: (order.items || []).map((it) => ({ sku: it.sku, name: require('./lib/sample-item').itemDisplayName(it), quantity: it.quantity })),
         }],
         internalNotes: internalNotes || null,
       });

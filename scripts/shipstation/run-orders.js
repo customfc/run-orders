@@ -9,6 +9,7 @@ const { ProsolClientV2 } = require('./prosol-client-v2');
 const cableSku = require('../../lib/cable-sku');
 const { planPackages } = require('../../lib/package-split');
 const { validateMapping } = require('../../lib/mapping-guard');
+const { sampleOf, sampleRefHandle } = require('../../lib/sample-item');
 
 // Airtight mapping guard: before staging an order, confirm the Prosol code we
 // resolved is the same product/size the customer actually ordered — comparing
@@ -443,6 +444,16 @@ function resolveOrderItems(order) {
   const failureItems = [];
   for (const item of (order.items || [])) {
     const sku = item.sku || 'UNKNOWN';
+    // "Order a Sample" lines carry no SKU (→ UNKNOWN → SKIP in the sku-map),
+    // so without this the order silently loses its only line and gets rejected
+    // as "no in-scope items". Surface what was actually requested instead —
+    // samples are vendor-fulfilled by hand, never auto-routed.
+    const sampleName = sampleOf(item);
+    if (sampleName) {
+      const handle = sampleRefHandle(item);
+      failures.push(`Sample of ${sampleName}${handle ? ` (${handle})` : ''} — vendor sample, fulfil manually`);
+      continue;
+    }
     const mapped = resolveMappedEntry(sku);
     const base = { sku, name: item.name || sku, qty: item.quantity || 1, original: item };
     const displayName = item.name || mapped?.product || sku;
