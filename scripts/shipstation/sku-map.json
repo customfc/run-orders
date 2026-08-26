@@ -362,11 +362,15 @@
       "verified": true
     },
     "11532": {
-      "api_sku": "UNMAPPED",
-      "prosol_sku": "UNMAPPED",
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
       "product": "Aqua Mix - AquaShield 720ml",
-      "note": "NOT FOUND in Prosol API. May be discontinued or not carried. Needs manual verification.",
-      "verified": false
+      "note": "Not in the Prosol API (was UNMAPPED, stranded order 1354 on 2026-08-26). Ships from CFC Sechelt own stock; same pattern as Bona 71/2891/2892 and Armstrong 1529-1531.",
+      "source": "SECHELT",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "brand": "aqua mix",
+      "verified_source": "Shopify inventory 2026-08-26: Sechelt available=23 (on_hand 26), Powell River=10; unit cost $9.03"
     },
     "11539": {
       "cost_cad": 57.49,
