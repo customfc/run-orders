@@ -3532,6 +3532,34 @@
       "schluter_item": "KDIF4GRKEBVGD5",
       "note": "Added 2026-07-21 for YourFloors Shopify order #1315 (Trendline Grate Kit 4in Floral / Brushed Vintage Gold). Shopify SKU = Prosol SKU. Verified live Prosol 2026-07-21: KDIF4GRKEBVGD5 = Floral Brushed Vintage Gold 4in, cost $113.23, 9 locs. YourFloors Trendline = Prosol Square Grate Kit Floral V2."
     },
+    "KL1DRE110": {
+      "cost_cad": 142.06,
+      "retail_cad": 249.22,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KL1DRE110",
+      "prosol_sku": "KL1DRE110",
+      "product": "Schluter KERDI-LINE Linear Floor Drain Frameless Tileable Grate SS (V4) 1-1/8in x 43-5/16in (110cm)",
+      "category": "KERDI",
+      "verified": true,
+      "source": "prosol-live-lookup",
+      "brand": "schluter",
+      "schluter_item": "KL1DRE110",
+      "note": "Added 2026-08-27 for YourFloors Shopify order #1360 (KERDI-LINE Linear Drain TILEABLE Grate Kit / 110 cm (44in)). Shopify SKU = Prosol SKU. Verified live Prosol 2026-08-27: productId 10199, frameless tileable 43-5/16in (=110cm), cost $142.06, 30 locs (Burnaby 3). NOT the off-set KL1DROE110 and NOT the channel body KL1V60E110."
+    },
+    "KL1V60E110": {
+      "cost_cad": 289.27,
+      "retail_cad": 507.49,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KL1V60E110",
+      "prosol_sku": "KL1V60E110",
+      "product": "Schluter KERDI-LINE Linear Drain Center Channel Body Kit 43-5/16in (110cm)",
+      "category": "KERDI",
+      "verified": true,
+      "source": "prosol-live-lookup",
+      "brand": "schluter",
+      "schluter_item": "KL1V60E110",
+      "note": "Added 2026-08-27 for YourFloors Shopify order #1360 (KERDI-LINE Channel Body / 110 cm (44in) / Center). Shopify SKU = Prosol SKU. Verified live Prosol 2026-08-27: productId 13589, center-outlet channel body 43-5/16in (=110cm), cost $289.27, 37 locs (Burnaby 5). Channel body, NOT the grate KL1DRE110."
+    },
     "KL1DRE70": {
       "cost_cad": 110.17,
       "retail_cad": 193.28,
