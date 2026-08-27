@@ -362,15 +362,16 @@
       "verified": true
     },
     "11532": {
-      "api_sku": "NON_PROSOL",
-      "prosol_sku": "NON_PROSOL",
-      "product": "Aqua Mix - AquaShield 720ml",
-      "note": "Not in the Prosol API (was UNMAPPED, stranded order 1354 on 2026-08-26). Ships from CFC Sechelt own stock; same pattern as Bona 71/2891/2892 and Armstrong 1529-1531.",
-      "source": "SECHELT",
-      "route_to": "CFC_SECHELT",
-      "shipstation_warehouse_id": 147654,
+      "cost_cad": 13.06,
+      "retail_cad": 22.1,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "C010507-4",
+      "prosol_sku": "C010507-07",
+      "product": "Aqua Mix - AquaShield Tile & Grout Cleaner & Resealer 24 oz (710ml)",
+      "verified": true,
+      "source": "prosol-live-lookup",
       "brand": "aqua mix",
-      "verified_source": "Shopify inventory 2026-08-26: Sechelt available=23 (on_hand 26), Powell River=10; unit cost $9.03"
+      "note": "Corrected 2026-08-27 (Mac: it IS a Prosol item). Was wrongly NON_PROSOL/Sechelt on 08-26 because filter[sku]=11532 returned nothing; the Prosol code follows the Aqua Mix pattern (api C010507-4, PO code C010507-07, productId 17802), matches SF item 11532 vendor item C010507-07 (UPC 718704711053). Verified live 2026-08-27: cost $13.06, 26 locs, Burnaby 12. Shopify title says 720 ml, Prosol/SF say 24 oz / 710 ml, same product."
     },
     "11539": {
       "cost_cad": 57.49,
