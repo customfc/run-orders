@@ -3519,6 +3519,20 @@
       "map_source": "schluter-map-2025-10-01.csv",
       "note": "Added 2026-07-21 for YourFloors Shopify order #1313 (Contour Grate Kit 4in / Brushed Brass). Shopify SKU = Prosol SKU. Verified live Prosol 2026-07-21: cost $55.97, stocked at 13 locations. Clone of verified ASIN entry B07PNJX29J."
     },
+    "KDIF4GRKMBWD6": {
+      "cost_cad": 113.23,
+      "retail_cad": 198.64,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KDIF4GRKMBWD6",
+      "prosol_sku": "KDIF4GRKMBWD6",
+      "product": "Schluter KERDI-DRAIN Square Grate Kit Curve SS (V2) Matte White 4in",
+      "category": "KERDI",
+      "verified": true,
+      "source": "prosol-live-lookup",
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKMBWD6",
+      "note": "Added 2026-08-27 for YourFloors Shopify order #1358 (Trendline Grate Kit 4in Curve / Matte White). Shopify SKU = Prosol SKU. Verified live Prosol 2026-08-27: productId 56564, Curve Matte White 4in, cost $113.23, 35 locs. YourFloors Trendline = Prosol Square Grate Kit V2. Sibling KDIF4GRKEBVGD5 = Floral Brushed Vintage Gold."
+    },
     "KDIF4GRKEBVGD5": {
       "cost_cad": 113.23,
       "retail_cad": 198.64,
