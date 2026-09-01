@@ -8852,6 +8852,20 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
     },
+    "B018A1IG4M": {
+      "cost_cad": 81.18,
+      "retail_cad": 142.42,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KEBA100125",
+      "prosol_sku": "KEBA100125",
+      "product": "Schluter KERDI-BAND Waterproofing Strip 5\" x 98' 5\"",
+      "category": "KERDI",
+      "verified": true,
+      "source": "prosol-live-lookup",
+      "brand": "schluter",
+      "schluter_item": "KEBA100125",
+      "note": "Added 2026-09-01 for Amazon order 701-1787892-0623452, which was stranded as UNMAPPED. Same physical product as B007NWYP40 (duplicate ASIN for the 5in x 98ft5in band). Verified live: productId 10231, cost $81.18, 41 locs, 687 available."
+    },
     "B007NWYP40": {
       "cost_cad": 81.18,
       "retail_cad": 142.42,
@@ -11260,14 +11274,17 @@
       "note": "Auto-mapped 2026-07-30 from part number DHPS5MA in title. Amazon title: \"Schluter Systems Self-Adhesive Peel and Stick Ditra Heat Membrane 8.4 Sq Ft (0.78 Sq M) Sh\". Not yet order-verified."
     },
     "B079G4GXRB": {
+      "cost_cad": 27.83,
+      "retail_cad": 48.82,
+      "cost_source": "prosol-offers-loc10010",
       "api_sku": "KD3/ABS/FL",
       "prosol_sku": "KD3ABSFL",
       "product": "Schluter - Flange ABS KERDI-DRAIN without seals and corners - 3\" drain outlet",
       "brand": "schluter",
       "msrp_cad": 48.82,
-      "verified": false,
-      "source": "map-gap-asins.js PART#",
-      "note": "Auto-mapped 2026-07-30 from part number KD3ABSFL in title. Amazon title: \"Schluter Systems Kerdi Flange Kits 2\" or 3\" Drain Outlet (KD3/ABS/FL 3\" ABS)\". Not yet order-verified."
+      "verified": true,
+      "source": "prosol-live-lookup",
+      "note": "Auto-mapped 2026-07-30 from part number KD3ABSFL in title. Cost backfilled + verified live 2026-09-01 for Amazon order 702-3174407-2710644 (productId 13445, cost $27.83, 6 locs, Burnaby 4); the null cost_cad was blocking staging."
     },
     "B0DJG57RK7": {
       "api_sku": "KB12SN305305AF",
