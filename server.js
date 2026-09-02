@@ -2056,15 +2056,16 @@ schedule('30 13 * * 1-5', () => runCronPipeline('13:30-stage', ['stage', 'buy', 
 // runs, and a weekend buy used to have no email tick until Monday.
 schedule('0 14 * * *', () => runCronPipeline('14:00-email', ['email']), TZ);
 
-// Second email tick. THE 2026-07-21 BUG: the 14:00 tick was the day's ONLY
-// email run, so any label bought after it (manual catch-up runs, /buy,
-// /api/labels/buy, a late `claude:save-stuck-orders` run) was never emailed to
-// the warehouse — and the next day loads a fresh state file that doesn't
-// contain yesterday's labels, so it was never emailed at all. Five orders on
-// 2026-07-21 alone; order 1316 sat unshipped for six days.
-// phaseEmail is per-order idempotent (ops-state email.byOrder), so a second
-// tick can only pick up what the first one genuinely missed.
-schedule('0 20 * * *', () => runCronPipeline('20:00-email-catchup', ['email']), TZ);
+// NOTE (2026-09-01, Mac): there used to be a second email tick at 20:00 ET here,
+// added after the 2026-07-21 bug where the 14:00 tick was the day's ONLY email run
+// and five labels bought later that day were never emailed at all (order 1316 sat
+// unshipped for six days). It worked, but 20:00 ET is a useless hour to reach a
+// warehouse — every branch is shut, nobody reads it until morning, and the goods
+// do not move any sooner. Mac's call: lump those into the next day instead.
+// The cross-day net is now the hourly orphan sweep below, which unlike phaseEmail
+// reads PRIOR days' ops-state and so can still rescue yesterday's labels. It is
+// windowed to business hours, so a label bought at 16:30 ET gets its warehouse
+// email at 07:15 the next morning rather than at 20:00 the same night.
 
 // Pickup sweep — books one pickup per (warehouse,carrier) for next biz day
 schedule('30 14 * * 1-5', () => runCronPipeline('14:30-pickups', ['pickups']), TZ);
@@ -2194,7 +2195,12 @@ schedule('30 9 * * 1-5', () => {
 // ORPHAN_SWEEP_DETECT_DAYS (60) so nothing ages out silently, and keeps
 // re-alerting daily while anything is outstanding. SHADOW until
 // ORPHAN_SWEEP_LIVE=1. See lib/orphan-email-sweep.js.
-schedule('15 * * * *', () => {
+// Windowed to 07:15–17:15 ET (was every hour). Outside business hours it would
+// only fire warehouse emails nobody can act on until morning, which is exactly
+// what the retired 20:00 catchup did. Anything bought after the last tick is
+// picked up at 07:15 the next day — the sweep reads prior days' state, so
+// nothing is lost by waiting.
+schedule('15 7-17 * * *', () => {
   const { orphanSweepTick } = require('./lib/orphan-email-sweep');
   orphanSweepTick('hourly').catch((e) => console.error('[orphan-sweep] tick failed:', e.message));
 }, TZ);
@@ -3267,8 +3273,8 @@ app.listen(PORT, () => {
   console.log(`YourFloors ops UI running at http://localhost:${PORT}`);
   console.log(`Cron schedule (America/Toronto):`);
   console.log(`  07:00 / 10:00 / 12:00 / 13:30 weekdays — stage + buy + POs`);
-  console.log(`  14:00 + 20:00 daily — email Kaitlyn sweep (2nd tick catches late buys)`);
-  console.log(`  :15 hourly — orphan-email sweep (backstop; ${process.env.ORPHAN_SWEEP_LIVE === '1' ? 'LIVE' : 'SHADOW'})`);
+  console.log(`  14:00 daily — email Kaitlyn sweep (late buys roll to next morning's orphan sweep)`);
+  console.log(`  :15 hourly 07-17 ET — orphan-email sweep (backstop; ${process.env.ORPHAN_SWEEP_LIVE === '1' ? 'LIVE' : 'SHADOW'})`);
   console.log(`  09:30 weekdays — stale-parcel reminder, Purolator only (${process.env.STALE_REMINDER_LIVE === '1' ? 'LIVE' : 'SHADOW'})`);
   console.log(`  14:30 weekdays — pickup sweep (next biz day)`);
   console.log(`  15:00 weekdays — daily digest Telegram`);
