@@ -84,3 +84,46 @@ test('collapses interior whitespace before measuring', () => {
   const s = splitLongReceiverName('Blue  Opal   Recovery and Wellness', '');
   assert.deepEqual(s, { name: 'Blue Opal Recovery and', company: 'Wellness' });
 });
+
+// ── No-comma composite: street + unit + business in one line (701-7987961-9571407,
+// 2026-09-09 — two Purolator 1100238s, fixed by hand; now self-healed).
+const { splitUnitAndBusiness } = require('../../lib/shipstation-v2');
+
+test('splits the real 701-7987961-9571407 line into street / unit / company, every token kept', () => {
+  const r = splitUnitAndBusiness({ street1: '5000 Highway 7 East Unit 2006L Auric King Fine Restaurant', street2: '', company: '' });
+  assert.deepEqual(r, { street1: '5000 Highway 7 East', street2: 'Unit 2006L', company: 'Auric King Fine Restaurant' });
+});
+
+test('assessCarrierAddress flags it as the self-healable unit composite, not the comma composite', () => {
+  const issues = assessCarrierAddress({ name: 'Chris Zhang', street1: '5000 Highway 7 East Unit 2006L Auric King Fine Restaurant', city: 'Markham', state: 'ON', postalCode: 'L3R 4M9', country: 'CA' });
+  assert.deepEqual(issues.map((i) => i.code), ['ADDRESS1_UNIT_COMPOSITE']);
+});
+
+test('a short "street Unit N" is left exactly as written', () => {
+  assert.equal(splitUnitAndBusiness({ street1: '12 Main St Unit 4' }), null);
+});
+
+test('unit with no business name: street2 only, existing company untouched', () => {
+  assert.deepEqual(splitUnitAndBusiness({ street1: '5000 Highway 7 East Suite 2006L', company: 'Existing Co' }), { street1: '5000 Highway 7 East', street2: 'Suite 2006L' });
+});
+
+test('business name with company already occupied goes to a human, never overwritten', () => {
+  assert.equal(splitUnitAndBusiness({ street1: '5000 Highway 7 East Unit 2006L Auric King Fine Restaurant', company: 'Other Co' }), null);
+});
+
+test('street2 already occupied goes to a human, never overwritten', () => {
+  assert.equal(splitUnitAndBusiness({ street1: '5000 Highway 7 East Unit 2006L Auric King Fine Restaurant', street2: 'Buzzer 12' }), null);
+});
+
+test('# form works, and "Ste" cannot fire inside a word like Stewart', () => {
+  assert.deepEqual(splitUnitAndBusiness({ street1: '5000 Highway 7 East #2006L Auric King Fine Restaurant' }), { street1: '5000 Highway 7 East', street2: '#2006L', company: 'Auric King Fine Restaurant' });
+  assert.equal(splitUnitAndBusiness({ street1: '123 Stewart Street Northwest Extension' }), null);
+});
+
+test('street part still over 30 chars is not a self-heal (would be rejected anyway)', () => {
+  assert.equal(splitUnitAndBusiness({ street1: '1234 Some Very Long Street Name Unit 5 Business' }), null);
+});
+
+test('comma composites belong to stripCompositeAddress1, not this split', () => {
+  assert.equal(splitUnitAndBusiness({ street1: '12316 188A Street, Pitt Meadows, BC, Canada Unit 5 Biz' }), null);
+});
