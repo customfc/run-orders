@@ -118,16 +118,19 @@ class ProsolClientV2 {
   async getProductId(prosolSku) {
     if (this.skuToIdCache[prosolSku]) return this.skuToIdCache[prosolSku];
 
-    // Try SKU filter
+    // Try SKU filter. limit=5, not 1: a bare numeric SKU can be shared across
+    // manufacturers (10003 is BOTH the QEP tile nipper and a Marshalltown
+    // handle). When several products answer, pickProductForSku prefers the one
+    // the sku-map pins by prosol_product_id / prosol_sku.
     const res = await this.apiGet(
-      `/api/storefront/products?filter[sku]=${encodeURIComponent(prosolSku)}&limit=1`
+      `/api/storefront/products?filter[sku]=${encodeURIComponent(prosolSku)}&limit=5`
     );
 
     if (res.status === 200) {
       const data = JSON.parse(res.body);
       const products = data.data || data;
       if (Array.isArray(products) && products.length > 0) {
-        const id = products[0].id;
+        const id = pickProductForSku(prosolSku, products);
         this.skuToIdCache[prosolSku] = id;
         return id;
       }
@@ -307,4 +310,29 @@ if (require.main === module) {
     console.error('Fatal:', err.message);
     process.exit(1);
   });
+}
+
+/**
+ * Choose among several Prosol products that answer the same filter[sku].
+ * Bare numeric SKUs collide across manufacturers (10003 = QEP tile nipper AND
+ * Marshalltown handle, 2026-09-09). Prefer the product the sku-map pins via
+ * prosol_product_id, then by prosol_sku (= Prosol display SKU / external_id),
+ * then an exact sku match, then the first hit — and say so in the log.
+ */
+function pickProductForSku(sku, products) {
+  if (products.length === 1) return products[0].id;
+  let pin = null;
+  try {
+    const map = require('./sku-map.json').mappings || {};
+    pin = Object.values(map).find((e) => e && e.api_sku === sku && (e.prosol_product_id || e.prosol_sku));
+  } catch {}
+  if (pin) {
+    const byId = products.find((p) => pin.prosol_product_id && Number(p.id) === Number(pin.prosol_product_id));
+    if (byId) return byId.id;
+    const byExt = products.find((p) => pin.prosol_sku && String(p.external_id || '') === String(pin.prosol_sku));
+    if (byExt) return byExt.id;
+  }
+  const exact = products.find((p) => String(p.sku) === String(sku)) || products[0];
+  log(`  ⚠️ ${products.length} Prosol products share SKU ${sku}; using product ${exact.id} (candidates ${products.map((p) => `${p.id}:${p.external_id || '?'}`).join(', ')})`);
+  return exact.id;
 }

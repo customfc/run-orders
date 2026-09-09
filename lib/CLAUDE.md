@@ -43,7 +43,7 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `resend-email.js` — Resend helper (CFC; `RESEND_API_KEY`).
 - `imap-watcher.js` · `mail-watcher.js` — inbound IMAP polling (no Mail.app scraping).
 - `vendor-reply-parser.js` — parse vendor email replies.
-- `orphan-email-sweep.js` — sweep un-emailed orphan orders (SHADOW).
+- `orphan-email-sweep.js` — sweep un-emailed orphan orders (LIVE via `ORPHAN_SWEEP_LIVE=1`). ShipStation-first since 2026-09-09: labels bought outside the pipeline are discovered and backfilled into `phases.buy.labels` before classification.
 - `telegram.js` — Telegram bot (`/deploy`, `/held`, `/buy`, `/claude`).
 
 ## Vendor data / analytics / health
