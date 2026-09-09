@@ -273,7 +273,7 @@ Each email contains (per order):
 Close with: "Please reply to confirm receipt."
 
 **SMTP:** smtp.office365.com:587 (STARTTLS)
-Login: `hello@yourfloors.ca` / `JohnD33r35G!`
+Login: `hello@yourfloors.ca` / password in `.env` as `YF_SMTP_PASSWORD` (do not paste it into this file)
 
 ---
 
