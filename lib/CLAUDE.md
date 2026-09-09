@@ -37,6 +37,7 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `auto-reprice.js` — buybox repricer (SHADOW; 18 Mapei SKUs).
 - `budget-guards.js` — spend guards (label-cost confirm, etc.).
 - `held-rebuys.js` — void→rebuy hold queue (`/held`, `data/held-rebuys.json`).
+- `large-order-releases.js` — human release for the large-order review gate (`/release`, `POST /api/orders/release`, `data/large-order-releases.json`, 14-day TTL, optional branch pin).
 
 ## Email / messaging
 - `emailer.js` — nodemailer send path.

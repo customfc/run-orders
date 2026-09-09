@@ -15,6 +15,7 @@ const { runPipeline, PHASES: PIPELINE_PHASES } = require('./lib/pipeline');
 const opsState = require('./lib/ops-state');
 const telegram = require('./lib/telegram');
 const heldRebuys = require('./lib/held-rebuys');
+const largeReleases = require('./lib/large-order-releases');
 const { createGhostPickup, trackOrphanGhost, processPendingVoids, loadPending: loadPendingVoids, ghostStatus, reconcileGhostLedger } = require('./lib/ghost-pickup');
 const fsRaw = require('fs');
 const httpsRaw = require('https');
@@ -422,6 +423,32 @@ app.post('/api/labels/buy', async (req, res) => {
     audit.log({ action: 'buy-label', orderId, success: false, error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// ── Large-order review gate: release ────────────────────────────────────────
+// The stage phase holds orders over the LARGE_ORDER_* thresholds and pages Mac.
+// This is the "release it from the dashboard" half. Optional warehouseCode pins
+// the Prosol branch. The order ships on the next stage pass (cron, or
+// POST /api/pipeline/run).
+
+app.get('/api/orders/releases', (req, res) => res.json({ releases: largeReleases.list() }));
+
+app.post('/api/orders/release', (req, res) => {
+  const { orderNumber, warehouseCode, by, note } = req.body || {};
+  if (!orderNumber) return res.status(400).json({ success: false, error: 'orderNumber required' });
+  try {
+    const entry = largeReleases.release(orderNumber, { by: by || 'dashboard', warehouseCode: warehouseCode || null, note: note || null });
+    audit.log({ action: 'large-order-released', orderNumber: entry.orderNumber, by: entry.by, warehouseCode: entry.warehouseCode, note: entry.note, via: 'http' });
+    res.json({ success: true, release: entry });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/orders/release/:orderNumber', (req, res) => {
+  const removed = largeReleases.remove(req.params.orderNumber);
+  if (removed) audit.log({ action: 'large-order-release-dropped', orderNumber: req.params.orderNumber, via: 'http' });
+  res.json({ success: true, removed });
 });
 
 // ── Email to Prosol ──────────────────────────────────────────────────────────
@@ -2886,6 +2913,7 @@ const COMMAND_HELP = `Commands:
 /map <SKU> — add an unmapped SKU to the sku-map (resolves Prosol prosol_sku + cost; live next run)
 /held — list orders held from auto-rebuy after a void (duplicate-spend guard)
 /buy <orderId> — approve & ship a held re-buy (see /held)
+/release <orderNumber> [WH_CODE] [now] — release a large order held for review; optional branch pin (e.g. WCAS); "now" runs stage→pickups immediately. /release list · /release drop <orderNumber>
 /orphans — show bought-but-never-emailed labels from the last 4 days (no-email strand)
 /health — check integration health (store syncs, PO creation, mail watcher)
 /pause — halt all pipeline runs until /resume
@@ -3090,6 +3118,31 @@ async function handleTelegramCommand(command, args) {
       heldRebuys.remove(orderId);
       const warn = r.costWarning ? ` ⚠️ cost $${r.labelCost} >1.5× est` : '';
       return `✅ Shipped ${h.orderNumber} — ${a.carrierCode}/${a.serviceCode}, tracking ${r.trackingNumber}, $${r.labelCost}${warn}\nEmail + PO follow on the next sweep. Removed from held.`;
+    }
+
+    case 'release': {
+      const a0 = (args[0] || '').trim();
+      if (!a0) return 'Usage: /release <orderNumber> [WH_CODE] [now]\nReleases a large order held for review. Optional branch pin (WCAS, KELO…). Add "now" to run stage→buy→pos→email→pickups immediately; otherwise it ships on the next stage pass.\n/release list · /release drop <orderNumber>';
+      if (a0 === 'list') {
+        const items = largeReleases.list();
+        if (!items.length) return 'No large-order releases on file.';
+        return `🔓 ${items.length} release(s) (expire after ${largeReleases.RELEASE_TTL_DAYS}d):\n` + items.map((r) => `• ${r.orderNumber} — by ${r.by} ${String(r.at).slice(0, 16)}${r.warehouseCode ? ` · pinned ${r.warehouseCode}` : ''}`).join('\n');
+      }
+      if (a0 === 'drop') {
+        return largeReleases.remove(args[1]) ? `🗑️ Dropped release for ${args[1]} — it will be held again on the next pass.` : `No release on file for ${args[1]}.`;
+      }
+      const rest = args.slice(1).map((s) => String(s).trim()).filter(Boolean);
+      const runNow = rest.some((s) => s.toLowerCase() === 'now');
+      const pin = rest.find((s) => s.toLowerCase() !== 'now' && /^[A-Za-z]{3,5}$/.test(s)) || null;
+      const entry = largeReleases.release(a0, { by: 'Mac (telegram)', warehouseCode: pin });
+      audit.log({ action: 'large-order-released', orderNumber: entry.orderNumber, by: entry.by, warehouseCode: entry.warehouseCode, via: 'telegram', runNow });
+      let tail = `Ships on the next stage pass (or send "/release ${entry.orderNumber}${pin ? ` ${pin}` : ''} now").`;
+      if (runNow) {
+        if (pipelineActive) tail = '⚠️ Pipeline is already running — the release is on file and this order will ship in that pass or the next.';
+        else if (opsState.isPaused()) tail = '⏸️ OPS is paused — release is on file; /resume then it ships on the next pass.';
+        else { runCronPipeline(`telegram-release:${entry.orderNumber}`, ['stage', 'buy', 'pos', 'email', 'pickups']).catch(() => {}); tail = '🚀 Running stage→buy→pos→email→pickups now. Progress alerts follow.'; }
+      }
+      return `🔓 Released ${entry.orderNumber}${pin ? ` · branch pinned to ${pin}` : ''} (expires in ${largeReleases.RELEASE_TTL_DAYS}d).\n${tail}`;
     }
 
     case 'ghost-pickup':

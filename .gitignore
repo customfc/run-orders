@@ -45,3 +45,4 @@ public/financial-report-*.html
 public/po-preview-*.html
 public/cost-review-*.csv
 public/replacement-label-*.pdf
+data/large-order-releases.json

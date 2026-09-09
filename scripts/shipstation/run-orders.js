@@ -10,6 +10,7 @@ const cableSku = require('../../lib/cable-sku');
 const { planPackages } = require('../../lib/package-split');
 const { validateMapping } = require('../../lib/mapping-guard');
 const { sampleOf, sampleRefHandle } = require('../../lib/sample-item');
+const largeReleases = require('../../lib/large-order-releases');
 
 // Airtight mapping guard: before staging an order, confirm the Prosol code we
 // resolved is the same product/size the customer actually ordered — comparing
@@ -951,7 +952,13 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
     // so a normal-sized order with a mapping issue still alerts on that instead.
     const profile = computeOrderProfile(order);
     const bigReasons = largeOrderReasons(profile);
-    if (bigReasons.length) {
+    // A human release (Telegram /release, POST /api/orders/release) lets the
+    // order through this gate once; the approval expires after 14 days.
+    const released = bigReasons.length ? largeReleases.get(order.orderNumber) : null;
+    if (bigReasons.length && released) {
+      onProgress({ type: 'status', message: `Large order ${order.orderNumber} (${bigReasons.join(', ')}) released by ${released.by} ${String(released.at).slice(0, 16)}${released.warehouseCode ? `, branch pinned to ${released.warehouseCode}` : ''}`, orderNumber: order.orderNumber });
+    }
+    if (bigReasons.length && !released) {
       rejected.push({
         orderNumber: order.orderNumber,
         reason: `Large order held for review (${bigReasons.join(', ')})`,
@@ -1041,7 +1048,23 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
             inventoryBySku[cacheKey] = inv;
           }
 
-          const warehouse = determineWarehouse(order, inventoryBySku);
+          // A large-order release may pin the branch (e.g. WCAS over CALN when
+          // both are 206 km out but only the hub has real depth). The pin must
+          // still cover the full quantity; it never overrides a stock shortfall.
+          let warehouse = null;
+          const pin = largeReleases.pinnedWarehouse(order.orderNumber);
+          if (pin) {
+            const hit = Object.entries(LOCATION_MAP).find(([id, l]) => /^\d+$/.test(id) && l.active && !l.non_prosol && l.shipstation_warehouse_id && String(l.code || '').toUpperCase() === pin);
+            if (!hit) throw new Error(`Released with branch pin ${pin}, but no active Prosol branch has that code`);
+            const [pinId, pinLoc] = hit;
+            if (scoreWarehouseAgainstOrder(Number(pinId), inventoryBySku, requiredQtyBySku(order)) < 0) {
+              throw new Error(`Released with branch pin ${pin}, but ${pinLoc.city} cannot cover the full quantity (${summarizeCoverage(order, inventoryBySku)})`);
+            }
+            warehouse = { prosolLocId: Number(pinId), location: pinLoc };
+            onProgress({ type: 'status', message: `Branch pinned to ${pinLoc.city} (${pin}) by the large-order release`, orderNumber: order.orderNumber });
+          } else {
+            warehouse = determineWarehouse(order, inventoryBySku);
+          }
           if (!warehouse) throw new Error(`No single Prosol branch can fulfill the full order quantity (${summarizeCoverage(order, inventoryBySku)}) — needs manual split or alternate sourcing`);
           warehouseId = Number(warehouse.location.shipstation_warehouse_id);
           warehouseLabel = `${warehouse.location.city} (${warehouse.location.code})`;
