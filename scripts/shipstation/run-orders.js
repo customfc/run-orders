@@ -703,6 +703,30 @@ function determineWarehouse(order, inventoryBySku) {
   return null;
 }
 
+/**
+ * Combine per-package rate lists into one carrier quote: the cheapest service
+ * offered for EVERY package, summed across packages. `perWeight` is
+ * [{ count, rates }] where rates is ShipStation's getrates array for one box of
+ * that weight. Returns null when no service covers every box.
+ */
+function bestCommonService(perWeight) {
+  if (!perWeight.length || perWeight.some((p) => !Array.isArray(p.rates) || !p.rates.length)) return null;
+  const tables = perWeight.map((p) => {
+    const byService = {};
+    for (const r of p.rates) {
+      if (!r.serviceCode || !Number.isFinite(Number(r.shipmentCost))) continue;
+      // ShipStation actually charges shipmentCost + otherCost (fuel surcharge, accessorials).
+      byService[r.serviceCode] = { serviceName: r.serviceName || r.serviceCode, totalCost: Number(r.shipmentCost) + Number(r.otherCost || 0) };
+    }
+    return { count: p.count, byService };
+  });
+  const common = Object.keys(tables[0].byService).filter((s) => tables.every((t) => t.byService[s]));
+  const best = common
+    .map((s) => ({ serviceCode: s, serviceName: tables[0].byService[s].serviceName, totalCost: tables.reduce((sum, t) => sum + t.byService[s].totalCost * t.count, 0) }))
+    .sort((a, b) => a.totalCost - b.totalCost)[0];
+  return best || null;
+}
+
 async function getRates(order, fromPostalCode) {
   const bodyBase = {
     packageCode: 'package',
@@ -711,28 +735,39 @@ async function getRates(order, fromPostalCode) {
     toState: normalizeProvince(order.shipTo?.state) || order.shipTo?.state,
     toCountry: order.shipTo?.country || 'CA',
     toCity: order.shipTo?.city,
-    weight: { value: Math.max(0.1, Number(toLb(order.weight).toFixed(2))), units: 'pounds' },
     confirmation: 'none',
     residential: !!order.shipTo?.residential,
   };
 
+  // Rate per BOX, not per order. A multi-package order rated as one parcel
+  // (6x DITRA30M = 234 lb, 2026-09-09) is over every carrier's parcel limit and
+  // gets no quote at all. Identical boxes are rated once and multiplied. The
+  // resulting shipmentCost is the order total, which is what the multi-package
+  // buy path compares against for the >1.5x cost warning.
+  let boxes = null;
+  try { boxes = planPackages(order.items, order.weight); } catch { boxes = null; }
+  const weights = (boxes && boxes.length > 1)
+    ? boxes.map((p) => Math.max(0.1, Number(toLb(p.totalWeight).toFixed(2))))
+    : [Math.max(0.1, Number(toLb(order.weight).toFixed(2)))];
+  const counts = new Map();
+  for (const w of weights) counts.set(w, (counts.get(w) || 0) + 1);
+
   async function one(carrierCode) {
-    const res = await ssRequest('POST', '/shipments/getrates', { ...bodyBase, carrierCode });
-    if (res.status !== 200) return null;
-    const rates = JSON.parse(res.body);
-    if (!Array.isArray(rates) || !rates.length) return null;
-    // ShipStation actually charges shipmentCost + otherCost (fuel surcharge, accessorials).
-    // Sort and report by the all-in total so the displayed estimate matches what hits the wallet.
-    const best = rates
-      .filter((r) => Number.isFinite(Number(r.shipmentCost)) && r.serviceCode)
-      .map((r) => ({ ...r, totalCost: Number(r.shipmentCost) + Number(r.otherCost || 0) }))
-      .sort((a, b) => a.totalCost - b.totalCost)[0];
+    const perWeight = [];
+    for (const [w, count] of counts) {
+      const res = await ssRequest('POST', '/shipments/getrates', { ...bodyBase, carrierCode, weight: { value: w, units: 'pounds' } });
+      if (res.status !== 200) return null;
+      let rates; try { rates = JSON.parse(res.body); } catch { return null; }
+      perWeight.push({ count, rates });
+    }
+    const best = bestCommonService(perWeight);
     if (!best) return null;
     return {
       carrierCode,
       serviceCode: best.serviceCode,
-      serviceName: best.serviceName || best.serviceCode,
+      serviceName: best.serviceName,
       shipmentCost: best.totalCost,
+      packages: weights.length,
     };
   }
 
@@ -1243,4 +1278,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage };
+module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage, bestCommonService };

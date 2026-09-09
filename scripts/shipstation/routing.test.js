@@ -75,3 +75,34 @@ test('summarizeCoverage: reports need / best branch / total for manual-review er
   } } };
   assert.match(summarizeCoverage(order, inv), /DITRA-XL\/175: need 5, best branch 6, total 8/);
 });
+
+// ── Per-box rate shopping (2026-09-09: 6x DITRA30M = 234 lb rated as ONE parcel
+// got no quote from any carrier and the released large order halted at staging).
+const { bestCommonService } = require('./run-orders');
+
+test('bestCommonService: sums the cheapest service offered for every box, weighted by box count', () => {
+  const perWeight = [
+    { count: 6, rates: [
+      { serviceCode: 'ups_standard', serviceName: 'UPS Standard', shipmentCost: 50, otherCost: 6.79 },
+      { serviceCode: 'ups_2nd_day_air', serviceName: 'UPS 2nd Day', shipmentCost: 150, otherCost: 5.14 },
+    ] },
+  ];
+  const best = bestCommonService(perWeight);
+  assert.equal(best.serviceCode, 'ups_standard');
+  assert.equal(Number(best.totalCost.toFixed(2)), 340.74, '6 boxes x (50 + 6.79)');
+});
+
+test('bestCommonService: only a service quoted for EVERY box qualifies', () => {
+  const perWeight = [
+    { count: 1, rates: [{ serviceCode: 'a', shipmentCost: 10, otherCost: 0 }, { serviceCode: 'b', shipmentCost: 12, otherCost: 0 }] },
+    { count: 2, rates: [{ serviceCode: 'b', shipmentCost: 20, otherCost: 1 }] },
+  ];
+  const best = bestCommonService(perWeight);
+  assert.equal(best.serviceCode, 'b', 'a is cheaper on box 1 but is not offered for box 2');
+  assert.equal(best.totalCost, 12 + 2 * 21);
+});
+
+test('bestCommonService: no quote for any box means no quote at all', () => {
+  assert.equal(bestCommonService([{ count: 1, rates: [] }]), null);
+  assert.equal(bestCommonService([]), null);
+});
