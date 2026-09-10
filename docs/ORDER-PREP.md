@@ -257,7 +257,7 @@ Auth: `API-Key: $SHIPSTATION_V2_API_KEY`
 
 **To:** KLazzarotto@prosol.ca
 **CC:** mac@customfc.ca
-**From:** `Mac Roy <hello@yourfloors.ca>`
+**From:** `YourFloors Support <hello@yourfloors.ca>` (sign-off is `Mac`, first name only — never the surname)
 **Subject:** `Order - {Warehouse}` (e.g. "Order - Saint-Laurent")
 
 One email per warehouse. All orders for that warehouse in one email.
