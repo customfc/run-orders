@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU → Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-09-15T01:32:42.786127Z",
+  "_updated": "2026-09-15T16:56:19.812789Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -12645,7 +12645,7 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv",
       "prosol_product_id": 13539,
-      "note": "Shopify SKU key for the 38\" x 76\" side-drain linear tray. Added 2026-09-14 for order #1381 (Brossard QC) after the customer swapped up from the 36\" x 72\". Verified live: exact filter[sku] hit, Prosol product 13539, cost $246.74, matching the existing ASIN entry B07KB651KP. NOTE: the Shopify variant KSLT1930/965S (\"76 X 38\") has NO Prosol part behind it - only 965/1930 exists - so that variant is unfulfillable and should be pulled from the listing."
+      "note": "Shopify SKU key for the 38\" x 76\" SIDE tray (short-side outlet, Prosol product 13539, 'Side Outlet Position 38 x 76'). Verified live, cost $246.74, matching ASIN entry B07KB651KP. CORRECTION 2026-09-15: an earlier note here claimed the 76x38 variant KSLT1930/965S had no Prosol part. That was wrong. It is a distinct part stored slashless as KSLT1930965S (product 13540). Do not substitute one for the other: the outlet sits on a different edge."
     },
     "KST915/1220BF": {
       "cost_cad": 127.52,
@@ -12687,6 +12687,26 @@
       "max_per_pkg": 2,
       "max_pkg_weight_lb": 50,
       "note": "Added 2026-09-14 for order #1381 (Brossard QC), the 28\" off-set swapped up to 48\". No sibling ASIN entry existed for the off-set 48\" (only 28/32/36 off-sets). Verified live: exact filter[sku] hit, Prosol product 13564, cost $324.23 at Burnaby, list $568.81; Shopify/MAP price $511.93. Off-set kept deliberately to match the customer's original rough-in."
+    },
+    "KSLT1930/965S": {
+      "cost_cad": 246.74,
+      "retail_cad": 432.86,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KSLT1930965S",
+      "prosol_sku": "KSLT1930965S",
+      "prosol_product_id": 13540,
+      "product": "KERDI-SHOWER-LINEAR-TRAY 76\" X 38\" SIDE (long-side outlet)",
+      "package_shape": "solo",
+      "category": "KERDI",
+      "barcode": "4011832163982",
+      "verified": true,
+      "source": "prosol-live-2026-09-15",
+      "brand": "schluter",
+      "schluter_item": "KSLT1930/965S",
+      "map_cad": 389.57,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "note": "76x38 LONG-SIDE-OUTLET tray. Prosol stores it WITHOUT the slash (KSLT1930965S, product 13540, 'Long Side Outlet Position 38 x 76'); filter[sku]=KSLT1930/965S returns 0 hits, which is why it was wrongly written off as unsourceable on 2026-09-14. Distinct Schluter part from KSLT965/1930S (barcode 4011832163982 vs 4011832163968). This is the tray that accepts a 48in KERDI-LINE channel along the 76in edge. Added 2026-09-15 for order #1381 after the customer caught that we sent the 38x76."
     }
   },
   "cable_lookup": {
