@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU → Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-09-15T16:56:19.812789Z",
+  "_updated": "2026-09-15T20:17:09.173374Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -300,12 +300,12 @@
       "api_sku": "NON_PROSOL",
       "prosol_sku": "NON_PROSOL",
       "product": "Durable Floor Protection Roll (72ft x 3ft) 216sqft - REUSABLE",
-      "note": "yourfloors Shopify SKU for CFC's floor protection roll (same physical product as Amazon ASIN B08X225YBK). CFC's own product - not sourced from Prosol. Ships from Sechelt. Bundle 4 rolls per box (~4.85lb/roll); solo + max_per_pkg=4 splits a 16-roll order into 4 boxes of 4 and keeps other SKUs in their own boxes.",
+      "note": "yourfloors Shopify SKU for CFC's floor protection roll (same physical product as Amazon ASIN B08X225YBK). CFC's own product - not sourced from Prosol. Ships from Sechelt. Bundle 5 rolls per stack (~4.41 lb/roll, ~22 lb per box): solo + max_per_pkg=5 splits a 15-roll order into 3 boxes of 5. Changed from 4 to 5 on 2026-09-15 on Mac's instruction for order #1386 ('can ship in 3 stacks of 5 from sechelt').",
       "source": "SECHELT_OR_FBA",
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
       "package_shape": "solo",
-      "max_per_pkg": 4
+      "max_per_pkg": 5
     },
     "11458": {
       "cost_cad": 184.1,
