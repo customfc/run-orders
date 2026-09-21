@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU → Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-09-15T20:17:09.173374Z",
+  "_updated": "2026-09-21T20:05:54.489192Z",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -12707,6 +12707,52 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv",
       "note": "76x38 LONG-SIDE-OUTLET tray. Prosol stores it WITHOUT the slash (KSLT1930965S, product 13540, 'Long Side Outlet Position 38 x 76'); filter[sku]=KSLT1930/965S returns 0 hits, which is why it was wrongly written off as unsourceable on 2026-09-14. Distinct Schluter part from KSLT965/1930S (barcode 4011832163982 vs 4011832163968). This is the tray that accepts a 48in KERDI-LINE channel along the 76in edge. Added 2026-09-15 for order #1381 after the customer caught that we sent the 38x76."
+    },
+    "KERECK/FA2": {
+      "cost_cad": 13.2,
+      "retail_cad": 20.84,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KERECK/FA2",
+      "prosol_sku": "KERECK/FA2",
+      "prosol_product_id": 10214,
+      "product": "Schluter - KERDI-KERECK Preformed Waterproofing Outside Corner 90 (2-pack)",
+      "category": "KERDI",
+      "brand": "schluter",
+      "schluter_item": "KERECK/FA2",
+      "verified": true,
+      "source": "prosol-live-2026-09-21",
+      "note": "Added 2026-09-21 for order #1392 (Vancouver). Slashed form is the live one: filter[sku]=KERECK/FA2 hits product 10214, slashless returns 0. No package_shape, matching sibling KERECK entries."
+    },
+    "KEBA100/125": {
+      "cost_cad": 81.18,
+      "retail_cad": 128.18,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KEBA100125",
+      "prosol_sku": "KEBA100125",
+      "prosol_product_id": 10231,
+      "product": "Schluter - KERDI-BAND Waterproofing Strip 5\" x 98' 5\"",
+      "category": "KERDI",
+      "brand": "schluter",
+      "schluter_item": "KEBA100/125",
+      "verified": true,
+      "source": "prosol-live-2026-09-21",
+      "note": "Added 2026-09-21 for order #1392. SLASHLESS at Prosol: filter[sku]=KEBA100/125 returns 0, KEBA100125 hits product 10231. One of the documented slashless exceptions - see project_prosol_sku_slashes. NOT roll_kerdi: that shape is for KERDI membrane rolls; sibling KERDI-BAND entries carry no package_shape."
+    },
+    "KST1220/1830": {
+      "cost_cad": 168.73,
+      "retail_cad": 266.41,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KST1220/1830",
+      "prosol_sku": "KST1220/1830",
+      "prosol_product_id": 13595,
+      "product": "Schluter - KERDI-SHOWER-T Prefabricated Sloped Shower Tray 48\" x 72\"",
+      "package_shape": "solo",
+      "category": "KERDI",
+      "brand": "schluter",
+      "schluter_item": "KST1220/1830",
+      "verified": true,
+      "source": "prosol-live-2026-09-21",
+      "note": "Added 2026-09-21 for order #1392. Slashed form is live: filter[sku]=KST1220/1830 hits product 13595. package_shape solo, matching the other KERDI-SHOWER trays."
     }
   },
   "cable_lookup": {
