@@ -157,10 +157,15 @@ const CP_PRICE_OVERRIDE_GAP = 20;
 // on 2026-09-22, the oldest 12 days. UPS pickups DO book at Sechelt.
 const SECHELT_WAREHOUSE_ID = 147654;
 // At Sechelt, keep Purolator only when it is at least this much cheaper than UPS.
-// Long/light goods (floor-protection rolls) are the case that matters: UPS bills
+// UPS is the PREFERENCE, not an absolute rule (Mac 2026-09-22: "only ups as a
+// preference not a holy rule, if purolator is heaps cheaper its worth the drop
+// off sometimes"). The gap has to be big enough that the manual depot run is
+// actually worth someone's time — at $5 we'd send a person to the depot to save
+// six dollars. Long/light goods are the case that earns it: UPS bills
 // dimensional weight where Purolator's quote ignores it, so UPS ran $24.74/box
-// dearer on #1386 while beating Purolator on every ordinary parcel.
-const SECHELT_PURO_SAVINGS_GAP = 5;
+// dearer on #1386's floor-protection rolls and $19.47 on the Hope BC grout,
+// while losing to UPS on every ordinary parcel. Tune here.
+const SECHELT_PURO_SAVINGS_GAP = 15;
 
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 

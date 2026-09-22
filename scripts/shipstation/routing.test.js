@@ -133,9 +133,18 @@ test('Sechelt: long/light goods stay Purolator when it is clearly cheaper', () =
   assert.equal(chooseNonCpCarrier({ ups: q(57.47), purolator: q(38.00), warehouseId: SECH }).winner.shipmentCost, 38.00);
 });
 
-test('Sechelt: a sub-threshold Purolator saving still goes UPS', () => {
-  const pick = chooseNonCpCarrier({ ups: q(20.00), purolator: q(16.00), warehouseId: SECH });
-  assert.equal(pick.winner.shipmentCost, 20.00, '$4 saving is under the $5 gap, pickup wins');
+test('Sechelt: a modest Purolator saving is not worth a depot run', () => {
+  // UPS is a preference, not absolute — but the drop-off has to actually pay.
+  assert.equal(chooseNonCpCarrier({ ups: q(20.00), purolator: q(16.00), warehouseId: SECH }).winner.shipmentCost,
+    20.00, '$4 saving does not justify driving to the depot');
+  assert.equal(chooseNonCpCarrier({ ups: q(26.00), purolator: q(16.00), warehouseId: SECH }).winner.shipmentCost,
+    26.00, '$10 saving still does not — under the $15 gap');
+});
+
+test('Sechelt: a big Purolator saving DOES earn the depot run', () => {
+  const pick = chooseNonCpCarrier({ ups: q(40.00), purolator: q(20.00), warehouseId: SECH });
+  assert.equal(pick.winner.shipmentCost, 20.00, '$20 saving clears the gap');
+  assert.match(pick.note, /depot drop/);
 });
 
 test('Prosol lanes are unchanged — Purolator preferred, kill-switch respected', () => {
