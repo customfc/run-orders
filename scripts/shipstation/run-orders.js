@@ -151,6 +151,17 @@ const UPS_ROUTING_DISABLED = true;
 // is too big to ignore and we route CP despite the manual-handoff cost. Tune here.
 const CP_PRICE_OVERRIDE_GAP = 20;
 
+// CFC's own Sechelt warehouse. Purolator has NO on-demand pickup at V0N 3A3 (a
+// hard carrier service rule, API 4100702), so every Purolator label cut there
+// waits for a human to drive it to the depot. Six parcels sat stranded that way
+// on 2026-09-22, the oldest 12 days. UPS pickups DO book at Sechelt.
+const SECHELT_WAREHOUSE_ID = 147654;
+// At Sechelt, keep Purolator only when it is at least this much cheaper than UPS.
+// Long/light goods (floor-protection rolls) are the case that matters: UPS bills
+// dimensional weight where Purolator's quote ignores it, so UPS ran $24.74/box
+// dearer on #1386 while beating Purolator on every ordinary parcel.
+const SECHELT_PURO_SAVINGS_GAP = 5;
+
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
 function httpsRequest(options, body = null, timeoutMs = 30000) {
@@ -727,7 +738,43 @@ function bestCommonService(perWeight) {
   return best || null;
 }
 
-async function getRates(order, fromPostalCode) {
+/**
+ * Pick between UPS and Purolator. Canada Post is decided separately by the
+ * caller. Pure and exported so the Sechelt rule is unit-testable.
+ *
+ * Prosol lanes keep the long-standing preference: Purolator, with UPS only when
+ * it is $4+ cheaper AND the global kill-switch is off.
+ *
+ * Sechelt (SECHELT_WAREHOUSE_ID) inverts it: UPS is preferred because it is the
+ * only carrier that collects from that warehouse. UPS_ROUTING_DISABLED does not
+ * gate Sechelt — that switch was raised for the June 2026 UPS pickup billing
+ * outage on Prosol depots, and Sechelt UPS pickups are proven working
+ * (147654::ups booked clean 2026-09-01 and 2026-09-07).
+ */
+function chooseNonCpCarrier({ ups, purolator, warehouseId } = {}) {
+  const atSechelt = Number(warehouseId) === SECHELT_WAREHOUSE_ID;
+  if (!ups && !purolator) return { winner: null, note: '' };
+  if (!ups || !purolator) {
+    const only = purolator || ups;
+    if (only === ups && UPS_ROUTING_DISABLED && !atSechelt) {
+      return { winner: only, note: 'UPS fallback — no Purolator rate; UPS pickups are DOWN, needs manual ups.com pickup' };
+    }
+    return { winner: only, note: '' };
+  }
+  if (atSechelt) {
+    const puroSaves = ups.shipmentCost - purolator.shipmentCost;
+    if (puroSaves >= SECHELT_PURO_SAVINGS_GAP) {
+      return { winner: purolator, note: `Purolator kept at Sechelt — $${puroSaves.toFixed(2)} cheaper than UPS. ⚠ needs the manual depot drop.` };
+    }
+    return { winner: ups, note: `UPS chosen at Sechelt — the only carrier that collects from our warehouse${puroSaves < 0 ? ` (and $${Math.abs(puroSaves).toFixed(2)} cheaper)` : ''}` };
+  }
+  if (!UPS_ROUTING_DISABLED && (purolator.shipmentCost - ups.shipmentCost) >= 4) {
+    return { winner: ups, note: `UPS chosen — saves $${(purolator.shipmentCost - ups.shipmentCost).toFixed(2)} vs Purolator` };
+  }
+  return { winner: purolator, note: '' };
+}
+
+async function getRates(order, fromPostalCode, warehouseId) {
   const bodyBase = {
     packageCode: 'package',
     fromPostalCode: fromPostalCode.replace(/\s/g, ''),
@@ -791,21 +838,9 @@ async function getRates(order, fromPostalCode) {
   // our Prosol lanes (busy depots run standing Purolator pickups; UPS has none
   // at most depots and shipments get stuck). The small price premium is worth
   // it — UPS only wins when the savings clearly justify it ($4+ cheaper).
-  let bestNonCp;
-  let nonCpNote = '';
-  if (purolator && ups) {
-    if (!UPS_ROUTING_DISABLED && (purolator.shipmentCost - ups.shipmentCost) >= 4) {
-      bestNonCp = ups;
-      nonCpNote = `UPS chosen — saves $${(purolator.shipmentCost - ups.shipmentCost).toFixed(2)} vs Purolator`;
-    } else {
-      bestNonCp = purolator;
-    }
-  } else {
-    bestNonCp = purolator || ups;
-    if (bestNonCp === ups && UPS_ROUTING_DISABLED) {
-      nonCpNote = 'UPS fallback — no Purolator rate; UPS pickups are DOWN, needs manual ups.com pickup';
-    }
-  }
+  const picked = chooseNonCpCarrier({ ups, purolator, warehouseId });
+  const bestNonCp = picked.winner;
+  const nonCpNote = picked.note;
   // Canada Post price override for EGREGIOUS rural gouging (Mac 2026-07-24).
   // Normally CP is PO-box-only — CP pickups are unreliable at Prosol depots (no
   // standing pickups; Ottawa refused pickup and told us to use Purolator), so we
@@ -1108,7 +1143,7 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
         }
 
         onProgress({ type: 'rates', message: `Rate shopping for ${order.orderNumber}...`, orderNumber: order.orderNumber });
-        const rate = await getRates(order, fromPostalCode);
+        const rate = await getRates(order, fromPostalCode, warehouseId);
         const itemSummary = itemPool.map((item) => `${item.qty}x ${item.label}`).join('; ');
 
         const assignment = {
@@ -1278,4 +1313,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage, bestCommonService };
+module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage, bestCommonService, chooseNonCpCarrier };

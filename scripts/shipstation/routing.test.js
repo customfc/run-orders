@@ -106,3 +106,46 @@ test('bestCommonService: no quote for any box means no quote at all', () => {
   assert.equal(bestCommonService([{ count: 1, rates: [] }]), null);
   assert.equal(bestCommonService([]), null);
 });
+
+// ── Sechelt UPS preference (2026-09-22). Mac: "we gotta try n use ups at the
+// sechelt warehouse cuz they the only ones that do pickups from our warehouse."
+// Purolator has no pickup at V0N 3A3, so its labels wait for a manual depot run;
+// six parcels were stranded that way, the oldest 12 days. Costs below are the
+// real Sechelt-origin quotes measured that day.
+const { chooseNonCpCarrier } = require('./run-orders');
+const SECH = 147654;
+const PROSOL_BURNABY = 1374417;
+const q = (c) => ({ shipmentCost: c });
+
+test('Sechelt: ordinary parcels route UPS (the only carrier that collects there)', () => {
+  // Suares 3 lb, Van Damme 36.5 lb, Mesenchuk 1.5 lb — UPS cheaper on all three
+  assert.equal(chooseNonCpCarrier({ ups: q(12.41), purolator: q(17.51), warehouseId: SECH }).winner.shipmentCost, 12.41);
+  assert.equal(chooseNonCpCarrier({ ups: q(36.12), purolator: q(47.12), warehouseId: SECH }).winner.shipmentCost, 36.12);
+  assert.equal(chooseNonCpCarrier({ ups: q(13.99), purolator: q(20.35), warehouseId: SECH }).winner.shipmentCost, 13.99);
+});
+
+test('Sechelt: long/light goods stay Purolator when it is clearly cheaper', () => {
+  // #1386 floor-protection roll, 22 lb: UPS bills dimensional weight, Puro does not
+  const roll = chooseNonCpCarrier({ ups: q(76.10), purolator: q(51.36), warehouseId: SECH });
+  assert.equal(roll.winner.shipmentCost, 51.36);
+  assert.match(roll.note, /depot drop/, 'flags that a human must drive it down');
+  // Hope BC grout, 20 lb
+  assert.equal(chooseNonCpCarrier({ ups: q(57.47), purolator: q(38.00), warehouseId: SECH }).winner.shipmentCost, 38.00);
+});
+
+test('Sechelt: a sub-threshold Purolator saving still goes UPS', () => {
+  const pick = chooseNonCpCarrier({ ups: q(20.00), purolator: q(16.00), warehouseId: SECH });
+  assert.equal(pick.winner.shipmentCost, 20.00, '$4 saving is under the $5 gap, pickup wins');
+});
+
+test('Prosol lanes are unchanged — Purolator preferred, kill-switch respected', () => {
+  const pick = chooseNonCpCarrier({ ups: q(10.00), purolator: q(47.12), warehouseId: PROSOL_BURNABY });
+  assert.equal(pick.winner.shipmentCost, 47.12, 'UPS_ROUTING_DISABLED keeps Prosol on Purolator');
+});
+
+test('single-carrier quotes still resolve', () => {
+  assert.equal(chooseNonCpCarrier({ ups: null, purolator: q(30), warehouseId: SECH }).winner.shipmentCost, 30);
+  assert.equal(chooseNonCpCarrier({ ups: q(30), purolator: null, warehouseId: SECH }).note, '', 'no DOWN warning at Sechelt');
+  assert.match(chooseNonCpCarrier({ ups: q(30), purolator: null, warehouseId: PROSOL_BURNABY }).note, /pickups are DOWN/);
+  assert.equal(chooseNonCpCarrier({ ups: null, purolator: null }).winner, null);
+});
