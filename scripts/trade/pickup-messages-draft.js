@@ -22,7 +22,11 @@ const p = (...lines) => out.push(...lines);
 function scenario(label, paidAt, lines, location = 'sechelt') {
   const r = eta.pickupEta({ paidAt, location, lines });
   const where = location === 'sechelt' ? 'Sechelt' : 'Powell River';
-  let what = r.kind === 'ready_now' ? `ready ${d(r.readyBy)}` : `${location === 'sechelt' ? 'rides' : 'supplier run ' + d(r.supplierRunDay || r.truckDay) + ', then the Powell River truck'} ${location === 'sechelt' ? 'the ' + d(r.truckDay) + ' truck' : d(r.truckDay)}, ready ${d(r.readyBy)}`;
+  let what;
+  if (r.kind === 'ready_now') what = `ready ${d(r.readyBy)}`;
+  else if (location === 'sechelt') what = `rides the ${d(r.truckDay)} truck, ready ${d(r.readyBy)}`;
+  else if (r.supplierRunDay) what = `supplier run ${d(r.supplierRunDay)}, then the Powell River truck ${d(r.truckDay)}, ready ${d(r.readyBy)}`;
+  else what = `from the Sechelt shelf on the Powell River truck ${d(r.truckDay)}, ready ${d(r.readyBy)}`;
   if (r.needsConfirm) what += ` (promised; if the supplier confirms the earlier run: ready ${d(r.readyByIfConfirmed)})`;
   p(`- ${label} (${where}): ${what}`);
 }
