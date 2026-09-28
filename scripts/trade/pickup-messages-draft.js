@@ -65,7 +65,7 @@ p(
   '- The truck is back in Sechelt that evening; the order is ready the next business morning (confirmed).',
   `- Powell River: goods go over on the Thursday truck (confirmed) and are ready in Powell River the next business morning, Friday (confirmed). They must be ready at Sechelt the business day before [MAC: right?]. Items already on the Sechelt shelf just need the Thursday truck.`,
   `- Mixed orders: the items already in stock at the pickup location can be picked up early if the customer wants (confirmed). That part is ready by the in-stock rule above (marked ready ${S.automation.ready_now_delay_minutes / 60} hours after payment, within business hours) and gets its own "ready for pickup" email; the rest follows on its date. They can come once or twice. In Powell River only items on the Powell River shelf go early; items on the Sechelt shelf still ride the Thursday truck.`,
-  `- Business days: Monday to Friday [MAC: Saturday half day?]. Holidays close the store and cancel a truck on that day: ${S.holidays.map((h) => `${h.name} (${d(h.date)})`).join(', ')}.`,
+  `- Orders are prepared and marked ready Monday to Friday. Pickup hours (confirmed, from the website): Sechelt ${S.locations.sechelt.hours}; Powell River ${S.locations.powell_river.hours}. So Sechelt pickups also work on Saturday. Holidays close the store and cancel a truck on that day: ${S.holidays.map((h) => `${h.name} (${d(h.date)})`).join(', ')}.`,
   `- Reminders: ${S.reminders.first_after_business_days} and ${S.reminders.second_after_business_days} business days after the order is ready, if not picked up.`,
   '',
   'Examples (BC time):',

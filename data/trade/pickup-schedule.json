@@ -45,7 +45,7 @@
     ],
     "same_day_cutoff": "14:00",
     "_status": {
-      "business_days": "PROPOSED [MAC: is Sechelt open Saturday for pickups (half day)? default Mon to Fri]",
+      "business_days": "Mon to Fri: the days orders are prepared and marked ready (automation). Customers can also pick up at Sechelt on Saturday 9 am to 3 pm per the posted hours (Mac 2026-09-28: pickup hours = website hours); Powell River is closed Saturday.",
       "same_day_cutoff": "PROPOSED [MAC: on-shelf orders paid before 14:00 on a business day are ready that day?]"
     }
   },
