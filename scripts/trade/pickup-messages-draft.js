@@ -28,6 +28,7 @@ function scenario(label, paidAt, lines, location = 'sechelt') {
   else if (r.supplierRunDay) what = `supplier run ${d(r.supplierRunDay)}, then the Powell River truck ${d(r.truckDay)}, ready ${d(r.readyBy)}`;
   else what = `from the Sechelt shelf on the Powell River truck ${d(r.truckDay)}, ready ${d(r.readyBy)}`;
   if (r.needsConfirm) what += ` (promised; if the supplier confirms the earlier run: ready ${d(r.readyByIfConfirmed)})`;
+  if (r.partial) what += `; the in-stock part can be picked up early, ready ${d(r.partial.readyBy)}`;
   p(`- ${label} (${where}): ${what}`);
 }
 
@@ -54,14 +55,16 @@ p(
   'Anything in [MAC: ...] is yours to fill. The code refuses to send a message that still has one.',
   'Every message: from YourFloors Support <hello@yourfloors.ca>, replies to hello@yourfloors.ca, signed "The YourFloors team".',
   'The supplier is never named. The customer is told to wait for the "ready for pickup" email before coming in.',
+  `Standing OK (${msg.STANDING_OK.grantedBy}, ${msg.STANDING_OK.date}): ${msg.STANDING_OK.types.join(', ')} and Shopify's Ready for pickup email go out`,
+  'automatically once nothing is left to fill. (a) is not included. Any new template or other customer email still needs a per-email send-it.',
   '',
   '# How the dates work',
   '',
   `- In stock at the pickup location: ready the same business day if paid before ${S.store.same_day_cutoff}, else the next business morning.`,
   `- Anything to order in rides our ${S.truck.run_days.map((x) => ({ tue: 'Tuesday', fri: 'Friday' }[x] || x)).join(' and ')} supplier run. It goes to the supplier any time the business day before the run (confirmed). Sent after ${S.truck.confirm_after_time} that day, the supplier must confirm it can still make the truck: the customer is promised the next run, and gets it sooner if they confirm (confirmed).`,
   '- The truck is back in Sechelt that evening; the order is ready the next business morning (confirmed).',
-  `- Powell River: goods go over on the Thursday truck (confirmed). They must be ready at Sechelt the business day before, and are ready in Powell River the next business morning, Friday [MAC: or Thursday afternoon?]. Items already on the Sechelt shelf just need the Thursday truck.`,
-  '- One item to order in holds the whole order, so it is all ready together.',
+  `- Powell River: goods go over on the Thursday truck (confirmed) and are ready in Powell River the next business morning, Friday (confirmed). They must be ready at Sechelt the business day before [MAC: right?]. Items already on the Sechelt shelf just need the Thursday truck.`,
+  `- Mixed orders: the items already in stock at the pickup location can be picked up early if the customer wants (confirmed). That part is ready by the in-stock rule above (marked ready ${S.automation.ready_now_delay_minutes / 60} hours after payment, within business hours) and gets its own "ready for pickup" email; the rest follows on its date. They can come once or twice. In Powell River only items on the Powell River shelf go early; items on the Sechelt shelf still ride the Thursday truck.`,
   `- Business days: Monday to Friday [MAC: Saturday half day?]. Holidays close the store and cancel a truck on that day: ${S.holidays.map((h) => `${h.name} (${d(h.date)})`).join(', ')}.`,
   `- Reminders: ${S.reminders.first_after_business_days} and ${S.reminders.second_after_business_days} business days after the order is ready, if not picked up.`,
   '',
@@ -81,22 +84,27 @@ scenario('Order in, paid Monday 10:00', '2026-10-19T10:00', ['order_in'], 'powel
 scenario('Order in, paid Wednesday 10:00', '2026-10-21T10:00', ['order_in'], 'powell_river');
 scenario('On the Sechelt shelf, paid Wednesday 10:00', '2026-10-21T10:00', ['at_sechelt'], 'powell_river');
 scenario('On the Powell River shelf, paid Monday 10:00', '2026-10-19T10:00', ['on_shelf'], 'powell_river');
+scenario('Mixed (one in stock, one to order in), paid Monday 10:00', '2026-10-19T10:00', ['on_shelf', 'order_in']);
+scenario('Mixed, paid Tuesday 3:00 pm', '2026-10-20T15:00', ['on_shelf', 'order_in']);
+scenario('Mixed (Powell River shelf, Sechelt shelf, order in), paid Monday 10:00', '2026-10-19T10:00', ['on_shelf', 'at_sechelt', 'order_in'], 'powell_river');
 p(
   '',
   `The messages below use order #1500 for Sam, paid Monday, October 19 at 10:00. In stock: ready ${d(ready.readyBy)}.`,
-  `With one item to order in: truck ${d(ordered.truckDay)}, ready ${d(ordered.readyBy)}; if that truck misses it, the next is ${d(late.truckDay)}, ready ${d(late.readyBy)}.`,
+  `With one item to order in: truck ${d(ordered.truckDay)}, ready ${d(ordered.readyBy)}; the in-stock item can be picked up early, ${d(ordered.partial.readyBy)}. If that truck misses it, the next is ${d(late.truckDay)}, ready ${d(late.readyBy)}.`,
   '',
 );
 
 message('(a) Order received, all in stock (optional)', 'when the order is paid and everything is on the shelf. Optional: Shopify\'s own order confirmation may be enough.', 'received_in_stock', { ...example, readyBy: ready.readyBy, today: '2026-10-19' });
-message("(b) We're bringing it in", 'when the order is paid and something has to be ordered in', 'ordering_in', { ...example, readyBy: ordered.readyBy, truckDay: ordered.truckDay, partial: true });
-p('Variant when the whole order is ordered in: the second paragraph reads', '', msg.buildPickupMessage('ordering_in', { ...example, readyBy: ordered.readyBy, truckDay: ordered.truckDay }).text.split('\n')[2], '', 'and the "We keep your order together" line is left out.', '');
+message("(b) We're bringing it in, part of it in stock", 'when the order is paid, something has to be ordered in and something is on the shelf at the pickup location', 'ordering_in', { ...example, readyBy: ordered.readyBy, truckDay: ordered.truckDay, partial: ordered.partial, today: '2026-10-19' });
+message("(b2) We're bringing it in, nothing in stock", 'when the order is paid and every item has to be ordered in (or, in Powell River, comes from the Sechelt shelf)', 'ordering_in', { ...example, readyBy: ordered.readyBy, truckDay: ordered.truckDay });
 message('(c) On the truck today', `the morning of the truck day (${d(ordered.truckDay)} in the example)`, 'on_truck', { ...example, readyBy: ordered.readyBy });
 
 p(
   '## (d) Ready for pickup (Shopify\'s own email)',
   '',
-  'When: someone presses "Mark as ready for pickup" on the order in Shopify. Shopify sends this, not run-orders.',
+  'When: run-orders marks the order ready for pickup in Shopify on its own at the ready time (nobody taps Ready). For a',
+  'mixed order that happens twice: once for the in-stock part, once for the rest. Shopify sends this, not run-orders.',
+  'Check in the template preview whether the email for the in-stock part lists only those items.',
   'Where: Shopify admin, Settings, Notifications, "Ready for pickup". Replace the intro text only and keep Shopify\'s',
   'order summary. The location lines depend on a `location` variable that is not verified in this template: check the',
   'preview there. If it shows the generic line for both stores, delete the two location lines and rely on the pickup',
@@ -123,16 +131,13 @@ p('# Still to fill [MAC]', '', ...[...placeholders].sort().map((x) => `- ${x}`),
 p(
   '# Questions for Mac',
   '',
-  '- Order cutoff for a truck: the business day before at 2:00 pm? (Tuesday truck: Monday 2 pm. Friday truck: Thursday 2 pm.)',
-  '- Is the truck back in Sechelt the same evening, ready the next morning?',
-  '- Powell River: one business day after Sechelt, or Powell River\'s own order day?',
   '- Same-day ready for in-stock orders paid before 2:00 pm: right?',
+  '- Powell River: must goods be ready at Sechelt the business day before the Thursday truck (Wednesday)?',
   '- Saturday pickups at Sechelt (half day)?',
   '- Hours for each location, and how long a ready order is held.',
   '- Is the warehouse closed on each holiday listed? Is Monday, December 28 a day off?',
   '- Send (a), or leave it to Shopify\'s order confirmation?',
   '- (h): our email or Shopify\'s "Picked up" email?',
-  '- Mixed orders wait for the ordered-in item. Offer to let people take the in-stock part early? (Not offered in the copy.)',
   '',
 );
 

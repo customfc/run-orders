@@ -70,7 +70,9 @@
       "shopify_location_id": "gid://shopify/Location/65050837159",
       "_status": {
         "hours": "PROPOSED [MAC: Powell River pickup hours]",
-        "via": "truck_days CONFIRMED Mac 2026-09-28 (\"truck goes to PR once on thursdays\"). PROPOSED [MAC]: ready at Powell River the next business morning after the Thursday truck (Friday), and goods must be ready at Sechelt the business day before the truck (Wednesday)."
+        "via": "truck_days CONFIRMED Mac 2026-09-28 (\"truck goes to PR once on thursdays\")",
+        "via.ready_business_days_after_truck": "CONFIRMED Mac 2026-09-28: ready at Powell River the next business morning after the Thursday truck (Friday)",
+        "via.at_sechelt_business_days_before_truck": "PROPOSED [MAC]: goods must be ready at Sechelt the business day before the truck (Wednesday)"
       },
       "via": {
         "from": "sechelt",
