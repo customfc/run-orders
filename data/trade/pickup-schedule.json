@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "what": "When a Coast pickup order (Sechelt Warehouse, Powell River Showroom & Warehouse) is ready: same day off the shelf, or on the supplier truck run that brings ordered-in lines. Read by lib/pickup-eta.js and lib/pickup-messages.js. Internal file: the distributor is never named in customer text.",
+    "what": "When a Coast pickup order (Sechelt Warehouse, Powell River Showroom & Warehouse) is ready: same day off the shelf, or on the supplier truck run that brings ordered-in lines. Read by lib/pickup-eta.js, lib/pickup-messages.js and lib/pickup-actions.js. Internal file: the distributor is never named in customer text.",
     "status": "Mac confirmed 2026-09-28: run days, day-before cutoff with the 14:00 confirm, next-morning ready at Sechelt, Thursday truck to Powell River. Everything marked PROPOSED/[MAC] is still a default.",
     "time": "All times are BC local, UTC-7 all year (BC permanent daylight time from 2026-03-08). Code uses the fixed offset (Etc/GMT+7), never America/Vancouver tzdata, which still falls back on 2026-11-01 on the laptop and the Mini.",
     "sources": [
@@ -90,6 +90,32 @@
       "first_after_business_days": "PROPOSED (task brief 2026-09-28)",
       "second_after_business_days": "PROPOSED (task brief 2026-09-28)",
       "hold_policy": "PROPOSED [MAC: hold time; no hold time is stated to customers until Mac sets one]"
+    }
+  },
+  "automation": {
+    "on_truck_time": "11:00",
+    "ready_time": "09:00",
+    "ready_now_delay_minutes": 120,
+    "business_hours": {
+      "open": "08:00",
+      "close": "16:00"
+    },
+    "reminder_time": "10:00",
+    "escalate_after_business_days": 10,
+    "_status": {
+      "what": "Read by lib/pickup-actions.js (the planner 01's handler runs): when each automatic step happens. Nobody taps Ready by hand (Mac 2026-09-28: \"automation brah\"). BC time, UTC-7.",
+      "on_truck_time": "PROPOSED [MAC: the \"on the truck today\" email goes out at 11:00 on the truck day (the Thursday truck for Powell River)?]",
+      "ready_time": "PROPOSED [MAC: ordered-in orders are marked ready in Shopify (which sends Shopify's Ready for pickup email) at 09:00 on the ready day, unless the warehouse replied HOLD or SHORT first?]",
+      "ready_now_delay_minutes": "PROPOSED [MAC: shelf orders are marked ready 2 hours after payment, moved into business hours (at or after close: the next business day at open)?]",
+      "business_hours": "PROPOSED [MAC: 08:00 to 16:00 for automatic Ready emails on shelf orders and releases; the store hours are still [MAC] in locations]",
+      "reminder_time": "PROPOSED [MAC: pickup reminders and the not-picked-up escalation go out at 10:00]",
+      "escalate_after_business_days": "PROPOSED [MAC: tell Mac when a ready order is not picked up after 10 business days?]"
+    }
+  },
+  "notify": {
+    "received_in_stock": false,
+    "_status": {
+      "received_in_stock": "PROPOSED [MAC: send our own \"in stock\" email at order time for shelf orders? default no: Shopify's order confirmation, then Shopify's Ready for pickup email]"
     }
   },
   "holidays": [
