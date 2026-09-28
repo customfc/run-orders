@@ -55,10 +55,10 @@
       "customer_name": "our Sechelt warehouse",
       "address": "5824 Sechelt Inlet Rd, Sechelt",
       "maps_url": "https://www.google.com/maps/search/?api=1&query=5824+Sechelt+Inlet+Rd+Sechelt+BC",
-      "hours": "[MAC: Sechelt pickup hours]",
+      "hours": "Monday to Friday 7:30 am to 5:00 pm, Saturday 9:00 am to 3:00 pm",
       "shopify_location_id": "gid://shopify/Location/65050771623",
       "_status": {
-        "hours": "PROPOSED [MAC: Sechelt pickup hours]"
+        "hours": "CONFIRMED Mac 2026-09-28 (\"pickup hours are the same as our website hours\"): the location hours on customfc.ca (home and /contact/, fetched 2026-09-28). yourfloors.ca/pages/contact-us lists different General Office hours (Mon-Fri 7:30-4:00, Sat 8-1)."
       }
     },
     "powell_river": {
@@ -66,10 +66,10 @@
       "customer_name": "our Powell River showroom",
       "address": "7345 Duncan St, Powell River",
       "maps_url": "https://www.google.com/maps/search/?api=1&query=7345+Duncan+St+Powell+River+BC",
-      "hours": "[MAC: Powell River pickup hours]",
+      "hours": "Monday to Friday 8:30 am to 5:00 pm",
       "shopify_location_id": "gid://shopify/Location/65050837159",
       "_status": {
-        "hours": "PROPOSED [MAC: Powell River pickup hours]",
+        "hours": "CONFIRMED Mac 2026-09-28 (\"pickup hours are the same as our website hours\"): the location hours on customfc.ca (home and /contact/, fetched 2026-09-28). yourfloors.ca/pages/contact-us lists different General Office hours (Mon-Fri 7:30-4:00, Sat 8-1).",
         "via": "truck_days CONFIRMED Mac 2026-09-28 (\"truck goes to PR once on thursdays\")",
         "via.ready_business_days_after_truck": "CONFIRMED Mac 2026-09-28: ready at Powell River the next business morning after the Thursday truck (Friday)",
         "via.at_sechelt_business_days_before_truck": "PROPOSED [MAC]: goods must be ready at Sechelt the business day before the truck (Wednesday)"
@@ -87,11 +87,11 @@
   "reminders": {
     "first_after_business_days": 3,
     "second_after_business_days": 7,
-    "hold_policy": "[MAC: how long we hold a ready order, and what happens after]",
+    "hold_policy": null,
     "_status": {
       "first_after_business_days": "PROPOSED (task brief 2026-09-28)",
       "second_after_business_days": "PROPOSED (task brief 2026-09-28)",
-      "hold_policy": "PROPOSED [MAC: hold time; no hold time is stated to customers until Mac sets one]"
+      "hold_policy": "Not set (Mac, 2026-09-28: not decided). Emails state no hold time until this is set to a customer-facing sentence."
     }
   },
   "automation": {
