@@ -22,7 +22,8 @@ const p = (...lines) => out.push(...lines);
 function scenario(label, paidAt, lines, location = 'sechelt') {
   const r = eta.pickupEta({ paidAt, location, lines });
   const where = location === 'sechelt' ? 'Sechelt' : 'Powell River';
-  const what = r.kind === 'ready_now' ? `ready ${d(r.readyBy)}` : `rides the ${d(r.truckDay)} truck, ready ${d(r.readyBy)}`;
+  let what = r.kind === 'ready_now' ? `ready ${d(r.readyBy)}` : `${location === 'sechelt' ? 'rides' : 'supplier run ' + d(r.supplierRunDay || r.truckDay) + ', then the Powell River truck'} ${location === 'sechelt' ? 'the ' + d(r.truckDay) + ' truck' : d(r.truckDay)}, ready ${d(r.readyBy)}`;
+  if (r.needsConfirm) what += ` (promised; if the supplier confirms the earlier run: ready ${d(r.readyByIfConfirmed)})`;
   p(`- ${label} (${where}): ${what}`);
 }
 
@@ -53,9 +54,9 @@ p(
   '# How the dates work',
   '',
   `- In stock at the pickup location: ready the same business day if paid before ${S.store.same_day_cutoff}, else the next business morning.`,
-  `- Anything to order in: it rides our ${S.truck.run_days.map((x) => ({ tue: 'Tuesday', fri: 'Friday' }[x] || x)).join(' and ')} truck. The order must be in by ${S.truck.cutoff_time} the business day before the truck [MAC: confirm].`,
-  '- The truck is back in Sechelt that evening; the order is ready the next business morning [MAC: confirm].',
-  `- Powell River: ordered-in goods are ready ${S.locations.powell_river.order_in_extra_business_days} business day after Sechelt [MAC: confirm, or Powell River's own order day].`,
+  `- Anything to order in rides our ${S.truck.run_days.map((x) => ({ tue: 'Tuesday', fri: 'Friday' }[x] || x)).join(' and ')} supplier run. It goes to the supplier any time the business day before the run (confirmed). Sent after ${S.truck.confirm_after_time} that day, the supplier must confirm it can still make the truck: the customer is promised the next run, and gets it sooner if they confirm (confirmed).`,
+  '- The truck is back in Sechelt that evening; the order is ready the next business morning (confirmed).',
+  `- Powell River: goods go over on the Thursday truck (confirmed). They must be ready at Sechelt the business day before, and are ready in Powell River the next business morning, Friday [MAC: or Thursday afternoon?]. Items already on the Sechelt shelf just need the Thursday truck.`,
   '- One item to order in holds the whole order, so it is all ready together.',
   `- Business days: Monday to Friday [MAC: Saturday half day?]. Holidays close the store and cancel a truck on that day: ${S.holidays.map((h) => `${h.name} (${d(h.date)})`).join(', ')}.`,
   `- Reminders: ${S.reminders.first_after_business_days} and ${S.reminders.second_after_business_days} business days after the order is ready, if not picked up.`,
@@ -66,12 +67,16 @@ scenario('In stock, paid Monday 10:00', '2026-10-19T10:00', ['on_shelf']);
 scenario('In stock, paid Monday 4:00 pm', '2026-10-19T16:00', ['on_shelf']);
 scenario('Order in, paid Monday 10:00', '2026-10-19T10:00', ['order_in']);
 scenario('Order in, paid Tuesday 3:00 pm', '2026-10-20T15:00', ['order_in']);
-scenario('Order in, paid Thursday 4:00 pm (misses Friday)', '2026-10-22T16:00', ['order_in']);
+scenario('Order in, paid Monday 4:00 pm (after 2 pm the day before)', '2026-10-19T16:00', ['order_in']);
+scenario('Order in, paid Thursday 4:00 pm (after 2 pm the day before)', '2026-10-22T16:00', ['order_in']);
 scenario('Order in, paid Friday 5:00 pm', '2026-10-23T17:00', ['order_in']);
 scenario('Order in, paid Monday Sep 28 10:00 (Sep 30 holiday)', '2026-09-28T10:00', ['order_in']);
 scenario('In stock, paid Tuesday Sep 29 4:00 pm (Sep 30 holiday)', '2026-09-29T16:00', ['on_shelf']);
 scenario('Order in, paid Wednesday Dec 23 (no truck on Christmas)', '2026-12-23T10:00', ['order_in']);
 scenario('Order in, paid Monday 10:00', '2026-10-19T10:00', ['order_in'], 'powell_river');
+scenario('Order in, paid Wednesday 10:00', '2026-10-21T10:00', ['order_in'], 'powell_river');
+scenario('On the Sechelt shelf, paid Wednesday 10:00', '2026-10-21T10:00', ['at_sechelt'], 'powell_river');
+scenario('On the Powell River shelf, paid Monday 10:00', '2026-10-19T10:00', ['on_shelf'], 'powell_river');
 p(
   '',
   `The messages below use order #1500 for Sam, paid Monday, October 19 at 10:00. In stock: ready ${d(ready.readyBy)}.`,
