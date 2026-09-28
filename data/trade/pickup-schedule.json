@@ -1,7 +1,7 @@
 {
   "_meta": {
     "what": "When a Coast pickup order (Sechelt Warehouse, Powell River Showroom & Warehouse) is ready: same day off the shelf, or on the supplier truck run that brings ordered-in lines. Read by lib/pickup-eta.js and lib/pickup-messages.js. Internal file: the distributor is never named in customer text.",
-    "status": "PROPOSED 2026-09-28. Only run_days is confirmed (Mac). Every value listed under _status as PROPOSED is a default for Mac to confirm. Nothing reads this file live yet.",
+    "status": "Mac confirmed 2026-09-28: run days, day-before cutoff with the 14:00 confirm, next-morning ready at Sechelt, Thursday truck to Powell River. Everything marked PROPOSED/[MAC] is still a default.",
     "time": "All times are BC local, UTC-7 all year (BC permanent daylight time from 2026-03-08). Code uses the fixed offset (Etc/GMT+7), never America/Vancouver tzdata, which still falls back on 2026-11-01 on the laptop and the Mini.",
     "sources": [
       "Mac 2026-09-28: \"our prosol pickups are every tuesday and friday\"",
@@ -9,29 +9,40 @@
       "BC statutory holidays; addresses from 01 PLAN 2.1 and the live /pages/prozone-sechelt section"
     ],
     "rules": [
-      "A line ordered in rides the next run whose order cutoff has not passed. Cutoff = cutoff_business_days_before business days before the run, at cutoff_time.",
-      "Goods reach Sechelt the evening of the run and are ready ready_business_days_after_run business days later (the next business morning). Powell River adds its order_in_extra_business_days.",
-      "An order is order_in if ANY line is order_in: the whole order is ready together.",
-      "All lines on the shelf: ready the same business day if paid before store.same_day_cutoff, else the next business morning.",
-      "A holiday closes the store and cancels a run falling on it (the order moves to the next run), unless the holiday row says store_open or truck_runs true.",
-      "Business days are store.business_days minus holidays. Order cutoffs use the same calendar."
+      "A line ordered in rides the next supplier run (Tue, Fri) if it goes to the supplier by the end of the business day before the run. Sent at or after confirm_after_time (14:00) that day, the supplier must confirm: the customer is promised the run after, and readyByIfConfirmed is the earlier date.",
+      "Goods reach Sechelt the evening of the run and are ready the next business morning.",
+      "Powell River: goods leave Sechelt on the Thursday truck; they must be ready at Sechelt the business day before, and are ready at Powell River the next business morning. A line on the Sechelt shelf ('at_sechelt') only needs the Thursday truck.",
+      "The whole order is ready together.",
+      "All lines on the pickup location's shelf: ready the same business day if paid before store.same_day_cutoff, else the next business morning.",
+      "A holiday closes the store and cancels a run or truck falling on it (the order moves to the next one), unless the holiday row says store_open or truck_runs true."
     ]
   },
   "utc_offset_hours": -7,
   "truck": {
-    "run_days": ["tue", "fri"],
+    "run_days": [
+      "tue",
+      "fri"
+    ],
     "cutoff_business_days_before": 1,
-    "cutoff_time": "14:00",
+    "cutoff_time": "end_of_day",
     "ready_business_days_after_run": 1,
     "_status": {
       "run_days": "CONFIRMED Mac 2026-09-28",
-      "cutoff_business_days_before": "PROPOSED [MAC: when must the order be in to make a run? default the business day before at 14:00]",
-      "cutoff_time": "PROPOSED [MAC: see cutoff_business_days_before]",
-      "ready_business_days_after_run": "PROPOSED [MAC: the truck is back in Sechelt the same evening and the goods are ready the next business morning?]"
-    }
+      "cutoff_business_days_before": "CONFIRMED Mac 2026-09-28: send it to the supplier the business day before the run",
+      "cutoff_time": "CONFIRMED Mac 2026-09-28: \"day before anytime to be safe\"",
+      "ready_business_days_after_run": "CONFIRMED Mac 2026-09-28: next business morning",
+      "confirm_after_time": "CONFIRMED Mac 2026-09-28: \"if its after 2 confirm it can still be on the truck tomorrow\". The customer is promised the next run; the earlier date only if the supplier confirms."
+    },
+    "confirm_after_time": "14:00"
   },
   "store": {
-    "business_days": ["mon", "tue", "wed", "thu", "fri"],
+    "business_days": [
+      "mon",
+      "tue",
+      "wed",
+      "thu",
+      "fri"
+    ],
     "same_day_cutoff": "14:00",
     "_status": {
       "business_days": "PROPOSED [MAC: is Sechelt open Saturday for pickups (half day)? default Mon to Fri]",
@@ -45,7 +56,6 @@
       "address": "5824 Sechelt Inlet Rd, Sechelt",
       "maps_url": "https://www.google.com/maps/search/?api=1&query=5824+Sechelt+Inlet+Rd+Sechelt+BC",
       "hours": "[MAC: Sechelt pickup hours]",
-      "order_in_extra_business_days": 0,
       "shopify_location_id": "gid://shopify/Location/65050771623",
       "_status": {
         "hours": "PROPOSED [MAC: Sechelt pickup hours]"
@@ -57,11 +67,18 @@
       "address": "7345 Duncan St, Powell River",
       "maps_url": "https://www.google.com/maps/search/?api=1&query=7345+Duncan+St+Powell+River+BC",
       "hours": "[MAC: Powell River pickup hours]",
-      "order_in_extra_business_days": 1,
       "shopify_location_id": "gid://shopify/Location/65050837159",
       "_status": {
         "hours": "PROPOSED [MAC: Powell River pickup hours]",
-        "order_in_extra_business_days": "PROPOSED [MAC: ordered-in goods reach Powell River one business day after Sechelt? 01 PLAN 5a.3 suggests Powell River's own supplier order instead, which may run on a different day]"
+        "via": "truck_days CONFIRMED Mac 2026-09-28 (\"truck goes to PR once on thursdays\"). PROPOSED [MAC]: ready at Powell River the next business morning after the Thursday truck (Friday), and goods must be ready at Sechelt the business day before the truck (Wednesday)."
+      },
+      "via": {
+        "from": "sechelt",
+        "truck_days": [
+          "thu"
+        ],
+        "ready_business_days_after_truck": 1,
+        "at_sechelt_business_days_before_truck": 1
       }
     }
   },
@@ -76,12 +93,36 @@
     }
   },
   "holidays": [
-    { "date": "2026-09-30", "name": "National Day for Truth and Reconciliation", "note": "BC statutory holiday; supplier closed in BC and MB" },
-    { "date": "2026-10-12", "name": "Thanksgiving", "note": "BC statutory holiday; supplier closed everywhere" },
-    { "date": "2026-11-11", "name": "Remembrance Day", "note": "BC statutory holiday; supplier closed except NS, ON and QC" },
-    { "date": "2026-12-25", "name": "Christmas Day", "note": "a Friday: that run is cancelled. Supplier closes at 1 pm on Thu Dec 24 (the cutoff day for this cancelled run, so no effect)" },
-    { "date": "2026-12-26", "name": "Boxing Day", "note": "a Saturday. [MAC: is Mon Dec 28 observed? default no]" },
-    { "date": "2027-01-01", "name": "New Year's Day", "note": "a Friday: that run is cancelled. Supplier closes at 1 pm on Thu Dec 31 (the cutoff day for this cancelled run, so no effect)" }
+    {
+      "date": "2026-09-30",
+      "name": "National Day for Truth and Reconciliation",
+      "note": "BC statutory holiday; supplier closed in BC and MB"
+    },
+    {
+      "date": "2026-10-12",
+      "name": "Thanksgiving",
+      "note": "BC statutory holiday; supplier closed everywhere"
+    },
+    {
+      "date": "2026-11-11",
+      "name": "Remembrance Day",
+      "note": "BC statutory holiday; supplier closed except NS, ON and QC"
+    },
+    {
+      "date": "2026-12-25",
+      "name": "Christmas Day",
+      "note": "a Friday: that run is cancelled. Supplier closes at 1 pm on Thu Dec 24 (the cutoff day for this cancelled run, so no effect)"
+    },
+    {
+      "date": "2026-12-26",
+      "name": "Boxing Day",
+      "note": "a Saturday. [MAC: is Mon Dec 28 observed? default no]"
+    },
+    {
+      "date": "2027-01-01",
+      "name": "New Year's Day",
+      "note": "a Friday: that run is cancelled. Supplier closes at 1 pm on Thu Dec 31 (the cutoff day for this cancelled run, so no effect)"
+    }
   ],
   "holidays_cover_through": "2027-02-14",
   "_holidays_status": "PROPOSED [MAC: is the Sechelt warehouse closed on each of these too? default yes]. The next BC statutory holiday is Family Day, Mon 2027-02-15: add the 2027 list before then (lib/pickup-eta.js warns on any date past holidays_cover_through)."
