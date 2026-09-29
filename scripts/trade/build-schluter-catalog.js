@@ -143,17 +143,19 @@ function build() {
   const strip = (s) => String(s || '').replace(/\//g, '');
   const oddPo = idx.filter((x) => x.po_code && x.po_code !== strip(x.prosol_code));
   const recoded = idx.filter((x) => x.prosol_code_jul29 && x.prosol_code !== x.prosol_code_jul29);
-  const special = idx.filter((x) => x.special_order);
+  const special = b.excluded.filter((e) => (e.reasons || []).includes('special_order'));
   const bundles = idx.filter((x) => x.bundles_of_10);
+  const poUnconfirmed = oddPo.filter((x) => cat.CONFIRMED_PO_CODES[x.sku] !== x.po_code);
+  const poConfirmed = oddPo.filter((x) => cat.CONFIRMED_PO_CODES[x.sku] === x.po_code);
   const backorder = idx.filter((x) => x.stock_status === 'backorder');
   const nameFlags = idx.filter((x) => x.name_check && x.name_check !== 'ok');
   const missingW1 = b.wave1Codes.filter((s) => !idx.some((x) => x.sku === s));
   const notes = [
     `Wave 1 builds ${idx.filter((x) => x.wave === '1').length} of the ${b.wave1Codes.length} planned codes; not built: ${missingW1.map((s) => `\`${s}\``).join(', ') || 'none'}.`,
     `"Within reason" (Mac 2026-09-28): wave 2a builds a variant only if the distributor has it available with at least ${minNetworkQty} units across its network; ${b.excluded.filter((e) => e.reason === 'fringe_low_stock' || (e.reasons || []).includes('fringe_low_stock')).length} left out as fringe_low_stock (excluded.csv). \`--min-network-qty=0\` turns it off. Wave 1 is exempt; ${backorder.length} included variants are on backorder (wave 1 only).`,
-    `Special order on the 2026 list: ${special.length} variants (${special.slice(0, 11).map((x) => `\`${x.sku}\``).join(', ')}${special.length > 11 ? ', ...' : ''}). Tags are product-level, so no special-order tag was added; a variant metafield or a lead-time note is the open choice.`,
-    `Sold in bundles of 10 on the 2026 list: ${bundles.length} SCHIENE-BASIC variants (${bundles.map((x) => `\`${x.sku}\``).join(', ')}). MAP is per length; confirm the buyer can take one length before activation, or set a minimum.`,
-    `Distributor PO codes that are not the storefront code minus slashes (confirm before the first PO): ${oddPo.map((x) => `\`${x.sku}\` -> \`${x.po_code}\``).join(', ') || 'none'}.`,
+    `Special order on the 2026 list: left out (Mac 2026-09-29, "forget them"): ${special.length} variants (${special.slice(0, 11).map((x) => `\`${x.sku}\``).join(', ')}${special.length > 11 ? ', ...' : ''}).`,
+    `Sold in bundles of 10 on the 2026 list: ${bundles.length} SCHIENE-BASIC variants (${bundles.map((x) => `\`${x.sku}\``).join(', ')}). Mac 2026-09-29: "if they come as bundles of 10, sell them that way". The distributor stocks and prices them by the single length (branch counts like 5, 11 and 21), so they sell by the length at MAP.`,
+    `Distributor PO codes that are not the storefront code minus slashes: confirmed by Mac 2026-09-29: ${poConfirmed.map((x) => `\`${x.sku}\` -> \`${x.po_code}\``).join(', ') || 'none'}; still to confirm before the first PO: ${poUnconfirmed.map((x) => `\`${x.sku}\` -> \`${x.po_code}\``).join(', ') || 'none'}.`,
     `${recoded.length} included variants have a distributor code that changed since the Jul 29 snapshot (e.g. ${recoded.slice(0, 3).map((x) => `\`${x.prosol_code_jul29}\` -> \`${x.prosol_code}\``).join(', ')}). \`manifest.json\` \`variants[]\` carries the fresh \`prosol_code\` and \`po_code\` for the S8 sku-map; variants.csv \`prosol_code\` is stale.`,
     `S1 name flags kept on ${nameFlags.length} included variants (code-based names, source-data slips): ${nameFlags.map((x) => `\`${x.sku}\``).join(', ')}.`,
     'Descriptions are short factual placeholders built from the catalogue fields (MAP text and codes). The copy pass (product-copy skill) replaces them; on an existing product `--apply` keeps the live description unless `--refresh-description`.',
