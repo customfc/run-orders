@@ -11,6 +11,8 @@
  *     prosol-refresh-<date>.jsonl         S2 refresh (exact code, cost, stock); newest file unless --refresh=<file>
  *     live-skus-<date>.json               read-only store snapshot for the duplicate-SKU check (newest; --no-live
  *                                         skips it). Made by 02's scripts/catalog/live-skus.js.
+ *     copy/copy.json                      family copy, material lines, collection function and trademark notice
+ *                                         (optional; --copy=<file>, --no-copy builds the placeholder text)
  *   plus the MAP list through lib/schluter-map.js (data/fba/maps, newest), and writes to <catalog-dir>/payloads/:
  *     1/<handle>.json, 2a/<handle>.json   one Admin API 2026-01 productSet input per product and wave
  *     manifest.json                       payload list with sha256, QA totals, excluded variants, and a variant
@@ -38,7 +40,7 @@
  *   (collectionAddProductsV2, metafieldsSet, productVariantAppendMedia), and delivery-profile assignment
  *   (01's pickup-only profile) is its own step.
  *
- * Options: --catalog-dir=<dir> --refresh=<jsonl> --live-skus=<json> --no-live --out=<dir> --keep-prosol-discontinued
+ * Options: --catalog-dir=<dir> --refresh=<jsonl> --live-skus=<json> --no-live --copy=<json> --no-copy --out=<dir> --keep-prosol-discontinued
  *          --min-network-qty=<n> (default 5: wave 2a skips variants not available or under n units network-wide)
  */
 
@@ -101,13 +103,22 @@ function build() {
     }
   }
 
+  let copy = null;
+  const copyFile = opt('copy') || path.join(catalogDir, 'copy', 'copy.json');
+  if (!flag('no-copy') && fs.existsSync(copyFile)) {
+    const inCopy = readInput('Product copy (family text, materials, trademark notice)', copyFile);
+    copy = JSON.parse(inCopy.text);
+    inCopy.note = `${Object.keys(copy.families || {}).length} families`;
+    inputs.push(inCopy);
+  }
+
   const products = cat.parseCsv(inProducts.text);
   const variants = cat.parseCsv(inVariants.text);
   const refresh = cat.parseJsonl(inRefresh.text);
   const keepProsolDiscontinued = flag('keep-prosol-discontinued');
   const minNetworkQty = opt('min-network-qty') === null ? 5 : Number(opt('min-network-qty')); // Mac's "within reason"
   if (!(minNetworkQty >= 0)) throw new Error('--min-network-qty must be a number >= 0');
-  const b = cat.buildCatalog({ products, variants, refresh, keepProsolDiscontinued, minNetworkQty });
+  const b = cat.buildCatalog({ products, variants, refresh, keepProsolDiscontinued, minNetworkQty, copy });
   const qa = cat.runQa({ build: b, mapLookup: (sku) => mapExact.get(sku) || null, liveRows });
 
   // Payload files, replacing stale ones in the wave folders.
