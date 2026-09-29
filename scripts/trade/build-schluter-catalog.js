@@ -39,6 +39,7 @@
  *   (01's pickup-only profile) is its own step.
  *
  * Options: --catalog-dir=<dir> --refresh=<jsonl> --live-skus=<json> --no-live --out=<dir> --keep-prosol-discontinued
+ *          --min-network-qty=<n> (default 5: wave 2a skips variants not available or under n units network-wide)
  */
 
 'use strict';
@@ -104,7 +105,9 @@ function build() {
   const variants = cat.parseCsv(inVariants.text);
   const refresh = cat.parseJsonl(inRefresh.text);
   const keepProsolDiscontinued = flag('keep-prosol-discontinued');
-  const b = cat.buildCatalog({ products, variants, refresh, keepProsolDiscontinued });
+  const minNetworkQty = opt('min-network-qty') === null ? 5 : Number(opt('min-network-qty')); // Mac's "within reason"
+  if (!(minNetworkQty >= 0)) throw new Error('--min-network-qty must be a number >= 0');
+  const b = cat.buildCatalog({ products, variants, refresh, keepProsolDiscontinued, minNetworkQty });
   const qa = cat.runQa({ build: b, mapLookup: (sku) => mapExact.get(sku) || null, liveRows });
 
   // Payload files, replacing stale ones in the wave folders.
@@ -147,7 +150,7 @@ function build() {
   const missingW1 = b.wave1Codes.filter((s) => !idx.some((x) => x.sku === s));
   const notes = [
     `Wave 1 builds ${idx.filter((x) => x.wave === '1').length} of the ${b.wave1Codes.length} planned codes; not built: ${missingW1.map((s) => `\`${s}\``).join(', ') || 'none'}.`,
-    `C-2 is still open: ${backorder.length} included variants are on distributor backorder (CONTINUE selling). Filter with the manifest's \`variants[].stock_status\` if Mac says in-stock only.`,
+    `"Within reason" (Mac 2026-09-28): wave 2a builds a variant only if the distributor has it available with at least ${minNetworkQty} units across its network; ${b.excluded.filter((e) => e.reason === 'fringe_low_stock' || (e.reasons || []).includes('fringe_low_stock')).length} left out as fringe_low_stock (excluded.csv). \`--min-network-qty=0\` turns it off. Wave 1 is exempt; ${backorder.length} included variants are on backorder (wave 1 only).`,
     `Special order on the 2026 list: ${special.length} variants (${special.slice(0, 11).map((x) => `\`${x.sku}\``).join(', ')}${special.length > 11 ? ', ...' : ''}). Tags are product-level, so no special-order tag was added; a variant metafield or a lead-time note is the open choice.`,
     `Sold in bundles of 10 on the 2026 list: ${bundles.length} SCHIENE-BASIC variants (${bundles.map((x) => `\`${x.sku}\``).join(', ')}). MAP is per length; confirm the buyer can take one length before activation, or set a minimum.`,
     `Distributor PO codes that are not the storefront code minus slashes (confirm before the first PO): ${oddPo.map((x) => `\`${x.sku}\` -> \`${x.po_code}\``).join(', ') || 'none'}.`,
@@ -162,7 +165,7 @@ function build() {
     generated_at: generatedAt, generated_bc: bcNow(), dry_run: true, api_version: cat.API_VERSION, store: cat.STORE,
     script: 'run-orders scripts/trade/build-schluter-catalog.js (branch trade/02)',
     inputs: inputs.map(({ label, path: p, sha256: h, note }) => ({ label, path: p, sha256: h, note: note || null })),
-    options: { keep_prosol_discontinued: keepProsolDiscontinued },
+    options: { keep_prosol_discontinued: keepProsolDiscontinued, min_network_qty: minNetworkQty },
     qa: {
       errors: errors.length,
       warnings: qa.checks.filter((c) => c.level === 'warn').length,
@@ -178,7 +181,7 @@ function build() {
   };
   fs.writeFileSync(path.join(outDir, 'manifest.json'), `${JSON.stringify(manifest, null, 1)}\n`);
 
-  const exCols = ['sku', 'wave', 'handle', 'stage', 'reason', 'reasons', 'prosol_match', 'prosol_code', 'cost', 'stock_status', 'discontinued', 'map_text'];
+  const exCols = ['sku', 'wave', 'handle', 'stage', 'reason', 'reasons', 'prosol_match', 'prosol_code', 'cost', 'stock_status', 'network_qty', 'discontinued', 'map_text'];
   fs.writeFileSync(path.join(outDir, 'excluded.csv'), `${[exCols.join(','), ...b.excluded.map((e) => exCols.map((c) => csvEsc(Array.isArray(e[c]) ? e[c].join(' ') : e[c])).join(','))].join('\n')}\n`);
 
   const md = cat.renderQa({ build: b, qa, meta: { generatedBc: bcNow(), inputs: manifest.inputs, keepProsolDiscontinued, notes } });
