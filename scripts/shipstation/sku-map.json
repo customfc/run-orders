@@ -13,6 +13,20 @@
     "max_pkg_weight_lb": "Max package weight in lb when combining (used with heat_sheet)"
   },
   "mappings": {
+    "B07QBD5Q86": {
+      "cost_cad": 114.92,
+      "retail_cad": 201.61,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "SES3D6EB",
+      "prosol_sku": "SES3D6EB",
+      "product": "SHELF QUADRILAT CORNER CURVE BRUSH STN STEEL",
+      "category": "SHELF",
+      "verified": true,
+      "source": "prosol filter[sku] exact, productId 13681",
+      "brand": "schluter",
+      "schluter_item": "SES3D6EB",
+      "note": "Added 2026-10-01 for order 701-2579357-2194614 (title ends SES3D6EB; Prosol exact match, stocked at 32 branches)."
+    },
     "DHDPS8MA": {
       "cost_cad": 31.65,
       "retail_cad": 55.52,
@@ -11479,14 +11493,18 @@
       "note": "Auto-mapped 2026-07-30 from part number VRO125 in title. Amazon title: \"Schluter Systems RONDEC/QUADEC Tile Edge Protection Profile Connector 1/2\" (12.5mm) Height\". Not yet order-verified."
     },
     "B006ZZQ8Y6": {
-      "api_sku": "KM511722",
+      "api_sku": "KM5117/22",
       "prosol_sku": "KM511722",
       "product": "Schluter - KERDI-KM Pre-Cut Seal for Pipe 7\" for Outlet Size 7/8\" (Pack of 5)",
       "brand": "schluter",
+      "schluter_item": "KM5117/22",
       "msrp_cad": 14.21,
-      "verified": false,
+      "cost_cad": 8.1,
+      "retail_cad": 14.21,
+      "cost_source": "prosol-offers-loc10010",
+      "verified": true,
       "source": "map-gap-asins.js PART#",
-      "note": "Auto-mapped 2026-07-30 from part number KM511722 in title. Amazon title: \"Schluter Kerdi-KM Waterproofing Pipe Collars - Ensures Watertight Seal for Pipe Protrusion\". Not yet order-verified."
+      "note": "Fixed 2026-10-01: api_sku needs the slash (Prosol filter[sku]=KM5117/22, productId 10184, PO code KM511722). As KM511722 every stock lookup returned nothing and order 701-8231542-2276228 sat in manual review past its ship-by date."
     },
     "B083F2M2PV": {
       "api_sku": "KL1V60E100",
