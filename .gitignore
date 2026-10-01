@@ -46,3 +46,6 @@ public/po-preview-*.html
 public/cost-review-*.csv
 public/replacement-label-*.pdf
 data/large-order-releases.json
+
+# Automayt beta1/staging rehearsal reports
+data/automayt-e2e/

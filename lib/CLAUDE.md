@@ -28,6 +28,10 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `sp-api.js` / `sp-api-reports.js` / `sp-api-inbound.js` — Amazon SP-API base / reports / FBA inbound.
 - `amazon-po.js` — Amazon PO drafts/creation.
 
+## Automayt (replaces Salesforce, see `../docs/AUTOMAYT.md`)
+- `automayt.js` — Open API transport: bearer key, required Idempotency-Key, same-key retries, 8 in flight, `AutomaytError` with `code` + `request_id`.
+- `automayt-erp.js` — domain calls: external-ref fixed records, items, SOs (procurement external), Amazon 14-day period SO, confirmed POs, receipts, cancels, notes, payables.
+
 ## FBA
 - `fba-inbound-orchestrator.js` · `fba-inbound-plans.js` — FBA inbound flow + plans.
 - `fba-po-drafts.js` · `fba-po-sender.js` — FBA PO draft + send.
