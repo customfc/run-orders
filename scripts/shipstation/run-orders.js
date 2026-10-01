@@ -11,6 +11,7 @@ const { planPackages } = require('../../lib/package-split');
 const { validateMapping } = require('../../lib/mapping-guard');
 const { sampleOf, sampleRefHandle } = require('../../lib/sample-item');
 const largeReleases = require('../../lib/large-order-releases');
+const skuResolver = require('../../lib/sku-resolver');
 
 // Airtight mapping guard: before staging an order, confirm the Prosol code we
 // resolved is the same product/size the customer actually ordered — comparing
@@ -326,6 +327,47 @@ function persistMappingToFile(key, entry) {
 function liveAddMapping(key, entry) {
   SKU_MAPPINGS[key] = entry;
   persistMappingToFile(key, entry);
+}
+
+// A line the resolver can work on: no sku-map entry at all, or an UNMAPPED*
+// placeholder. Samples, HALTs and title mismatches are human decisions.
+function isUnmappedLine(item) {
+  if (sampleOf(item)) return false;
+  const sku = item.sku || 'UNKNOWN';
+  if (sku === 'UNKNOWN') return false;
+  const m = resolveMappedEntry(sku);
+  if (!m) return !extractDhehkSkuFromName(item.name);
+  return typeof m === 'object' && (m.api_sku === 'UNMAPPED' || m.api_sku === 'UNMAPPED_GROUT');
+}
+
+// Exact-identity pre-pass (lib/sku-resolver.js tier 1): before staging, map any
+// unmapped SKU that is provably our own Sechelt stock, so its order ships on
+// THIS pass instead of being rejected. Only lines with no entry at all qualify.
+// Isolated: any failure leaves the order to be rejected exactly as before.
+async function autoResolveExact(orders, { dryRun, onProgress }) {
+  const bySku = new Map();
+  for (const order of orders) {
+    for (const item of (order.items || [])) {
+      if (!isUnmappedLine(item) || resolveMappedEntry(item.sku)) continue;
+      const cur = bySku.get(item.sku) || { sku: item.sku, itemName: item.name, qty: 0, orders: [] };
+      cur.qty += Number(item.quantity) || 1;
+      if (!cur.orders.includes(order.orderNumber)) cur.orders.push(order.orderNumber);
+      bySku.set(item.sku, cur);
+    }
+  }
+  const autoMapped = [];
+  for (const line of bySku.values()) {
+    try {
+      const r = await skuResolver.tryExact(line);
+      if (!r.entry) continue;
+      if (!dryRun) liveAddMapping(line.sku, r.entry);
+      autoMapped.push({ sku: line.sku, orders: line.orders, summary: r.summary, entry: r.entry, dryRun });
+      onProgress({ type: 'status', message: `${dryRun ? 'Would auto-map' : 'Auto-mapped'} ${line.sku} to Sechelt (${r.summary})` });
+    } catch (e) {
+      console.error(`[sku-resolver] exact ${line.sku}: ${e.message}`);
+    }
+  }
+  return autoMapped;
 }
 
 // Pull a SKU-shaped trailing token from an Amazon listing title.
@@ -986,6 +1028,13 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
   const shopifyCount = inScope.filter(isShopifyOrder).length;
   onProgress({ type: 'status', message: `Found ${allOrders.length} total · ${amazonCount} Amazon · ${shopifyCount} Shopify. Filtering...` });
 
+  let autoMapped = [];
+  try {
+    autoMapped = await autoResolveExact(inScope, { dryRun, onProgress });
+  } catch (e) {
+    console.error(`[sku-resolver] exact pre-pass failed, staging unchanged: ${e.message}`);
+  }
+
   for (const order of inScope) {
     const province = normalizeProvince(order.shipTo?.state);
     if (!province) {
@@ -995,7 +1044,9 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
 
     const { resolved, fixedWarehouseItems, failures, failureItems } = resolveOrderItems(order);
     if (failures.length) {
-      rejected.push({ orderNumber: order.orderNumber, reason: failures.join('; '), _suggestInputs: failureItems });
+      const unmappedItems = (order.items || []).filter(isUnmappedLine)
+        .map((it) => ({ sku: it.sku, name: it.name || null, qty: it.quantity || 1 }));
+      rejected.push({ orderNumber: order.orderNumber, reason: failures.join('; '), _suggestInputs: failureItems, ...(unmappedItems.length ? { unmappedItems } : {}) });
       continue;
     }
     const fixedWarehouseIds = [...new Set(fixedWarehouseItems.map((item) => item.warehouseId))];
@@ -1278,6 +1329,7 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
       assignments,
       manualReview: [...rejected, ...planningErrors].sort((a, b) => String(a.orderNumber).localeCompare(String(b.orderNumber))),
       errors: stagingErrors,
+      autoMapped,
     };
   } finally {
     await client.close();

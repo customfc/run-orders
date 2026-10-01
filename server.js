@@ -425,6 +425,54 @@ app.post('/api/labels/buy', async (req, res) => {
   }
 });
 
+// ── SKU resolver: one-tap approve for an Opus mapping proposal ──────────────
+// The proposal email links here. GET only shows a confirm page (mail scanners
+// pre-open links, so a GET must never change anything); the button POSTs.
+// The token is an HMAC over sku + the exact proposed entry (lib/sku-resolver.js).
+
+function skuApprovePage(title, body) {
+  const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
+<style>body{font:16px/1.5 -apple-system,system-ui,sans-serif;max-width:640px;margin:24px auto;padding:0 16px;color:#111}pre{background:#f4f4f5;padding:12px;border-radius:8px;white-space:pre-wrap;font-size:13px}button{font-size:17px;padding:12px 20px;border-radius:8px;border:0;background:#111;color:#fff}</style></head><body>${body(esc)}</body></html>`;
+}
+
+app.get('/sku-resolver/approve', (req, res) => {
+  const skuResolver = require('./lib/sku-resolver');
+  const { sku, t } = req.query;
+  const rec = skuResolver.verifyApprove(String(sku || ''), String(t || ''));
+  if (!rec) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This approve link is not valid or has expired.</h2>'));
+  if (rec.status === 'applied') return res.send(skuApprovePage('Already applied', (e) => `<h2>SKU ${e(sku)} is already mapped.</h2>`));
+  res.send(skuApprovePage(`Approve ${sku}`, (e) => `
+<h2>Map SKU ${e(sku)}?</h2>
+<p>Order ${e(rec.orders.join(', '))}: ${e(rec.itemName)}</p>
+<p>${e(rec.proposal?.explanation)}</p>
+<pre>${e(JSON.stringify(rec.entry, null, 2))}</pre>
+<form method="post" action="/sku-resolver/approve">
+<input type="hidden" name="sku" value="${e(sku)}"><input type="hidden" name="t" value="${e(t)}">
+<button type="submit">Approve and map</button></form>`));
+});
+
+app.post('/sku-resolver/approve', express.urlencoded({ extended: false }), (req, res) => {
+  const skuResolver = require('./lib/sku-resolver');
+  const { liveAddMapping, resolveMappedEntry } = require('./scripts/shipstation/run-orders');
+  const sku = String(req.body?.sku || '');
+  const rec = skuResolver.verifyApprove(sku, String(req.body?.t || ''));
+  if (!rec) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This approve link is not valid or has expired.</h2>'));
+  if (resolveMappedEntry(sku)) {
+    skuResolver.markApplied(sku, { by: 'approve-link (already mapped)' });
+    return res.send(skuApprovePage('Already mapped', (e) => `<h2>SKU ${e(sku)} was already mapped. Nothing changed.</h2>`));
+  }
+  try {
+    liveAddMapping(sku, rec.entry);
+    skuResolver.markApplied(sku);
+    audit.log({ action: 'sku-resolver-approved', sku, entry: rec.entry, orders: rec.orders });
+    res.send(skuApprovePage('Mapped', (e) => `<h2>Mapped ${e(sku)}.</h2><p>Order ${e(rec.orders.join(', '))} ships on the next staging pass. The change is in sku-map.json on the Mini; it gets committed with the next deploy.</p>`));
+  } catch (err) {
+    audit.log({ action: 'sku-resolver-approve-failed', sku, error: err.message });
+    res.status(500).send(skuApprovePage('Failed', (e) => `<h2>Mapping failed</h2><pre>${e(err.message)}</pre>`));
+  }
+});
+
 // ── Large-order review gate: release ────────────────────────────────────────
 // The stage phase holds orders over the LARGE_ORDER_* thresholds and pages Mac.
 // This is the "release it from the dashboard" half. Optional warehouseCode pins
