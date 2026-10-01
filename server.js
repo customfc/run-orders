@@ -2222,12 +2222,14 @@ schedule('0 8 * * 1-5', () => morningStaleScan('08:00 weekday'), TZ);
 // Emails rather than Telegram: Mac triages email.
 async function sampleWatch(source) {
   try {
-    const { scanSamples, buildSampleDigest, loadState, saveState } = require('./lib/sample-watch');
+    const { scanSamples, scanFollowUps, buildSampleDigest, loadState, saveState } = require('./lib/sample-watch');
     const state = loadState();
+    const now = new Date();
     const scan = await scanSamples({ state });
-    const d = buildSampleDigest({ scan, state, now: new Date() });
+    const { followUps } = await scanFollowUps({ state, now });
+    const d = buildSampleDigest({ scan, followUps, state, now });
     saveState(d.state);
-    audit.log({ action: 'sample-watch', source, open: (scan.orders || []).length, sent: d.shouldSend, counts: d.counts || null });
+    audit.log({ action: 'sample-watch', source, open: (scan.orders || []).length, followUps: followUps.length, sent: d.shouldSend, counts: d.counts || null });
     if (!d.shouldSend) return;
     const { sendEmail } = require('./lib/emailer');
     await sendEmail({ to: process.env.SAMPLE_WATCH_EMAIL || 'mac@customfc.ca', subject: d.subject, text: d.body });
