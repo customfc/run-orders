@@ -31,6 +31,8 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 ## Automayt (replaces Salesforce, see `../docs/AUTOMAYT.md`)
 - `automayt.js` — Open API transport: bearer key, required Idempotency-Key, same-key retries, 8 in flight, `AutomaytError` with `code` + `request_id`.
 - `automayt-erp.js` — domain calls: external-ref fixed records, items, SOs (procurement external), Amazon 14-day period SO, confirmed POs, receipts, cancels, notes, payables.
+- `automayt-orders.js` — Automayt twins of the Shopify, Amazon and FBA SO/PO flows, same result shapes as the Salesforce originals.
+- `erp-backend.js` — `ERP_BACKEND` switch every SO/PO caller goes through: `salesforce` (default) | `automayt-shadow` (mirror after SF, never fails SF) | `automayt`.
 
 ## FBA
 - `fba-inbound-orchestrator.js` · `fba-inbound-plans.js` — FBA inbound flow + plans.

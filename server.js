@@ -7,8 +7,10 @@ const path = require('path');
 const audit = require('./lib/audit');
 const { runOrders } = require('./scripts/shipstation/run-orders');
 const { scanShippedLabels, bookPickupForBucket } = require('./lib/pickups');
-const { fetchShopifyOrder, createShopifySoPo } = require('./lib/shopify-sf');
-const { createAmazonPOs, findMostRecentAmazonSO } = require('./lib/amazon-po');
+const { fetchShopifyOrder } = require('./lib/shopify-sf');
+const { findMostRecentAmazonSO } = require('./lib/amazon-po');
+// SO/PO writes go through the ERP_BACKEND switch (Salesforce by default).
+const { createShopifySoPo, createAmazonPOs } = require('./lib/erp-backend');
 const sfLib = require('./lib/salesforce');
 const { scanStaleShipments } = require('./lib/stale-tracker');
 const { runPipeline, PHASES: PIPELINE_PHASES } = require('./lib/pipeline');
