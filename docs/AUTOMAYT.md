@@ -61,6 +61,13 @@ First full pass: 2026-10-01 on beta1, 22 of 22 steps, run `261001172010`. Replay
 
 **Found on beta1:** a per-order tax exemption is stamped on the lines sent with the create, and lines added later through `POST /sales-orders/{id}/lines` are taxable unless the call repeats `tax_treatment`. `addToAmazonPeriodSo` now sends it on every add (request `req_20417913a907408eb0e3918d7d4176e6` shows the taxed case).
 
+## Facts settled 2026-10-01
+
+- **No QuickBooks after cutover.** Automayt is CFC's books, so channel orders must carry the tax CFC owes (see below) and are invoiced in Automayt.
+- **Tax.** Shopify charges destination GST/HST plus BC PST on BC deliveries only, shipping taxed; Shopify remits nothing. On Amazon, Amazon remits BC PST (marketplace facilitator) but CFC is GST/HST-registered, so GST/HST is CFC's (Amazon passes it through in the settlement). Automayt computes destination tax from `ship_to_region` but also adds QST, SK PST and MB RST, which CFC doesn't charge. How Amazon GST/HST lands in Automayt is open with Automayt (one order per Amazon order, or booked from settlements).
+- **Amazon cutover window.** Salesforce's open Amazon order is SO-026232 "Sep 24 - Oct 7"; Automayt's first is `period:2026-10-08`, so `AMAZON_PERIOD_ANCHOR=2026-10-08`.
+- **Production IP.** The Mini's public address is 64.180.67.80 (TELUS, can change). On `403 ip_not_allowed` the client adds the host's current public IP to the error.
+
 ## Waiting on Automayt before staging
 
 - Vendors Prosol, Treeco and the carriers, and a virtual Amazon Fulfillment location: the API can't create vendors or locations.
