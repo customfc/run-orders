@@ -10,6 +10,7 @@ data/order-cache.json
 data/ghost-voids.json
 data/telegram-state.json
 data/telegram-outbox.jsonl
+data/alerts-log.jsonl
 data/ops-state/
 data/fba/
 data/analytics.sqlite
