@@ -12,6 +12,8 @@ const { validateMapping } = require('../../lib/mapping-guard');
 const { sampleOf, sampleRefHandle } = require('../../lib/sample-item');
 const largeReleases = require('../../lib/large-order-releases');
 const skuResolver = require('../../lib/sku-resolver');
+const { isPickupOnly, pickupOnlyMessage } = require('../../lib/trade-pickup-only');
+const { isCatalogEntry } = require('../../lib/trade-skumap');
 
 // Airtight mapping guard: before staging an order, confirm the Prosol code we
 // resolved is the same product/size the customer actually ordered — comparing
@@ -26,6 +28,9 @@ async function checkMappingGuard(resolvedItems) {
     const sf = require('../../lib/salesforce');
     let conn = null;
     for (const item of resolvedItems) {
+      // Catalogue entries were checked when generated (one exact Prosol product, the MAP code, the Shopify title), and
+      // Salesforce names some families differently (it calls SCHIENE "Jolly"), so a name compare here would halt them.
+      if (item.catalog) continue;
       const code = String(item.prosolSku || '').trim();
       if (!code) continue;
       if (!_guardSfCache.has(code)) {
@@ -553,6 +558,13 @@ function resolveOrderItems(order) {
       continue;
     }
 
+    // Full-length profiles never get a parcel label (lib/trade-pickup-only.js). Kept out of failureItems: a Prosol
+    // search can't fix this one, the order has to be handled as a pickup.
+    if (isPickupOnly(mapped)) {
+      failures.push(`${sku}: ${pickupOnlyMessage([sku])}`);
+      continue;
+    }
+
     if (mapped.api_sku === 'UNMAPPED' || mapped.api_sku === 'UNMAPPED_GROUT') {
       failures.push(`Manual lookup required for ${sku} (${mapped.product || item.name || sku})`);
       failureItems.push({ sku, name: mapped.product || item.name || null });
@@ -635,7 +647,10 @@ function resolveOrderItems(order) {
       continue;
     }
 
-    resolved.push({ ...base, kind: 'prosol', apiSku: mapped.api_sku, prosolSku: mapped.prosol_sku || mapped.api_sku, label: mapped.product || item.name || sku });
+    resolved.push({
+      ...base, kind: 'prosol', apiSku: mapped.api_sku, prosolSku: mapped.prosol_sku || mapped.api_sku, label: mapped.product || item.name || sku,
+      ...(isCatalogEntry(mapped) ? { catalog: true } : {}),
+    });
   }
   return { resolved, fixedWarehouseItems, failures, failureItems };
 }
