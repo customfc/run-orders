@@ -2215,6 +2215,27 @@ async function morningStaleScan(source) {
   }
 }
 schedule('0 8 * * 1-5', () => morningStaleScan('08:00 weekday'), TZ);
+
+// Sample-order watchdog. Samples carry no SKU, so every other watchdog here is
+// blind to them -- they key off a label or a warehouse and a sample order has
+// neither. Order 1353 sat five weeks and burned three labels with no alert.
+// Emails rather than Telegram: Mac triages email.
+async function sampleWatch(source) {
+  try {
+    const { scanSamples, buildSampleDigest, loadState, saveState } = require('./lib/sample-watch');
+    const state = loadState();
+    const scan = await scanSamples({ state });
+    const d = buildSampleDigest({ scan, state, now: new Date() });
+    saveState(d.state);
+    audit.log({ action: 'sample-watch', source, open: (scan.orders || []).length, sent: d.shouldSend, counts: d.counts || null });
+    if (!d.shouldSend) return;
+    const { sendEmail } = require('./lib/emailer');
+    await sendEmail({ to: process.env.SAMPLE_WATCH_EMAIL || 'mac@customfc.ca', subject: d.subject, text: d.body });
+  } catch (err) {
+    await telegram.notify('attn', `Sample watch failed (${source})`, err.message);
+  }
+}
+schedule('30 8 * * 1-5', () => sampleWatch('08:30 weekday'), TZ);
 schedule('0 10 * * 6', () => morningStaleScan('10:00 Saturday'), TZ);
 schedule('0 10 * * 0', () => morningStaleScan('10:00 Sunday'), TZ); // weekend pileups must not wait until Monday to surface
 

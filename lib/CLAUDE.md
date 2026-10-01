@@ -6,6 +6,7 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `pipeline.js` — pipeline stage orchestration.
 - `map-rules.js` — sku-map rule resolution (title-is-truth, slashes, ASIN aliases).
 - `auto-map.js` — exact-identity SKU auto-mapping (shadow-first).
+- `sku-resolver.js` — unmapped-SKU resolver: exact tier auto-maps provable Sechelt stock during staging; everything else gets an Opus mapping proposal emailed with a one-tap approve link (`/sku-resolver/approve`), re-emailed daily while the order waits (`data/sku-resolver-state.json`).
 - `schluter-map.js` — Schluter-specific SKU mapping.
 - `ops-state.js` — persisted ops state (`data/ops-state/`).
 - `audit.js` — append-only audit trail (`data/audit.jsonl`).
@@ -51,4 +52,5 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `prosol-stock.js` — Prosol stock lookup (also source of `cost_cad`).
 - `analytics-db.js` + `analytics-schema.sql` + `analytics-views.sql` — SQLite analytics layer.
 - `analytics-alerts.js` — analytics alerting.
+- `sample-watch.js` — sample-order watchdog (samples carry no SKU, so other watchdogs miss them); 08:30 weekday email digest (`data/sample-watch-state.json`).
 - `integration-health.js` — cross-integration health monitor.
