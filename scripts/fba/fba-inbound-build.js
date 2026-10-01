@@ -36,6 +36,7 @@ const BASE = '/inbound/fba/2024-03-20';
 const arg = (k, d = null) => { const a = process.argv.find((x) => x.startsWith(`--${k}=`)); return a ? a.split('=').slice(1).join('=') : d; };
 const COMMIT = process.argv.includes('--commit');
 const SPEC_PATH = arg('spec');
+const RESUME_PLAN = arg('plan');   // resume an already-created plan instead of making another
 
 const money = (n) => '$' + Number(n || 0).toFixed(2);
 const feesOf = (o) => (o.fees || []).reduce((t, f) => t + (typeof f?.value?.amount === 'number' ? f.value.amount : 0), 0);
@@ -181,14 +182,19 @@ async function groupItems(planId, packingOptionId, packingGroupId) {
   console.log('\nprep ownership (from Amazon getPrepDetails):');
   for (const i of spec.items) console.log(`  ${i.msku.padEnd(20)} prepOwner=${prep[i.msku].prepOwner.padEnd(6)} labelOwner=${prep[i.msku].labelOwner}  (${prep[i.msku].why})`);
 
-  const created = await inbound.createInboundPlan({
-    name: spec.name,
-    sourceAddress: src,
-    items: spec.items.map((i) => ({ msku: i.msku, quantity: i.qty, prepOwner: prep[i.msku].prepOwner, labelOwner: prep[i.msku].labelOwner, ...(spec.expiration ? { expiration: spec.expiration } : {}) })),
-  });
-  await inbound.waitForOperation(created.operationId);
-  const planId = created.inboundPlanId;
-  console.log(`\n1) plan created ${planId}`);
+  let planId = RESUME_PLAN;
+  if (planId) {
+    console.log(`\n1) resuming existing plan ${planId}`);
+  } else {
+    const created = await inbound.createInboundPlan({
+      name: spec.name,
+      sourceAddress: src,
+      items: spec.items.map((i) => ({ msku: i.msku, quantity: i.qty, prepOwner: prep[i.msku].prepOwner, labelOwner: prep[i.msku].labelOwner, ...(spec.expiration ? { expiration: spec.expiration } : {}) })),
+    });
+    await inbound.waitForOperation(created.operationId);
+    planId = created.inboundPlanId;
+    console.log(`\n1) plan created ${planId}`);
+  }
 
   await inbound.waitForOperation((await inbound.generatePackingOptions(planId)).operationId);
   const opt = (await inbound.listPackingOptions(planId)).packingOptions[0];
@@ -198,18 +204,28 @@ async function groupItems(planId, packingOptionId, packingGroupId) {
   // Assign each carton to the group holding its SKU. Unlike the old script this
   // supports N groups; what it will NOT do is guess when a carton's SKU appears
   // in no group, because mismatched box content causes receiving discrepancies.
-  const groupings = [];
-  const assigned = new Set();
-  for (const gid of groups) {
-    const mskus = new Set(await groupItems(planId, opt.packingOptionId, gid));
-    const mine = spec.boxes.filter((b) => b.units.every((u) => mskus.has(u.msku)));
-    mine.forEach((b) => assigned.add(b));
-    console.log(`   group ${gid}: ${mskus.size} sku(s) → ${mine.length} carton(s)`);
-    if (mine.length) groupings.push({ packingGroupId: gid, boxes: mine.map((b) => packingBox(b, spec.expiration, prep)) });
-  }
-  const orphan = spec.boxes.filter((b) => !assigned.has(b));
-  if (orphan.length) {
-    throw new Error(`${orphan.length} carton(s) match no packing group: ${orphan.map((b) => b.units.map((u) => u.msku).join('+')).join(', ')}`);
+  // One group is the common case and needs no lookup — every carton belongs to
+  // it by definition. Worth short-circuiting: our SP-API role gets 403 on
+  // listPackingGroupItems, so calling it when the answer is already known would
+  // fail a plan that is perfectly valid.
+  let groupings;
+  if (groups.length === 1) {
+    groupings = [{ packingGroupId: groups[0], boxes: spec.boxes.map((b) => packingBox(b, spec.expiration, prep)) }];
+    console.log(`   single group ${groups[0]} → all ${spec.boxes.length} carton(s)`);
+  } else {
+    groupings = [];
+    const assigned = new Set();
+    for (const gid of groups) {
+      const mskus = new Set(await groupItems(planId, opt.packingOptionId, gid));
+      const mine = spec.boxes.filter((b) => b.units.every((u) => mskus.has(u.msku)));
+      mine.forEach((b) => assigned.add(b));
+      console.log(`   group ${gid}: ${mskus.size} sku(s) → ${mine.length} carton(s)`);
+      if (mine.length) groupings.push({ packingGroupId: gid, boxes: mine.map((b) => packingBox(b, spec.expiration, prep)) });
+    }
+    const orphan = spec.boxes.filter((b) => !assigned.has(b));
+    if (orphan.length) {
+      throw new Error(`${orphan.length} carton(s) match no packing group: ${orphan.map((b) => b.units.map((u) => u.msku).join('+')).join(', ')}`);
+    }
   }
 
   await inbound.waitForOperation((await inbound.confirmPackingOption(planId, opt.packingOptionId)).operationId);
