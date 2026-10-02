@@ -2365,18 +2365,23 @@ async function autoRebookSweep(source) {
   try {
     const { runAutoRebooker } = require('./lib/auto-rebooker');
     const r = await runAutoRebooker();
+    // Manual drop-off groups (Sechelt Purolator) never get a pickup booked; the
+    // crew has to drop the box at the depot, so name the orders instead.
+    const dropLines = (r.dropOff || []).map(x => `📦 ${x.warehouseName} ${x.carrier} ×${x.count} (oldest ${x.oldest}d): ${x.orders.slice(0, 4).join(', ')} — no carrier pickup here, the crew needs to drop it off`);
     if (r.live) {
-      if (r.rebooked.length || r.locked.length || r.failed.length) {
+      if (r.rebooked.length || r.locked.length || r.failed.length || dropLines.length) {
         const body = [
           ...r.rebooked.map(x => `✓ ${x.warehouseName} ${x.carrier} → ${x.confirmation || x.pickupId}${x.lockedRiding ? ` (+${x.lockedRiding} locked riding along)` : ''}`),
           ...r.locked.map(x => `🔒 ${x.warehouseName} ${x.carrier} ×${x.count} (oldest ${x.oldest}d): ${x.orders.slice(0, 3).join(', ')} — book a warehouse-level pickup`),
           ...r.failed.map(x => `✗ ${x.warehouseName} ${x.carrier} ×${x.count}: ${String(x.error).slice(0, 90)}`),
+          ...dropLines,
         ].join('\n');
-        const sev = (r.locked.length || r.failed.length) ? 'attn' : 'ok';
-        await telegram.notify(sev, `Auto-rebooker [LIVE] — ${r.rebooked.length} rebooked, ${r.locked.length} locked, ${r.failed.length} failed`, `${body}\n\nSkipped ${r.skipped.length} (delivered / phantom / 0-item).`);
+        const sev = (r.locked.length || r.failed.length || dropLines.length) ? 'attn' : 'ok';
+        const dropTitle = dropLines.length ? `, ${r.dropOff.length} need drop-off` : '';
+        await telegram.notify(sev, `Auto-rebooker [LIVE] — ${r.rebooked.length} rebooked, ${r.locked.length} locked, ${r.failed.length} failed${dropTitle}`, `${body}\n\nSkipped ${r.skipped.length} (delivered / phantom / 0-item).`);
       }
-    } else if (r.wouldRebook.length || r.skipped.length) {
-      const wb = r.wouldRebook.map(x => `• ${x.warehouseName} ${x.carrier} ×${x.count} (oldest ${x.oldest}d): ${x.orders.slice(0, 4).join(', ')}${x.orders.length > 4 ? '…' : ''}`).join('\n');
+    } else if (r.wouldRebook.length || r.skipped.length || dropLines.length) {
+      const wb = [...r.wouldRebook.map(x => `• ${x.warehouseName} ${x.carrier} ×${x.count} (oldest ${x.oldest}d): ${x.orders.slice(0, 4).join(', ')}${x.orders.length > 4 ? '…' : ''}`), ...dropLines].join('\n');
       const sk = r.skipped.slice(0, 10).map(x => `• ${x.order} (${x.age}d) — ${x.reason}`).join('\n');
       await telegram.notify('debug', `Auto-rebooker [SHADOW] — would rebook ${r.wouldRebook.length} group(s)`, `${wb || '(none)'}\n\nGuard skipped ${r.skipped.length}:\n${sk}${r.skipped.length > 10 ? `\n…and ${r.skipped.length - 10} more` : ''}\n\nValidate, then set AUTO_REBOOK_LIVE=1 to act.`);
     }

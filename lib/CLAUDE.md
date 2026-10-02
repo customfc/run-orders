@@ -15,7 +15,8 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `shipstation-v2.js` — ShipStation V2 API (labels, `bookPickup`).
 - `ups-api.js` — UPS API.
 - `pickups.js` — pickup booking orchestration (UPS / Purolator / Canada Post).
-- `auto-rebooker.js` — auto re-book stuck pickups.
+- `auto-rebooker.js` — auto re-book stuck pickups. Sechelt Purolator is reported as "needs crew drop-off" instead of booked (no carrier pickup there); a carrier "already scheduled" answer is reported as locked, not failed.
+- `manual-dropoff.js` — the `<warehouseId>::<carrier>` groups the crew hand-drops (Sechelt Purolator), shared by the pickup phase and the rebooker.
 - `ghost-pickup.js` — ghost-pickup tracking (alert-only, no auto-spend).
 - `stale-tracker.js` — stale order / pickup detection (age≤1 wait is intentional).
 - `package-split.js` — split-shipment child handling.
