@@ -21,6 +21,9 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `stale-tracker.js` — stale order / pickup detection (age≤1 wait is intentional).
 - `package-split.js` — split-shipment child handling.
 - `packing-slip.js` — packing-slip generation.
+- `local-fulfillment.js` — pickup guard: Shopify pickup / local-delivery / "Pickup at our ..." orders never get a courier label or a Prosol PO (staging, manual buy, SO reconcile).
+- `pickup-runner.js` — runs every pickup order (Coast truck, counter pickups, split trims) every 15 min; SHADOW unless `PICKUP_RUNNER_LIVE=coast|all`; state `data/pickup-state.json`. Helpers: `pickup-io.js` (fulfil, refund trims), `pickup-counter-messages.js` (counter + split emails), `pickup-actions.js` / `pickup-messages.js` / `pickup-eta.js` (Coast), `branch-pickup.js` (counter resolution + PO email).
+- `trade-accounts.js` / `trade-applications.js` / `trade-verify.js` — ProZone one-tap approve, application intake, business check (CRA check digit + OrgBook BC).
 
 ## Salesforce / Shopify / Amazon
 - `salesforce.js` — jsforce SO/PO + PBSI integration.
