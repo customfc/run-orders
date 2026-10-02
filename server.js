@@ -538,7 +538,7 @@ app.get('/prozone/approve', (req, res) => {
     return res.send(skuApprovePage(`Already ${rec.status}`, (e) => `<h2>${e(rec.app.business || rec.app.email)} is already ${e(rec.status)}.</h2>${rec.result?.code ? `<p>Client code ${e(rec.result.code)}.</p>` : ''}`));
   }
   const w = apps.welcomeEmail(rec.app, { code: '(their code)' });
-  const deal = rec.app.national ? '10% on accessories (national)' : '20%/25% on accessories, 10% on trims (Coast)';
+  const deal = rec.app.national ? '20% on accessories, 10% on trims (national)' : '20%/25% on accessories, 10% on trims (Coast)';
   res.send(skuApprovePage(`Approve ${rec.app.business || rec.app.email} (ProZone ${apps.programName(rec.app)})`, (e) => `
 <h2>Approve ${e(rec.app.business || rec.app.name)} for ProZone ${e(apps.programName(rec.app))}?</h2>
 ${apps.detailsHtml(rec.app)}
