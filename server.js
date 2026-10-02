@@ -586,6 +586,42 @@ app.post('/prozone/decline', express.urlencoded({ extended: false }), (req, res)
   res.send(skuApprovePage('Declined', (e) => `<h2>Declined ${e(hit.rec.app.business || hit.rec.app.email)}.</h2><p>No email was sent.</p>`));
 });
 
+// ── Pickup runner one-taps (Mac) and the customer's trim choice (via the CS agent, loopback only) ──
+const PICKUP_ACTIONS = { ready: 'Mark it ready and email the customer', 'picked-up': 'Mark it picked up and send the thank-you', nudge: 'Re-send the pickup email to the branch' };
+app.get('/pickup/:action', (req, res) => {
+  const pr = require('./lib/pickup-runner');
+  const action = req.params.action;
+  const name = String(req.query.o || '');
+  if (!PICKUP_ACTIONS[action] || !pr.verify(`${action}|${name}`, String(req.query.t || ''))) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  const rec = pr.loadState().orders[name];
+  res.send(skuApprovePage(PICKUP_ACTIONS[action], (e) => `<h2>${e(name)}: ${e(PICKUP_ACTIONS[action])}?</h2><p>${e(rec ? `${rec.kind} pickup, ${rec.branch || rec.location || ''}, status ${rec.status}` : 'not in the pickup runner')}</p>
+<form method="post" action="/pickup/${e(action)}"><input type="hidden" name="o" value="${e(name)}"><input type="hidden" name="t" value="${e(req.query.t)}"><button type="submit">${e(PICKUP_ACTIONS[action])}</button></form>`));
+});
+app.post('/pickup/:action', express.urlencoded({ extended: false }), async (req, res) => {
+  const pr = require('./lib/pickup-runner');
+  const action = req.params.action;
+  if (!PICKUP_ACTIONS[action]) return res.status(404).end();
+  const rec = pr.applySignal({ action, name: String(req.body?.o || ''), token: String(req.body?.t || '') });
+  if (!rec) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  audit.log({ action: `pickup-${action}`, order: req.body.o });
+  runPickupRunner('one-tap').catch(() => {});
+  res.send(skuApprovePage('Done', (e) => `<h2>Done: ${e(req.body.o)}.</h2><p>${e(PICKUP_ACTIONS[action])}. The runner acts on it now${pr.mode() === 'shadow' ? ' (test mode: it lists it in the digest instead)' : ''}.</p>`));
+});
+app.post('/api/pickup/choice', async (req, res) => {
+  if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress)) return res.status(403).json({ error: 'loopback only' });
+  const pr = require('./lib/pickup-runner');
+  const text = String(req.body?.text || '');
+  const field = (k) => { const m = new RegExp(`^\\s*${k}\\s*:\\s*(.+)$`, 'im').exec(text); return m ? m[1].trim() : ''; };
+  const o = field('Order').replace(/^#?/, '#');
+  const c = field('Choice').toUpperCase();
+  const t = field('Token');
+  const rec = pr.applySignal({ action: 'choice', name: o, code: c, token: t });
+  audit.log({ action: 'pickup-choice', order: o, choice: c, ok: !!rec });
+  if (!rec) return res.status(400).json({ error: 'choice did not verify', order: o, choice: c });
+  runPickupRunner('choice').catch(() => {});
+  res.json({ ok: true, order: o, choice: rec.choice });
+});
+
 // ── Large-order review gate: release ────────────────────────────────────────
 // The stage phase holds orders over the LARGE_ORDER_* thresholds and pages Mac.
 // This is the "release it from the dashboard" half. Optional warehouseCode pins
@@ -2443,6 +2479,45 @@ async function pollCancellations(source) {
   }
 }
 schedule('*/15 * * * *', () => pollCancellations('15-min'), TZ);
+
+// Pickup runner (lib/pickup-runner.js, PICKUP-ZONES-PLAN.md section 3): every 15 min, runs every pickup order
+// (Coast truck, counter pickups, split trims). SHADOW unless PICKUP_RUNNER_LIVE=coast|all; in SHADOW Mac gets one
+// digest a day at 16:00 BC (19:00 ET) of what it would have done. Never runs while the pipeline is running.
+function pickupIo() {
+  const { graphql } = require('./lib/shopify-graphql');
+  const pio = require('./lib/pickup-io');
+  const gql = async (q, v) => (await graphql(q, v)).data;
+  const raw = async (q, v) => graphql(q, v);
+  return {
+    gql,
+    sendEmail: (m) => require('./lib/emailer').sendEmail(m),
+    fulfill: (ids) => pio.fulfill(raw, ids),
+    refundTrims: (order, lines) => pio.refundTrims(raw, order, lines),
+    log: (o) => audit.log(o),
+  };
+}
+let pickupRunnerBusy = false;
+async function runPickupRunner(source) {
+  if (pipelineActive || pickupRunnerBusy) return;
+  pickupRunnerBusy = true;
+  try {
+    const r = await require('./lib/pickup-runner').run({ io: pickupIo() });
+    if (r.performed.length || r.errors.length) audit.log({ action: 'pickup-runner-tick', source, performed: r.performed, errors: r.errors });
+    if (r.errors.length) console.error('[pickup-runner]', JSON.stringify(r.errors).slice(0, 500));
+  } catch (err) {
+    console.error(`[pickup-runner ${source}] failed:`, err.message);
+  } finally { pickupRunnerBusy = false; }
+}
+schedule('*/15 * * * *', () => runPickupRunner('15-min'), TZ);
+schedule('0 19 * * *', async () => {
+  const pr = require('./lib/pickup-runner');
+  if (pr.mode() === 'all') return;
+  const day = new Date(Date.now() - 7 * 3600e3).toISOString().slice(0, 10);
+  const d = pr.shadowDigest(pr.loadState(), day);
+  if (!d) return;
+  try { await require('./lib/emailer').sendEmail({ to: process.env.MAC_CC_EMAIL || 'mac@customfc.ca', subject: d.subject, html: d.html }); }
+  catch (err) { console.error('[pickup-runner digest] failed:', err.message); }
+}, TZ);
 
 // Buy-box defender — daily 09:00 ET. Pulls competing offers for managed
 // Mapei FBM SKUs and undercuts by 2% (within margin floor + price band).
