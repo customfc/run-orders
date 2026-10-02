@@ -22,9 +22,9 @@ const upsApi = require('../lib/ups-api');
 const PRESETS = {
   treeco_delta: {
     companyName: 'Treeco',
-    contactName: 'Robyn P.',
+    contactName: 'Brianna M.',
     phone: '604-523-2235',
-    email: 'robynp@treeco.ca',
+    email: 'briannam@treeco.ca',
     address1: '1230 Cliveden Ave',
     city: 'Delta',
     stateProvince: 'BC',
@@ -36,7 +36,7 @@ const PRESETS = {
     companyName: 'Treeco',
     contactName: 'Treeco Calgary',
     phone: '403-219-3303',
-    email: 'robynp@treeco.ca',
+    email: 'briannam@treeco.ca',
     address1: '5211 52 St SE',
     city: 'Calgary',
     stateProvince: 'AB',
