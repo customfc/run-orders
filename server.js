@@ -334,6 +334,27 @@ async function buyLabelForOrder({ orderId, carrierCode, serviceCode, packageCode
   const { v1Request, getLabelUrl, ensureValidShipTo } = require('./lib/shipstation-v2');
   const { orderSource } = require('./scripts/shipstation/run-orders');
 
+  // Pickup / local-delivery belt (lib/local-fulfillment.js), before anything can write to ShipStation: a Shopify
+  // order picked up in Sechelt or Powell River, or delivered by CFC's truck, never gets a courier label here either.
+  // Fails closed when the order or its delivery method can't be read.
+  {
+    const { localVerdict } = require('./lib/local-fulfillment');
+    const { isShopifyOrder } = require('./scripts/shipstation/run-orders');
+    let verdict = null;
+    try {
+      const r = await v1Request('GET', `/orders/${encodeURIComponent(orderId)}`);
+      if (r.status !== 200) throw new Error(`ShipStation GET /orders/${orderId} -> ${r.status}`);
+      const ssOrder = JSON.parse(r.body);
+      if (isShopifyOrder(ssOrder)) verdict = await localVerdict(ssOrder);
+    } catch (e) {
+      verdict = { action: 'hold', reason: `pickup check failed: ${e.message}` };
+    }
+    if (verdict && verdict.action !== 'ship') {
+      audit.log({ action: 'buy-label', orderId, success: false, error: `local-fulfillment guard: ${verdict.reason}` });
+      return { success: false, error: verdict.reason, code: 'LOCAL_FULFILLMENT' };
+    }
+  }
+
   // Pre-buy address guard — without this a malformed CA province burns a UPS
   // rejection. ensureValidShipTo throws a structured BAD_ADDRESS_* error, and
   // also normalizes the order's stored dims cm→in so createlabelfororder (which

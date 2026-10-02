@@ -14,6 +14,7 @@ const largeReleases = require('../../lib/large-order-releases');
 const skuResolver = require('../../lib/sku-resolver');
 const { isPickupOnly, pickupOnlyMessage } = require('../../lib/trade-pickup-only');
 const { isCatalogEntry } = require('../../lib/trade-skumap');
+const { localVerdict } = require('../../lib/local-fulfillment');
 
 // Airtight mapping guard: before staging an order, confirm the Prosol code we
 // resolved is the same product/size the customer actually ordered — comparing
@@ -1051,6 +1052,17 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
   }
 
   for (const order of inScope) {
+    // Pickup and local-delivery orders never get a courier label (lib/local-fulfillment.js). Fails closed: a Shopify
+    // order whose delivery method can't be read is held this run and retried on the next.
+    if (isShopifyOrder(order)) {
+      const v = await localVerdict(order);
+      if (v.action !== 'ship') {
+        const local = ['PICK_UP', 'LOCAL', 'MARKER', 'MIXED'].includes(v.kind);
+        rejected.push({ orderNumber: order.orderNumber, reason: v.reason, ...(local ? { local: true, localKind: v.kind, localLocation: v.location, localOrder: { orderNumber: order.orderNumber, customerEmail: order.customerEmail || null, shipTo: { name: order.shipTo?.name || null, phone: order.shipTo?.phone || null }, items: (order.items || []).map((i) => ({ sku: i.sku, name: i.name, quantity: i.quantity })) } } : {}) });
+        continue;
+      }
+    }
+
     const province = normalizeProvince(order.shipTo?.state);
     if (!province) {
       rejected.push({ orderNumber: order.orderNumber, reason: `Unsupported province/state: ${order.shipTo?.state || 'blank'}` });
@@ -1385,4 +1397,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage, bestCommonService, chooseNonCpCarrier };
+module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, isShopifyOrder, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage, bestCommonService, chooseNonCpCarrier };
