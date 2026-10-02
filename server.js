@@ -505,7 +505,8 @@ app.post('/api/prozone/applications', async (req, res) => {
   try {
     const app0 = apps.parseApplication(req.body?.text, req.body?.replyTo || null);
     if (!app0.email) return res.status(400).json({ error: 'no applicant email' });
-    const { rec, isNew } = apps.recordApplication({ ...app0, raw: String(req.body?.text || '').slice(0, 4000) });
+    const verify = await require('./lib/trade-verify').verifyBusiness(app0);
+    const { rec, isNew } = apps.recordApplication({ ...app0, verify, raw: String(req.body?.text || '').slice(0, 4000) });
     audit.log({ action: 'prozone-application', id: rec.id, email: app0.email, business: app0.business, isNew });
     if (rec.status === 'pending' && isNew) {
       const { subject, html } = apps.macEmail(rec);
@@ -542,7 +543,7 @@ app.get('/prozone/approve', (req, res) => {
 ${apps.detailsHtml(rec.app)}
 <p>Approve turns on 20%/25% on Schluter (10% trims) for ${e(rec.app.email)}, makes their client code, and sends them this email from hello@yourfloors.ca:</p>
 <pre>${e(w.text)}</pre>
-<form method="post" action="/prozone/approve"><input type="hidden" name="id" value="${e(id)}"><input type="hidden" name="t" value="${e(t)}"><button type="submit">Approve and send</button></form>
+${rec.app.verify?.level === 'invalid' ? '<p><b>Approve is off: the GST/HST number is not a real CRA number.</b></p>' : `<form method="post" action="/prozone/approve"><input type="hidden" name="id" value="${e(id)}"><input type="hidden" name="t" value="${e(t)}"><button type="submit">Approve and send</button></form>`}
 <form method="post" action="/prozone/decline" style="margin-top:16px"><input type="hidden" name="id" value="${e(id)}"><input type="hidden" name="t" value="${e(t)}"><button type="submit" style="background:#fff;color:#111;border:1px solid #ccc">Decline (no email sent)</button></form>`));
 });
 
@@ -553,6 +554,7 @@ app.post('/prozone/approve', express.urlencoded({ extended: false }), async (req
   if (!hit) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
   const { rec } = hit;
   if (rec.status === 'approved') return res.send(skuApprovePage('Already approved', (e) => `<h2>Already approved.</h2><p>Client code ${e(rec.result?.code)}.</p>`));
+  if (rec.app.verify?.level === 'invalid') return res.status(409).send(skuApprovePage('Not approved', (e) => `<h2>Not approved: the GST/HST number isn't a real CRA number.</h2><p>${e(rec.app.verify.summary)}</p>`));
   let result;
   try {
     result = await approveAccount({ ...rec.app, business: rec.app.business || rec.app.name || rec.app.email });
