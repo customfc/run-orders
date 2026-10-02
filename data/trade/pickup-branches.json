@@ -1,1735 +1,1907 @@
 {
-  "_meta": {
-    "what": "Every Prosol branch as a possible customer pickup point for yourfloors.ca branch-pickup shipping rates (02 build plan 3B, tasks K5 and K8). Internal data: the distributor name must never reach customer-facing text; only rate_title is customer-facing.",
-    "generated": "2026-09-28",
-    "sources": [
-      "run-orders/scripts/shipstation/prosol-location-map.json (40 active branches, numeric keys; non-Prosol entries and the 3 old ShipStation duplicate ids skipped)",
-      "Prosol public location list (www.prosol.ca/contact CMS, 43 locations, fetched 2026-09-28; snapshot kept at cfc-projects/02-yf-schluter-trade/data/prosol-public-locations-2026-09-28.json). Addresses, phones, emails and hours come from this list.",
-      "cfc-projects/02-yf-schluter-trade/research/2026-09-28-prozone-build/prosol-network.md (F1 new branches, F2 map corrections, F7 Schluter coverage)"
-    ],
-    "rules": [
-      "enabled is false for every branch: Prosol has not agreed to customer pickup yet (K1). Flip a branch to true only with Prosol's yes for that branch and Mac's go.",
-      "pilot marks the first branch to enable (Calgary South). pilot alone never publishes a rate.",
-      "code is the prosol-location-map.json code (the key for POs and per-branch stock) whenever the branch is in the map, so code equals map_code. Where the public list uses another code it is kept as display_code (Calgary South: code WCAS, public CALS). lib/branch-pickup.js and --preview resolve any of the three.",
-      "rate_title is customer-facing: it must start with \"Pickup:\" (01 A1 marker), must never name the distributor, and must match exactly between the Prosol profile and the pickup-only profile (checkout keeps only rate names common to every profile in the cart).",
-      "map_corrections lists where prosol-location-map.json disagrees with the public list. ref \"F2\" = already found in prosol-network.md. The map itself is not changed here (build plan N5, a run-orders deploy).",
-      "Hours are Prosol's published walk-in hours, not a promise of pickup hours; check holidays (prosol-network.md F11)."
-    ],
-    "rate_title_format": "Pickup: <pickup_label> trade counter (ready in 2-4 business days)",
-    "counts": {
-      "total": 43,
-      "in_location_map": 40,
-      "new": [
-        "KELN",
-        "GRPR",
-        "LETH"
-      ],
-      "by_province": {
-        "BC": 13,
-        "AB": 7,
-        "SK": 2,
-        "MB": 1,
-        "ON": 14,
-        "QC": 4,
-        "NB": 1,
-        "NS": 1
-      },
-      "enabled": 0,
-      "pilot": [
-        "WCAS"
-      ],
-      "map_corrections": [
-        "KELO",
-        "KITC",
-        "MISS",
-        "SCAR",
-        "STCA",
-        "SUDB",
-        "BROS"
-      ]
-    },
-    "provinces_without_branch": [
-      "PE",
-      "NL",
-      "YT",
-      "NT",
-      "NU"
-    ]
+ "_meta": {
+  "what": "Every Prosol branch as a possible customer pickup point for yourfloors.ca branch-pickup shipping rates (02 build plan 3B, tasks K5 and K8). Internal data: the distributor name must never reach customer-facing text; only rate_title is customer-facing.",
+  "generated": "2026-09-28",
+  "sources": [
+   "run-orders/scripts/shipstation/prosol-location-map.json (40 active branches, numeric keys; non-Prosol entries and the 3 old ShipStation duplicate ids skipped)",
+   "Prosol public location list (www.prosol.ca/contact CMS, 43 locations, fetched 2026-09-28; snapshot kept at cfc-projects/02-yf-schluter-trade/data/prosol-public-locations-2026-09-28.json). Addresses, phones, emails and hours come from this list.",
+   "cfc-projects/02-yf-schluter-trade/research/2026-09-28-prozone-build/prosol-network.md (F1 new branches, F2 map corrections, F7 Schluter coverage)"
+  ],
+  "rules": [
+   "enabled: Mac's go 2026-10-02 on the tier-1 set (PICKUP-ZONES-PLAN.md D1: Sechelt, Powell River + 17 hubs); Prosol supports customer pickup at every branch (Mac 2026-09-28). Flip a tier-2 branch on with Mac's go.",
+   "pilot marks the first branch to enable (Calgary South). pilot alone never publishes a rate.",
+   "code is the prosol-location-map.json code (the key for POs and per-branch stock) whenever the branch is in the map, so code equals map_code. Where the public list uses another code it is kept as display_code (Calgary South: code WCAS, public CALS). lib/branch-pickup.js and --preview resolve any of the three.",
+   "rate_title is customer-facing: 'Pickup at our <label> trade counter' (Coast: 'Pickup at our Sechelt warehouse' / 'Pickup at our Powell River showroom'). It starts with 'Pickup' (the run-orders local-fulfillment marker), never names the distributor, has no en/em dash, and must match exactly between the Prosol profile and the pickup-only profile (checkout keeps only rate names common to every profile in the cart).",
+   "map_corrections lists where prosol-location-map.json disagrees with the public list. ref \"F2\" = already found in prosol-network.md. The map itself is not changed here (build plan N5, a run-orders deploy).",
+   "Hours are Prosol's published walk-in hours, not a promise of pickup hours; check holidays (prosol-network.md F11)."
+  ],
+  "rate_title_format": "Pickup: <pickup_label> trade counter (ready in 2-4 business days)",
+  "counts": {
+   "total": 43,
+   "in_location_map": 40,
+   "new": [
+    "KELN",
+    "GRPR",
+    "LETH"
+   ],
+   "by_province": {
+    "BC": 13,
+    "AB": 7,
+    "SK": 2,
+    "MB": 1,
+    "ON": 14,
+    "QC": 4,
+    "NB": 1,
+    "NS": 1
+   },
+   "enabled": 0,
+   "pilot": [
+    "WCAS"
+   ],
+   "map_corrections": [
+    "KELO",
+    "KITC",
+    "MISS",
+    "SCAR",
+    "STCA",
+    "SUDB",
+    "BROS"
+   ]
   },
-  "branches": [
+  "provinces_without_branch": [
+   "PE",
+   "NL",
+   "YT",
+   "NT",
+   "NU"
+  ],
+  "coast": "Rows with coast: true are CFC's own pickup points (Sechelt, Powell River), BC only, never a Prosol PO: they ride the Tue/Fri truck (PICKUP-FLOW.md)."
+ },
+ "branches": [
+  {
+   "code": "SECH",
+   "coast": true,
+   "name": "Sechelt Warehouse",
+   "city": "Sechelt",
+   "province": "BC",
+   "pickup_label": "Sechelt",
+   "address_full": "5824 Sechelt Inlet Rd, Sechelt, BC",
+   "rate_title": "Pickup at our Sechelt warehouse",
+   "customer_name": "our Sechelt warehouse",
+   "description": "5824 Sechelt Inlet Rd, Sechelt. Mon to Fri 7:30 am to 5 pm, Sat 9 am to 3 pm. Usually ready in 1 to 3 business days. We email you when it's ready, so please wait for that email. Bring your order number.",
+   "shopify_location_id": "gid://shopify/Location/65050771623",
+   "enabled": true,
+   "tier": 1,
+   "in_location_map": false,
+   "hours": {
+    "mon_fri": "7:30am - 5:00pm",
+    "sat": "9:00am - 3:00pm",
+    "sun": "Closed"
+   }
+  },
+  {
+   "code": "PRIV",
+   "coast": true,
+   "name": "Powell River Showroom & Warehouse",
+   "city": "Powell River",
+   "province": "BC",
+   "pickup_label": "Powell River",
+   "address_full": "7345 Duncan St, Powell River, BC",
+   "rate_title": "Pickup at our Powell River showroom",
+   "customer_name": "our Powell River showroom",
+   "description": "7345 Duncan St, Powell River. Mon to Fri 8:30 am to 5 pm. Usually ready in 3 to 7 business days. We email you when it's ready. Bring your order number.",
+   "shopify_location_id": "gid://shopify/Location/65050837159",
+   "enabled": true,
+   "tier": 1,
+   "in_location_map": false,
+   "hours": {
+    "mon_fri": "8:30am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   }
+  },
+  {
+   "code": "ABBY",
+   "map_code": "ABBY",
+   "map_key": "10007",
+   "name": "Abbotsford",
+   "city": "Abbotsford",
+   "province": "BC",
+   "address": {
+    "street": "30799 Simpson Rd",
+    "city": "Abbotsford",
+    "province": "BC",
+    "postal_code": "V2T 6X4",
+    "country": "CA"
+   },
+   "address_full": "30799 Simpson Rd, Abbotsford, BC V2T 6X4",
+   "phone": "604 853-7778",
+   "email": "order.abbotsford@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Abbotsford",
+   "rate_title": "Pickup at our Abbotsford trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869849,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 78,
+    "skus_ge5": 47,
+    "units": 956
+   },
+   "map_corrections": [],
+   "notes": [
+    "Map has unit \"#108\", public list has no unit (minor)."
+   ],
+   "customer_name": "our Abbotsford trade counter",
+   "description": "30799 Simpson Rd, Abbotsford, BC V2T 6X4. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "BURN",
+   "map_code": "BURN",
+   "map_key": "10010",
+   "name": "Burnaby",
+   "city": "Burnaby",
+   "province": "BC",
+   "address": {
+    "street": "2829 Norland Ave",
+    "city": "Burnaby",
+    "province": "BC",
+    "postal_code": "V5B 3A9",
+    "country": "CA"
+   },
+   "address_full": "2829 Norland Ave, Burnaby, BC V5B 3A9",
+   "phone": "778 327-5865",
+   "email": "order.burnaby@prosol.ca",
+   "hours": {
+    "mon_fri": "6:30am - 4:00pm",
+    "sat": "8:00am - 12:00pm",
+    "sun": "Closed"
+   },
+   "pickup_label": "Burnaby",
+   "rate_title": "Pickup at our Burnaby trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1374417,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 89,
+    "skus_ge5": 101,
+    "units": 3396
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Burnaby trade counter",
+   "description": "2829 Norland Ave, Burnaby, BC V5B 3A9. Mon to Fri 6:30 am to 4 pm, Sat 8 am to 12 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "COQL",
+   "map_code": "COQL",
+   "map_key": "10003",
+   "name": "Coquitlam",
+   "city": "Coquitlam",
+   "province": "BC",
+   "address": {
+    "street": "1450 Brigantine Dr",
+    "city": "Coquitlam",
+    "province": "BC",
+    "postal_code": "V3K 7C1",
+    "country": "CA"
+   },
+   "address_full": "1450 Brigantine Dr, Coquitlam, BC V3K 7C1",
+   "phone": "604 342 1011",
+   "email": "order.coquitlam@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Coquitlam",
+   "rate_title": "Pickup at our Coquitlam trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1824505,
+   "shopify_mirror_location": "Vancouver Warehouse",
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 87,
+    "skus_ge5": 101,
+    "units": 3305
+   },
+   "map_corrections": [],
+   "notes": [
+    "Shopify \"Vancouver Warehouse\" mirrors this branch but has postal V3K 7A1 (wrong). Not used for pickup (placeholder stock)."
+   ],
+   "customer_name": "our Coquitlam trade counter",
+   "description": "1450 Brigantine Dr, Coquitlam, BC V3K 7C1. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "KAML",
+   "map_code": "KAML",
+   "map_key": "10022",
+   "name": "Kamloops",
+   "city": "Kamloops",
+   "province": "BC",
+   "address": {
+    "street": "1370 Dalhousie Dr",
+    "city": "Kamloops",
+    "province": "BC",
+    "postal_code": "V2C 5P7",
+    "country": "CA"
+   },
+   "address_full": "1370 Dalhousie Dr, Kamloops, BC V2C 5P7",
+   "phone": "250 851-5138",
+   "email": "order.kamloops@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Kamloops",
+   "rate_title": "Pickup at our Kamloops trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869856,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 75,
+    "skus_ge5": 34,
+    "units": 977
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Kamloops trade counter",
+   "description": "1370 Dalhousie Dr, Kamloops, BC V2C 5P7. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "KELO",
+   "map_code": "KELO",
+   "map_key": "10023",
+   "name": "Kelowna",
+   "city": "Kelowna",
+   "province": "BC",
+   "address": {
+    "street": "459 Banks Rd",
+    "city": "Kelowna",
+    "province": "BC",
+    "postal_code": "V1X 6A2",
+    "country": "CA"
+   },
+   "address_full": "459 Banks Rd, Kelowna, BC V1X 6A2",
+   "phone": "250 868-9441",
+   "email": "order.kelowna@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Kelowna",
+   "rate_title": "Pickup at our Kelowna trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869857,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 88,
+    "skus_ge5": 77,
+    "units": 2357
+   },
+   "map_corrections": [
     {
-      "code": "ABBY",
-      "map_code": "ABBY",
-      "map_key": "10007",
-      "name": "Abbotsford",
-      "city": "Abbotsford",
-      "province": "BC",
-      "address": {
-        "street": "30799 Simpson Rd",
-        "city": "Abbotsford",
-        "province": "BC",
-        "postal_code": "V2T 6X4",
-        "country": "CA"
-      },
-      "address_full": "30799 Simpson Rd, Abbotsford, BC V2T 6X4",
-      "phone": "604 853-7778",
-      "email": "order.abbotsford@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Abbotsford",
-      "rate_title": "Pickup: Abbotsford trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869849,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 78,
-        "skus_ge5": 47,
-        "units": 956
-      },
-      "map_corrections": [],
-      "notes": [
-        "Map has unit \"#108\", public list has no unit (minor)."
-      ]
-    },
-    {
-      "code": "BURN",
-      "map_code": "BURN",
-      "map_key": "10010",
-      "name": "Burnaby",
-      "city": "Burnaby",
-      "province": "BC",
-      "address": {
-        "street": "2829 Norland Ave",
-        "city": "Burnaby",
-        "province": "BC",
-        "postal_code": "V5B 3A9",
-        "country": "CA"
-      },
-      "address_full": "2829 Norland Ave, Burnaby, BC V5B 3A9",
-      "phone": "778 327-5865",
-      "email": "order.burnaby@prosol.ca",
-      "hours": {
-        "mon_fri": "6:30am - 4:00pm",
-        "sat": "8:00am - 12:00pm",
-        "sun": "Closed"
-      },
-      "pickup_label": "Burnaby",
-      "rate_title": "Pickup: Burnaby trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1374417,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 89,
-        "skus_ge5": 101,
-        "units": 3396
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "COQL",
-      "map_code": "COQL",
-      "map_key": "10003",
-      "name": "Coquitlam",
-      "city": "Coquitlam",
-      "province": "BC",
-      "address": {
-        "street": "1450 Brigantine Dr",
-        "city": "Coquitlam",
-        "province": "BC",
-        "postal_code": "V3K 7C1",
-        "country": "CA"
-      },
-      "address_full": "1450 Brigantine Dr, Coquitlam, BC V3K 7C1",
-      "phone": "604 342 1011",
-      "email": "order.coquitlam@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Coquitlam",
-      "rate_title": "Pickup: Coquitlam trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1824505,
-      "shopify_mirror_location": "Vancouver Warehouse",
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 87,
-        "skus_ge5": 101,
-        "units": 3305
-      },
-      "map_corrections": [],
-      "notes": [
-        "Shopify \"Vancouver Warehouse\" mirrors this branch but has postal V3K 7A1 (wrong). Not used for pickup (placeholder stock)."
-      ]
-    },
-    {
-      "code": "KAML",
-      "map_code": "KAML",
-      "map_key": "10022",
-      "name": "Kamloops",
-      "city": "Kamloops",
-      "province": "BC",
-      "address": {
-        "street": "1370 Dalhousie Dr",
-        "city": "Kamloops",
-        "province": "BC",
-        "postal_code": "V2C 5P7",
-        "country": "CA"
-      },
-      "address_full": "1370 Dalhousie Dr, Kamloops, BC V2C 5P7",
-      "phone": "250 851-5138",
-      "email": "order.kamloops@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Kamloops",
-      "rate_title": "Pickup: Kamloops trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869856,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 75,
-        "skus_ge5": 34,
-        "units": 977
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "KELO",
-      "map_code": "KELO",
-      "map_key": "10023",
-      "name": "Kelowna",
-      "city": "Kelowna",
-      "province": "BC",
-      "address": {
-        "street": "459 Banks Rd",
-        "city": "Kelowna",
-        "province": "BC",
-        "postal_code": "V1X 6A2",
-        "country": "CA"
-      },
-      "address_full": "459 Banks Rd, Kelowna, BC V1X 6A2",
-      "phone": "250 868-9441",
-      "email": "order.kelowna@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Kelowna",
-      "rate_title": "Pickup: Kelowna trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869857,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 88,
-        "skus_ge5": 77,
-        "units": 2357
-      },
-      "map_corrections": [
-        {
-          "field": "postal_code",
-          "map": "V1X6A3",
-          "public": "V1X 6A2",
-          "ref": "F2"
-        }
-      ],
-      "notes": []
-    },
-    {
-      "code": "KELN",
-      "map_code": null,
-      "map_key": null,
-      "name": "Kelowna North",
-      "city": "Kelowna",
-      "province": "BC",
-      "address": {
-        "street": "830 McCurdy Pl",
-        "city": "Kelowna",
-        "province": "BC",
-        "postal_code": "V1X 8C8",
-        "country": "CA"
-      },
-      "address_full": "830 McCurdy Pl, Kelowna, BC V1X 8C8",
-      "phone": "(778) 484-5575",
-      "email": "order.kelownanorth@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Kelowna North",
-      "rate_title": "Pickup: Kelowna North trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": false,
-      "shipstation_warehouse_id": null,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": null,
-      "map_corrections": [],
-      "notes": [
-        "New branch, not in prosol-location-map.json (first on Prosol's public list 2026-03-03). Needs build plan N5 before any PO or pickup booking.",
-        "Never seen in a stock snapshot: no Schluter, or no storefront location id (UNVERIFIED). Prosol lists the city as \"Kelowna North\"; the postal city is Kelowna."
-      ]
-    },
-    {
-      "code": "LANG",
-      "map_code": "LANG",
-      "map_key": "10026",
-      "name": "Langley",
-      "city": "Langley",
-      "province": "BC",
-      "address": {
-        "street": "20555 Langley Bypass #5",
-        "city": "Langley",
-        "province": "BC",
-        "postal_code": "V3A 5E8",
-        "country": "CA"
-      },
-      "address_full": "20555 Langley Bypass #5, Langley, BC V3A 5E8",
-      "phone": "604 533-1080",
-      "email": "order.langley@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Langley",
-      "rate_title": "Pickup: Langley trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869859,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 76,
-        "skus_ge5": 42,
-        "units": 821
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "NANA",
-      "map_code": "NANA",
-      "map_key": "10031",
-      "name": "Nanaimo",
-      "city": "Nanaimo",
-      "province": "BC",
-      "address": {
-        "street": "2512 Kenworth Rd",
-        "city": "Nanaimo",
-        "province": "BC",
-        "postal_code": "V9T 3Y4",
-        "country": "CA"
-      },
-      "address_full": "2512 Kenworth Rd, Nanaimo, BC V9T 3Y4",
-      "phone": "778 762-4333",
-      "email": "order.nanaimo@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Nanaimo",
-      "rate_title": "Pickup: Nanaimo trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869860,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 76,
-        "skus_ge5": 45,
-        "units": 1711
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "PRIN",
-      "map_code": "PRIN",
-      "map_key": "10034",
-      "name": "Prince George",
-      "city": "Prince George",
-      "province": "BC",
-      "address": {
-        "street": "1967 Ogilvie St S",
-        "city": "Prince George",
-        "province": "BC",
-        "postal_code": "V2N 1X2",
-        "country": "CA"
-      },
-      "address_full": "1967 Ogilvie St S, Prince George, BC V2N 1X2",
-      "phone": "250 562-4348",
-      "email": "order.princegeorge@prosol.ca",
-      "hours": {
-        "mon_fri": "7:30am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Prince George",
-      "rate_title": "Pickup: Prince George trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869861,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 65,
-        "skus_ge5": 34,
-        "units": 787
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "RICH",
-      "map_code": "RICH",
-      "map_key": "10038",
-      "name": "Richmond",
-      "city": "Richmond",
-      "province": "BC",
-      "address": {
-        "street": "12231 Bridgeport Road, Unit 140",
-        "city": "Richmond",
-        "province": "BC",
-        "postal_code": "V6V 1J4",
-        "country": "CA"
-      },
-      "address_full": "12231 Bridgeport Road, Unit 140, Richmond, BC V6V 1J4",
-      "phone": "604 270-1314",
-      "email": "order.richmond@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Richmond",
-      "rate_title": "Pickup: Richmond trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869865,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 65,
-        "skus_ge5": 37,
-        "units": 863
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "SURR",
-      "map_code": "SURR",
-      "map_key": "10044",
-      "name": "Surrey",
-      "city": "Surrey",
-      "province": "BC",
-      "address": {
-        "street": "13375 76 Ave",
-        "city": "Surrey",
-        "province": "BC",
-        "postal_code": "V3W 6J3",
-        "country": "CA"
-      },
-      "address_full": "13375 76 Ave, Surrey, BC V3W 6J3",
-      "phone": "604 591-3431",
-      "email": "order.surrey@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Surrey",
-      "rate_title": "Pickup: Surrey trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869869,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 69,
-        "skus_ge5": 55,
-        "units": 1053
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "VERN",
-      "map_code": "VERN",
-      "map_key": "10055",
-      "name": "Vernon",
-      "city": "Vernon",
-      "province": "BC",
-      "address": {
-        "street": "5000 Silver Star Rd",
-        "city": "Vernon",
-        "province": "BC",
-        "postal_code": "V1B 0A9",
-        "country": "CA"
-      },
-      "address_full": "5000 Silver Star Rd, Vernon, BC V1B 0A9",
-      "phone": "250 503-5012",
-      "email": "order.vernon@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Vernon",
-      "rate_title": "Pickup: Vernon trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869874,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 63,
-        "skus_ge5": 17,
-        "units": 532
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "VICT",
-      "map_code": "VICT",
-      "map_key": "10045",
-      "name": "Victoria",
-      "city": "Victoria",
-      "province": "BC",
-      "address": {
-        "street": "3934 Quadra St #112",
-        "city": "Victoria",
-        "province": "BC",
-        "postal_code": "V8X 1J6",
-        "country": "CA"
-      },
-      "address_full": "3934 Quadra St #112, Victoria, BC V8X 1J6",
-      "phone": "250 479-1114",
-      "email": "order.victoria@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Victoria",
-      "rate_title": "Pickup: Victoria trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869870,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 81,
-        "skus_ge5": 62,
-        "units": 3133
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "CALN",
-      "map_code": "CALN",
-      "map_key": "10011",
-      "name": "Calgary North",
-      "city": "Calgary",
-      "province": "AB",
-      "address": {
-        "street": "3101 16 St NE",
-        "city": "Calgary",
-        "province": "AB",
-        "postal_code": "T2E 7K8",
-        "country": "CA"
-      },
-      "address_full": "3101 16 St NE, Calgary, AB T2E 7K8",
-      "phone": "403 569-6922",
-      "email": "order.calgarynorth@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:30pm",
-        "sat": "8:00am - 10:00am",
-        "sun": "Closed"
-      },
-      "pickup_label": "Calgary North",
-      "rate_title": "Pickup: Calgary North trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869850,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 79,
-        "skus_ge5": 49,
-        "units": 1040
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "WCAS",
-      "map_code": "WCAS",
-      "display_code": "CALS",
-      "map_key": "10054",
-      "name": "Calgary South",
-      "city": "Calgary",
-      "province": "AB",
-      "address": {
-        "street": "5760 9 St SE #105",
-        "city": "Calgary",
-        "province": "AB",
-        "postal_code": "T2H 1Z9",
-        "country": "CA"
-      },
-      "address_full": "5760 9 St SE #105, Calgary, AB T2H 1Z9",
-      "phone": "403 253-4642",
-      "email": "order.calgary@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:30pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Calgary South",
-      "rate_title": "Pickup: Calgary South trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": true,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1284722,
-      "shopify_mirror_location": "Calgary Warehouse",
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 84,
-        "skus_ge5": 105,
-        "units": 3549
-      },
-      "map_corrections": [],
-      "notes": [
-        "Pilot branch (build plan 3B, prosol-network rec 3): 84% Schluter coverage, Kaitlyn (order desk) works here, AB has no PST. Code is the location-map code WCAS (the PO and stock key); CALS is the public-list code, kept as display_code.",
-        "Shopify \"Calgary Warehouse\" mirrors this branch (placeholder stock incl. non-Prosol goods); not used for pickup."
-      ]
-    },
-    {
-      "code": "EDMN",
-      "map_code": "EDMN",
-      "map_key": "10018",
-      "name": "Edmonton North",
-      "city": "Edmonton",
-      "province": "AB",
-      "address": {
-        "street": "11662 154 St",
-        "city": "Edmonton",
-        "province": "AB",
-        "postal_code": "T5M 3N8",
-        "country": "CA"
-      },
-      "address_full": "11662 154 St, Edmonton, AB T5M 3N8",
-      "phone": "780 451-4222",
-      "email": "order.edmonton@prosol.ca",
-      "hours": {
-        "mon_fri": "7:30am - 4:30pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Edmonton North",
-      "rate_title": "Pickup: Edmonton North trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869853,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 82,
-        "skus_ge5": 59,
-        "units": 1204
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "EDMS",
-      "map_code": "EDMS",
-      "map_key": "10019",
-      "name": "Edmonton South",
-      "city": "Edmonton",
-      "province": "AB",
-      "address": {
-        "street": "9779 45th Ave NW",
-        "city": "Edmonton",
-        "province": "AB",
-        "postal_code": "T6E 5V8",
-        "country": "CA"
-      },
-      "address_full": "9779 45th Ave NW, Edmonton, AB T6E 5V8",
-      "phone": "780 435-5375",
-      "email": "order.edmsouth@prosol.ca",
-      "hours": {
-        "mon_fri": "7:30am - 4:30pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Edmonton South",
-      "rate_title": "Pickup: Edmonton South trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869854,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 69,
-        "skus_ge5": 78,
-        "units": 2271
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "GRPR",
-      "map_code": null,
-      "map_key": null,
-      "name": "Grande Prairie",
-      "city": "Grande Prairie",
-      "province": "AB",
-      "address": {
-        "street": "11041 96 Avenue",
-        "city": "Grande Prairie",
-        "province": "AB",
-        "postal_code": "T8V 5W1",
-        "country": "CA"
-      },
-      "address_full": "11041 96 Avenue, Grande Prairie, AB T8V 5W1",
-      "phone": "780 532-4801",
-      "email": "order.grandeprairie@prosol.ca",
-      "hours": {
-        "mon_fri": "8:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Grande Prairie",
-      "rate_title": "Pickup: Grande Prairie trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": false,
-      "shipstation_warehouse_id": null,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": null,
-      "map_corrections": [],
-      "notes": [
-        "New branch, not in prosol-location-map.json (first on Prosol's public list 2026-06-08). Needs build plan N5 before any PO or pickup booking.",
-        "Storefront stock location is 10057 or 10058 (first seen 2026-06-09); which is which is UNVERIFIED."
-      ]
-    },
-    {
-      "code": "LETH",
-      "map_code": null,
-      "map_key": null,
-      "name": "Lethbridge",
-      "city": "Lethbridge",
-      "province": "AB",
-      "address": {
-        "street": "239 12 St N",
-        "city": "Lethbridge",
-        "province": "AB",
-        "postal_code": "T1H 2G3",
-        "country": "CA"
-      },
-      "address_full": "239 12 St N, Lethbridge, AB T1H 2G3",
-      "phone": "(403) 327-8881",
-      "email": "order.lethbridge@prosol.ca",
-      "hours": {
-        "mon_fri": "7:30am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Lethbridge",
-      "rate_title": "Pickup: Lethbridge trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": false,
-      "shipstation_warehouse_id": null,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": null,
-      "map_corrections": [],
-      "notes": [
-        "New branch, not in prosol-location-map.json (first on Prosol's public list 2026-06-08). Needs build plan N5 before any PO or pickup booking.",
-        "Storefront stock location is 10057 or 10058 (first seen 2026-06-09); which is which is UNVERIFIED."
-      ]
-    },
-    {
-      "code": "REDD",
-      "map_code": "REDD",
-      "map_key": "10036",
-      "name": "Red Deer",
-      "city": "Red Deer",
-      "province": "AB",
-      "address": {
-        "street": "7619 Gaetz Ave W 4 & 5",
-        "city": "Red Deer",
-        "province": "AB",
-        "postal_code": "T4P 1M6",
-        "country": "CA"
-      },
-      "address_full": "7619 Gaetz Ave W 4 & 5, Red Deer, AB T4P 1M6",
-      "phone": "403 346-8383",
-      "email": "order.reddeer@prosol.ca",
-      "hours": {
-        "mon_fri": "7:30am - 4:30pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Red Deer",
-      "rate_title": "Pickup: Red Deer trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869863,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 59,
-        "skus_ge5": 27,
-        "units": 769
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "REGI",
-      "map_code": "REGI",
-      "map_key": "10037",
-      "name": "Regina",
-      "city": "Regina",
-      "province": "SK",
-      "address": {
-        "street": "515 6th Avenue E",
-        "city": "Regina",
-        "province": "SK",
-        "postal_code": "S4N 5A3",
-        "country": "CA"
-      },
-      "address_full": "515 6th Avenue E, Regina, SK S4N 5A3",
-      "phone": "306 525-8215",
-      "email": "order.regina@prosol.ca",
-      "hours": {
-        "mon_fri": "7:30am - 4:30pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Regina",
-      "rate_title": "Pickup: Regina trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869864,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 57,
-        "skus_ge5": 21,
-        "units": 648
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "SASK",
-      "map_code": "SASK",
-      "map_key": "10039",
-      "name": "Saskatoon",
-      "city": "Saskatoon",
-      "province": "SK",
-      "address": {
-        "street": "3603 Millar Ave Unit 12",
-        "city": "Saskatoon",
-        "province": "SK",
-        "postal_code": "S7P 0B2",
-        "country": "CA"
-      },
-      "address_full": "3603 Millar Ave Unit 12, Saskatoon, SK S7P 0B2",
-      "phone": "306 651-5033",
-      "email": "order.saskatoon@prosol.ca",
-      "hours": {
-        "mon_fri": "8:00am - 4:30pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Saskatoon",
-      "rate_title": "Pickup: Saskatoon trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869866,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 68,
-        "skus_ge5": 54,
-        "units": 1699
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "WINN",
-      "map_code": "WINN",
-      "map_key": "10049",
-      "name": "Winnipeg",
-      "city": "Winnipeg",
-      "province": "MB",
-      "address": {
-        "street": "167 Hutchings, Unit 2",
-        "city": "Winnipeg",
-        "province": "MB",
-        "postal_code": "R2X 2R4",
-        "country": "CA"
-      },
-      "address_full": "167 Hutchings, Unit 2, Winnipeg, MB R2X 2R4",
-      "phone": "204 632-1212",
-      "email": "order.winnipeg@prosol.ca",
-      "hours": {
-        "mon_fri": "7:30am - 4:30pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Winnipeg",
-      "rate_title": "Pickup: Winnipeg trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1811347,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 51,
-        "skus_ge5": 34,
-        "units": 990
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "BARR",
-      "map_code": "BARR",
-      "map_key": "10052",
-      "name": "Barrie",
-      "city": "Barrie",
-      "province": "ON",
-      "address": {
-        "street": "230 Bayview Dr #9",
-        "city": "Barrie",
-        "province": "ON",
-        "postal_code": "L4N 4Y8",
-        "country": "CA"
-      },
-      "address_full": "230 Bayview Dr #9, Barrie, ON L4N 4Y8",
-      "phone": "705 733-2212",
-      "email": "order.barrie@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Barrie",
-      "rate_title": "Pickup: Barrie trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869873,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 65,
-        "skus_ge5": 50,
-        "units": 896
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "CAMB",
-      "map_code": "CAMB",
-      "map_key": "10013",
-      "name": "Cambridge",
-      "city": "Cambridge",
-      "province": "ON",
-      "address": {
-        "street": "1731 Bishop St. North",
-        "city": "Cambridge",
-        "province": "ON",
-        "postal_code": "N1T 1N5",
-        "country": "CA"
-      },
-      "address_full": "1731 Bishop St. North, Cambridge, ON N1T 1N5",
-      "phone": "519 740-9311",
-      "email": "order.cambridge@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Cambridge",
-      "rate_title": "Pickup: Cambridge trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1793463,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 62,
-        "skus_ge5": 42,
-        "units": 1216
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "HAMI",
-      "map_code": "HAMI",
-      "map_key": "10021",
-      "name": "Hamilton",
-      "city": "Hamilton",
-      "province": "ON",
-      "address": {
-        "street": "47 Ditton Dr",
-        "city": "Hamilton",
-        "province": "ON",
-        "postal_code": "L8W 2E5",
-        "country": "CA"
-      },
-      "address_full": "47 Ditton Dr, Hamilton, ON L8W 2E5",
-      "phone": "905 575-8106",
-      "email": "order.hamilton@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Hamilton",
-      "rate_title": "Pickup: Hamilton trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869855,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 65,
-        "skus_ge5": 52,
-        "units": 1303
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "KING",
-      "map_code": "KING",
-      "map_key": "10024",
-      "name": "Kingston",
-      "city": "Kingston",
-      "province": "ON",
-      "address": {
-        "street": "1663 Venture Drive, Unit 1D",
-        "city": "Kingston",
-        "province": "ON",
-        "postal_code": "K7P 0E9",
-        "country": "CA"
-      },
-      "address_full": "1663 Venture Drive, Unit 1D, Kingston, ON K7P 0E9",
-      "phone": "613 384-1212",
-      "email": "order.kingston@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Kingston",
-      "rate_title": "Pickup: Kingston trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1504076,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 67,
-        "skus_ge5": 42,
-        "units": 1236
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "KITC",
-      "map_code": "KITC",
-      "map_key": "10025",
-      "name": "Kitchener",
-      "city": "Kitchener",
-      "province": "ON",
-      "address": {
-        "street": "500 Bingemans Centre Drive, Unit #10",
-        "city": "Kitchener",
-        "province": "ON",
-        "postal_code": "N2B 3X9",
-        "country": "CA"
-      },
-      "address_full": "500 Bingemans Centre Drive, Unit #10, Kitchener, ON N2B 3X9",
-      "phone": "519 581-8484",
-      "email": "order.kitchener@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Kitchener",
-      "rate_title": "Pickup: Kitchener trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869858,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 58,
-        "skus_ge5": 32,
-        "units": 567
-      },
-      "map_corrections": [
-        {
-          "field": "phone",
-          "map": "+19054181082",
-          "public": "519 581-8484",
-          "ref": "F2"
-        },
-        {
-          "field": "postal_code",
-          "map": "N2B1R9",
-          "public": "N2B 3X9",
-          "ref": "F2"
-        },
-        {
-          "field": "address",
-          "map": "500 Bingemans Center Drive",
-          "public": "500 Bingemans Centre Drive, Unit #10",
-          "detail": "map has no unit number (Unit #10)",
-          "ref": "F2"
-        }
-      ],
-      "notes": []
-    },
-    {
-      "code": "LOND",
-      "map_code": "LOND",
-      "map_key": "10027",
-      "name": "London",
-      "city": "London",
-      "province": "ON",
-      "address": {
-        "street": "94 Bessemer Court",
-        "city": "London",
-        "province": "ON",
-        "postal_code": "N6E 1K7",
-        "country": "CA"
-      },
-      "address_full": "94 Bessemer Court, London, ON N6E 1K7",
-      "phone": "519 668-7260",
-      "email": "order.london@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "London",
-      "rate_title": "Pickup: London trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1793487,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 75,
-        "skus_ge5": 71,
-        "units": 1697
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "MISS",
-      "map_code": "MISS",
-      "map_key": "10028",
-      "name": "Mississauga",
-      "city": "Mississauga",
-      "province": "ON",
-      "address": {
-        "street": "3240 Lenworth Dr",
-        "city": "Mississauga",
-        "province": "ON",
-        "postal_code": "L4X 2G1",
-        "country": "CA"
-      },
-      "address_full": "3240 Lenworth Dr, Mississauga, ON L4X 2G1",
-      "phone": "905 238-0223",
-      "email": "order.mississauga@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "7:00am - 11:00am",
-        "sun": "Closed"
-      },
-      "pickup_label": "Mississauga",
-      "rate_title": "Pickup: Mississauga trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1824506,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 51,
-        "skus_ge5": 29,
-        "units": 627
-      },
-      "map_corrections": [
-        {
-          "field": "phone",
-          "map": "+19054181082",
-          "public": "905 238-0223",
-          "ref": "F2"
-        }
-      ],
-      "notes": [
-        "Shopify \"Ontario Warehouse\" is labelled Mississauga but sits at 6900 Airport Rd (International Centre), not this branch. Not used for pickup."
-      ]
-    },
-    {
-      "code": "OTTA",
-      "map_code": "OTTA",
-      "map_key": "10032",
-      "name": "Ottawa",
-      "city": "Ottawa",
-      "province": "ON",
-      "address": {
-        "street": "1153 Newmarket St",
-        "city": "Ottawa",
-        "province": "ON",
-        "postal_code": "K1B 4N4",
-        "country": "CA"
-      },
-      "address_full": "1153 Newmarket St, Ottawa, ON K1B 4N4",
-      "phone": "613 746-1212",
-      "email": "order.ottawa@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Ottawa",
-      "rate_title": "Pickup: Ottawa trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1814007,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 73,
-        "skus_ge5": 41,
-        "units": 901
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "SCAR",
-      "map_code": "SCAR",
-      "map_key": "10040",
-      "name": "Scarborough",
-      "city": "Scarborough",
-      "province": "ON",
-      "address": {
-        "street": "1410 Warden Ave",
-        "city": "Scarborough",
-        "province": "ON",
-        "postal_code": "M1R 5A3",
-        "country": "CA"
-      },
-      "address_full": "1410 Warden Ave, Scarborough, ON M1R 5A3",
-      "phone": "416-609-3972",
-      "email": "order.scarborough@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "7:00am - 11:00am",
-        "sun": "Closed"
-      },
-      "pickup_label": "Scarborough",
-      "rate_title": "Pickup: Scarborough trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869867,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 78,
-        "skus_ge5": 88,
-        "units": 1614
-      },
-      "map_corrections": [
-        {
-          "field": "phone",
-          "map": "+19054181082",
-          "public": "416-609-3972",
-          "ref": "F2"
-        },
-        {
-          "field": "address",
-          "map": "1412 Warden Ave.",
-          "public": "1410 Warden Ave",
-          "detail": "civic number 1412 in map, 1410 in public list",
-          "ref": "F2"
-        }
-      ],
-      "notes": []
-    },
-    {
-      "code": "STCA",
-      "map_code": "STCA",
-      "map_key": "10041",
-      "name": "St. Catharines",
-      "city": "St. Catharines",
-      "province": "ON",
-      "address": {
-        "street": "113 Cushman Rd Unit # 52-54",
-        "city": "St. Catharines",
-        "province": "ON",
-        "postal_code": "L2M 6S9",
-        "country": "CA"
-      },
-      "address_full": "113 Cushman Rd Unit # 52-54, St. Catharines, ON L2M 6S9",
-      "phone": "905 685-3834",
-      "email": "order.stcatharines@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "St. Catharines",
-      "rate_title": "Pickup: St. Catharines trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869868,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 71,
-        "skus_ge5": 50,
-        "units": 1333
-      },
-      "map_corrections": [
-        {
-          "field": "phone",
-          "map": "+19054181082",
-          "public": "905 685-3834",
-          "ref": "F2"
-        }
-      ],
-      "notes": [
-        "Map unit \"# 54\", public list \"# 52-54\" (minor)."
-      ]
-    },
-    {
-      "code": "SUDB",
-      "map_code": "SUDB",
-      "map_key": "10043",
-      "name": "Sudbury",
-      "city": "Sudbury",
-      "province": "ON",
-      "address": {
-        "street": "922 Cambrian Heights Dr",
-        "city": "Sudbury",
-        "province": "ON",
-        "postal_code": "P3C 5M6",
-        "country": "CA"
-      },
-      "address_full": "922 Cambrian Heights Dr, Sudbury, ON P3C 5M6",
-      "phone": "705 525-4044",
-      "email": "order.sudbury@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Sudbury",
-      "rate_title": "Pickup: Sudbury trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1786140,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 69,
-        "skus_ge5": 50,
-        "units": 1189
-      },
-      "map_corrections": [
-        {
-          "field": "postal_code",
-          "map": "P3C5L8",
-          "public": "P3C 5M6",
-          "ref": "F2"
-        }
-      ],
-      "notes": []
-    },
-    {
-      "code": "DOWN",
-      "map_code": "DOWN",
-      "map_key": "10017",
-      "name": "Downsview",
-      "city": "Toronto",
-      "province": "ON",
-      "address": {
-        "street": "255 Steeprock Drive",
-        "city": "Toronto",
-        "province": "ON",
-        "postal_code": "M3J 2X1",
-        "country": "CA"
-      },
-      "address_full": "255 Steeprock Drive, Toronto, ON M3J 2X1",
-      "phone": "416 630-4883",
-      "email": "order.downsview@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "7:00am - 11:00am",
-        "sun": "Closed"
-      },
-      "pickup_label": "Toronto Downsview",
-      "rate_title": "Pickup: Toronto Downsview trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869852,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 58,
-        "skus_ge5": 30,
-        "units": 655
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "WCON",
-      "map_code": "WCON",
-      "map_key": "10001",
-      "name": "Vaughan",
-      "city": "Vaughan",
-      "province": "ON",
-      "address": {
-        "street": "161 Cidermill Ave",
-        "city": "Vaughan",
-        "province": "ON",
-        "postal_code": "L4K 4G5",
-        "country": "CA"
-      },
-      "address_full": "161 Cidermill Ave, Vaughan, ON L4K 4G5",
-      "phone": "905-418-1082",
-      "email": "order.vaughan@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Vaughan",
-      "rate_title": "Pickup: Vaughan trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1791764,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 74,
-        "skus_ge5": 64,
-        "units": 3328
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "WIND",
-      "map_code": "WIND",
-      "map_key": "10048",
-      "name": "Windsor",
-      "city": "Windsor",
-      "province": "ON",
-      "address": {
-        "street": "4445 County Rd 42",
-        "city": "Windsor",
-        "province": "ON",
-        "postal_code": "N9A 6J3",
-        "country": "CA"
-      },
-      "address_full": "4445 County Rd 42, Windsor, ON N9A 6J3",
-      "phone": "519 946-1255",
-      "email": "order.windsor@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Windsor",
-      "rate_title": "Pickup: Windsor trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869871,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 58,
-        "skus_ge5": 29,
-        "units": 615
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "BROS",
-      "map_code": "BROS",
-      "map_key": "10051",
-      "name": "Brossard",
-      "city": "Brossard",
-      "province": "QC",
-      "address": {
-        "street": "2850 Boul Matte",
-        "city": "Brossard",
-        "province": "QC",
-        "postal_code": "J4Y 2P4",
-        "country": "CA"
-      },
-      "address_full": "2850 Boul Matte, Brossard, QC J4Y 2P4",
-      "phone": "450-500-1281",
-      "email": "order.brossard@prosol.ca",
-      "hours": {
-        "mon_fri": "6:30am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Brossard",
-      "rate_title": "Pickup: Brossard trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869872,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 67,
-        "skus_ge5": 46,
-        "units": 1494
-      },
-      "map_corrections": [
-        {
-          "field": "postal_code",
-          "map": "J4Y0G5",
-          "public": "J4Y 2P4",
-          "ref": "not in F2: found by this build 2026-09-28, UNVERIFIED which is right"
-        }
-      ],
-      "notes": [
-        "Postal code differs from the map and is not in F2; check before any Canada Post booking."
-      ]
-    },
-    {
-      "code": "WGRF",
-      "map_code": "WGRF",
-      "map_key": "10004",
-      "name": "Saint-Laurent",
-      "city": "Saint-Laurent",
-      "province": "QC",
-      "address": {
-        "street": "4305 Griffith St.",
-        "city": "Saint-Laurent",
-        "province": "QC",
-        "postal_code": "H4T 2A2",
-        "country": "CA"
-      },
-      "address_full": "4305 Griffith St., Saint-Laurent, QC H4T 2A2",
-      "phone": "514 745-1212",
-      "email": "order.montreal@prosol.ca",
-      "hours": {
-        "mon_fri": "6:30am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Montreal Saint-Laurent",
-      "rate_title": "Pickup: Montreal Saint-Laurent trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1791765,
-      "shopify_mirror_location": "Quebec Warehouse",
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 85,
-        "skus_ge5": 111,
-        "units": 3974
-      },
-      "map_corrections": [],
-      "notes": [
-        "Prosol lists weekday hours as \"6:30am - 17:00pm\"; normalized to 5:00pm. Prosol head office. Flagged chronically slow turnaround in run-orders DEPRIORITIZED_LOCS.",
-        "Shopify \"Quebec Warehouse\" mirrors this branch (placeholder stock incl. non-Prosol goods); not used for pickup."
-      ]
-    },
-    {
-      "code": "QUEB",
-      "map_code": "QUEB",
-      "map_key": "10035",
-      "name": "Quebec",
-      "city": "Quebec",
-      "province": "QC",
-      "address": {
-        "street": "2555 Ave Watt",
-        "city": "Quebec",
-        "province": "QC",
-        "postal_code": "G1P 3T2",
-        "country": "CA"
-      },
-      "address_full": "2555 Ave Watt, Quebec, QC G1P 3T2",
-      "phone": "418 656-9458",
-      "email": "order.quebec@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 5:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Quebec City",
-      "rate_title": "Pickup: Quebec City trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869862,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 76,
-        "skus_ge5": 67,
-        "units": 1643
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "CHIC",
-      "map_code": "CHIC",
-      "map_key": "10014",
-      "name": "Saguenay",
-      "city": "Chicoutimi",
-      "province": "QC",
-      "address": {
-        "street": "1041 Rupert St.",
-        "city": "Chicoutimi",
-        "province": "QC",
-        "postal_code": "G7K 0A2",
-        "country": "CA"
-      },
-      "address_full": "1041 Rupert St., Chicoutimi, QC G7K 0A2",
-      "phone": "418 549-8886",
-      "email": "order.saguenay@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:00pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Saguenay",
-      "rate_title": "Pickup: Saguenay trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1869851,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 61,
-        "skus_ge5": 31,
-        "units": 1013
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "MONC",
-      "map_code": "MONC",
-      "map_key": "10029",
-      "name": "Moncton",
-      "city": "Moncton",
-      "province": "NB",
-      "address": {
-        "street": "400 Edinburgh Dr",
-        "city": "Moncton",
-        "province": "NB",
-        "postal_code": "E1E 2L1",
-        "country": "CA"
-      },
-      "address_full": "400 Edinburgh Dr, Moncton, NB E1E 2L1",
-      "phone": "506 859-9494",
-      "email": "order.moncton@prosol.ca",
-      "hours": {
-        "mon_fri": "7:30am - 4:30pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Moncton",
-      "rate_title": "Pickup: Moncton trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1852856,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 69,
-        "skus_ge5": 46,
-        "units": 1510
-      },
-      "map_corrections": [],
-      "notes": []
-    },
-    {
-      "code": "DART",
-      "map_code": "DART",
-      "map_key": "10016",
-      "name": "Dartmouth",
-      "city": "Dartmouth",
-      "province": "NS",
-      "address": {
-        "street": "105 Akerley Blvd",
-        "city": "Dartmouth",
-        "province": "NS",
-        "postal_code": "B3B 1R7",
-        "country": "CA"
-      },
-      "address_full": "105 Akerley Blvd, Dartmouth, NS B3B 1R7",
-      "phone": "902 468-1990",
-      "email": "order.dartmouth@prosol.ca",
-      "hours": {
-        "mon_fri": "7:00am - 4:30pm",
-        "sat": "Closed",
-        "sun": "Closed"
-      },
-      "pickup_label": "Dartmouth",
-      "rate_title": "Pickup: Dartmouth trade counter (ready in 2-4 business days)",
-      "enabled": false,
-      "pilot": false,
-      "in_location_map": true,
-      "shipstation_warehouse_id": 1852858,
-      "shopify_mirror_location": null,
-      "schluter_stock_2026_09_28": {
-        "coverage_pct": 61,
-        "skus_ge5": 44,
-        "units": 1272
-      },
-      "map_corrections": [],
-      "notes": []
+     "field": "postal_code",
+     "map": "V1X6A3",
+     "public": "V1X 6A2",
+     "ref": "F2"
     }
-  ]
+   ],
+   "notes": [],
+   "customer_name": "our Kelowna trade counter",
+   "description": "459 Banks Rd, Kelowna, BC V1X 6A2. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "KELN",
+   "map_code": null,
+   "map_key": null,
+   "name": "Kelowna North",
+   "city": "Kelowna",
+   "province": "BC",
+   "address": {
+    "street": "830 McCurdy Pl",
+    "city": "Kelowna",
+    "province": "BC",
+    "postal_code": "V1X 8C8",
+    "country": "CA"
+   },
+   "address_full": "830 McCurdy Pl, Kelowna, BC V1X 8C8",
+   "phone": "(778) 484-5575",
+   "email": "order.kelownanorth@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Kelowna North",
+   "rate_title": "Pickup at our Kelowna North trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": false,
+   "shipstation_warehouse_id": null,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": null,
+   "map_corrections": [],
+   "notes": [
+    "New branch, not in prosol-location-map.json (first on Prosol's public list 2026-03-03). Needs build plan N5 before any PO or pickup booking.",
+    "Never seen in a stock snapshot: no Schluter, or no storefront location id (UNVERIFIED). Prosol lists the city as \"Kelowna North\"; the postal city is Kelowna."
+   ],
+   "customer_name": "our Kelowna North trade counter",
+   "description": "830 McCurdy Pl, Kelowna, BC V1X 8C8. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "LANG",
+   "map_code": "LANG",
+   "map_key": "10026",
+   "name": "Langley",
+   "city": "Langley",
+   "province": "BC",
+   "address": {
+    "street": "20555 Langley Bypass #5",
+    "city": "Langley",
+    "province": "BC",
+    "postal_code": "V3A 5E8",
+    "country": "CA"
+   },
+   "address_full": "20555 Langley Bypass #5, Langley, BC V3A 5E8",
+   "phone": "604 533-1080",
+   "email": "order.langley@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Langley",
+   "rate_title": "Pickup at our Langley trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869859,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 76,
+    "skus_ge5": 42,
+    "units": 821
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Langley trade counter",
+   "description": "20555 Langley Bypass #5, Langley, BC V3A 5E8. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "NANA",
+   "map_code": "NANA",
+   "map_key": "10031",
+   "name": "Nanaimo",
+   "city": "Nanaimo",
+   "province": "BC",
+   "address": {
+    "street": "2512 Kenworth Rd",
+    "city": "Nanaimo",
+    "province": "BC",
+    "postal_code": "V9T 3Y4",
+    "country": "CA"
+   },
+   "address_full": "2512 Kenworth Rd, Nanaimo, BC V9T 3Y4",
+   "phone": "778 762-4333",
+   "email": "order.nanaimo@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Nanaimo",
+   "rate_title": "Pickup at our Nanaimo trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869860,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 76,
+    "skus_ge5": 45,
+    "units": 1711
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Nanaimo trade counter",
+   "description": "2512 Kenworth Rd, Nanaimo, BC V9T 3Y4. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "PRIN",
+   "map_code": "PRIN",
+   "map_key": "10034",
+   "name": "Prince George",
+   "city": "Prince George",
+   "province": "BC",
+   "address": {
+    "street": "1967 Ogilvie St S",
+    "city": "Prince George",
+    "province": "BC",
+    "postal_code": "V2N 1X2",
+    "country": "CA"
+   },
+   "address_full": "1967 Ogilvie St S, Prince George, BC V2N 1X2",
+   "phone": "250 562-4348",
+   "email": "order.princegeorge@prosol.ca",
+   "hours": {
+    "mon_fri": "7:30am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Prince George",
+   "rate_title": "Pickup at our Prince George trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869861,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 65,
+    "skus_ge5": 34,
+    "units": 787
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Prince George trade counter",
+   "description": "1967 Ogilvie St S, Prince George, BC V2N 1X2. Mon to Fri 7:30 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "RICH",
+   "map_code": "RICH",
+   "map_key": "10038",
+   "name": "Richmond",
+   "city": "Richmond",
+   "province": "BC",
+   "address": {
+    "street": "12231 Bridgeport Road, Unit 140",
+    "city": "Richmond",
+    "province": "BC",
+    "postal_code": "V6V 1J4",
+    "country": "CA"
+   },
+   "address_full": "12231 Bridgeport Road, Unit 140, Richmond, BC V6V 1J4",
+   "phone": "604 270-1314",
+   "email": "order.richmond@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Richmond",
+   "rate_title": "Pickup at our Richmond trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869865,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 65,
+    "skus_ge5": 37,
+    "units": 863
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Richmond trade counter",
+   "description": "12231 Bridgeport Road, Unit 140, Richmond, BC V6V 1J4. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "SURR",
+   "map_code": "SURR",
+   "map_key": "10044",
+   "name": "Surrey",
+   "city": "Surrey",
+   "province": "BC",
+   "address": {
+    "street": "13375 76 Ave",
+    "city": "Surrey",
+    "province": "BC",
+    "postal_code": "V3W 6J3",
+    "country": "CA"
+   },
+   "address_full": "13375 76 Ave, Surrey, BC V3W 6J3",
+   "phone": "604 591-3431",
+   "email": "order.surrey@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Surrey",
+   "rate_title": "Pickup at our Surrey trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869869,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 69,
+    "skus_ge5": 55,
+    "units": 1053
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Surrey trade counter",
+   "description": "13375 76 Ave, Surrey, BC V3W 6J3. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "VERN",
+   "map_code": "VERN",
+   "map_key": "10055",
+   "name": "Vernon",
+   "city": "Vernon",
+   "province": "BC",
+   "address": {
+    "street": "5000 Silver Star Rd",
+    "city": "Vernon",
+    "province": "BC",
+    "postal_code": "V1B 0A9",
+    "country": "CA"
+   },
+   "address_full": "5000 Silver Star Rd, Vernon, BC V1B 0A9",
+   "phone": "250 503-5012",
+   "email": "order.vernon@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Vernon",
+   "rate_title": "Pickup at our Vernon trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869874,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 63,
+    "skus_ge5": 17,
+    "units": 532
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Vernon trade counter",
+   "description": "5000 Silver Star Rd, Vernon, BC V1B 0A9. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "VICT",
+   "map_code": "VICT",
+   "map_key": "10045",
+   "name": "Victoria",
+   "city": "Victoria",
+   "province": "BC",
+   "address": {
+    "street": "3934 Quadra St #112",
+    "city": "Victoria",
+    "province": "BC",
+    "postal_code": "V8X 1J6",
+    "country": "CA"
+   },
+   "address_full": "3934 Quadra St #112, Victoria, BC V8X 1J6",
+   "phone": "250 479-1114",
+   "email": "order.victoria@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Victoria",
+   "rate_title": "Pickup at our Victoria trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869870,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 81,
+    "skus_ge5": 62,
+    "units": 3133
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Victoria trade counter",
+   "description": "3934 Quadra St #112, Victoria, BC V8X 1J6. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "CALN",
+   "map_code": "CALN",
+   "map_key": "10011",
+   "name": "Calgary North",
+   "city": "Calgary",
+   "province": "AB",
+   "address": {
+    "street": "3101 16 St NE",
+    "city": "Calgary",
+    "province": "AB",
+    "postal_code": "T2E 7K8",
+    "country": "CA"
+   },
+   "address_full": "3101 16 St NE, Calgary, AB T2E 7K8",
+   "phone": "403 569-6922",
+   "email": "order.calgarynorth@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:30pm",
+    "sat": "8:00am - 10:00am",
+    "sun": "Closed"
+   },
+   "pickup_label": "Calgary North",
+   "rate_title": "Pickup at our Calgary North trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869850,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 79,
+    "skus_ge5": 49,
+    "units": 1040
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Calgary North trade counter",
+   "description": "3101 16 St NE, Calgary, AB T2E 7K8. Mon to Fri 7 am to 4:30 pm, Sat 8 am to 10 am. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "WCAS",
+   "map_code": "WCAS",
+   "display_code": "CALS",
+   "map_key": "10054",
+   "name": "Calgary South",
+   "city": "Calgary",
+   "province": "AB",
+   "address": {
+    "street": "5760 9 St SE #105",
+    "city": "Calgary",
+    "province": "AB",
+    "postal_code": "T2H 1Z9",
+    "country": "CA"
+   },
+   "address_full": "5760 9 St SE #105, Calgary, AB T2H 1Z9",
+   "phone": "403 253-4642",
+   "email": "order.calgary@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:30pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Calgary South",
+   "rate_title": "Pickup at our Calgary South trade counter",
+   "enabled": true,
+   "pilot": true,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1284722,
+   "shopify_mirror_location": "Calgary Warehouse",
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 84,
+    "skus_ge5": 105,
+    "units": 3549
+   },
+   "map_corrections": [],
+   "notes": [
+    "Pilot branch (build plan 3B, prosol-network rec 3): 84% Schluter coverage, Kaitlyn (order desk) works here, AB has no PST. Code is the location-map code WCAS (the PO and stock key); CALS is the public-list code, kept as display_code.",
+    "Shopify \"Calgary Warehouse\" mirrors this branch (placeholder stock incl. non-Prosol goods); not used for pickup."
+   ],
+   "customer_name": "our Calgary South trade counter",
+   "description": "5760 9 St SE #105, Calgary, AB T2H 1Z9. Mon to Fri 7 am to 4:30 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "EDMN",
+   "map_code": "EDMN",
+   "map_key": "10018",
+   "name": "Edmonton North",
+   "city": "Edmonton",
+   "province": "AB",
+   "address": {
+    "street": "11662 154 St",
+    "city": "Edmonton",
+    "province": "AB",
+    "postal_code": "T5M 3N8",
+    "country": "CA"
+   },
+   "address_full": "11662 154 St, Edmonton, AB T5M 3N8",
+   "phone": "780 451-4222",
+   "email": "order.edmonton@prosol.ca",
+   "hours": {
+    "mon_fri": "7:30am - 4:30pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Edmonton North",
+   "rate_title": "Pickup at our Edmonton North trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869853,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 82,
+    "skus_ge5": 59,
+    "units": 1204
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Edmonton North trade counter",
+   "description": "11662 154 St, Edmonton, AB T5M 3N8. Mon to Fri 7:30 am to 4:30 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "EDMS",
+   "map_code": "EDMS",
+   "map_key": "10019",
+   "name": "Edmonton South",
+   "city": "Edmonton",
+   "province": "AB",
+   "address": {
+    "street": "9779 45th Ave NW",
+    "city": "Edmonton",
+    "province": "AB",
+    "postal_code": "T6E 5V8",
+    "country": "CA"
+   },
+   "address_full": "9779 45th Ave NW, Edmonton, AB T6E 5V8",
+   "phone": "780 435-5375",
+   "email": "order.edmsouth@prosol.ca",
+   "hours": {
+    "mon_fri": "7:30am - 4:30pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Edmonton South",
+   "rate_title": "Pickup at our Edmonton South trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869854,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 69,
+    "skus_ge5": 78,
+    "units": 2271
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Edmonton South trade counter",
+   "description": "9779 45th Ave NW, Edmonton, AB T6E 5V8. Mon to Fri 7:30 am to 4:30 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "GRPR",
+   "map_code": null,
+   "map_key": null,
+   "name": "Grande Prairie",
+   "city": "Grande Prairie",
+   "province": "AB",
+   "address": {
+    "street": "11041 96 Avenue",
+    "city": "Grande Prairie",
+    "province": "AB",
+    "postal_code": "T8V 5W1",
+    "country": "CA"
+   },
+   "address_full": "11041 96 Avenue, Grande Prairie, AB T8V 5W1",
+   "phone": "780 532-4801",
+   "email": "order.grandeprairie@prosol.ca",
+   "hours": {
+    "mon_fri": "8:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Grande Prairie",
+   "rate_title": "Pickup at our Grande Prairie trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": false,
+   "shipstation_warehouse_id": null,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": null,
+   "map_corrections": [],
+   "notes": [
+    "New branch, not in prosol-location-map.json (first on Prosol's public list 2026-06-08). Needs build plan N5 before any PO or pickup booking.",
+    "Storefront stock location is 10057 or 10058 (first seen 2026-06-09); which is which is UNVERIFIED."
+   ],
+   "customer_name": "our Grande Prairie trade counter",
+   "description": "11041 96 Avenue, Grande Prairie, AB T8V 5W1. Mon to Fri 8 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "LETH",
+   "map_code": null,
+   "map_key": null,
+   "name": "Lethbridge",
+   "city": "Lethbridge",
+   "province": "AB",
+   "address": {
+    "street": "239 12 St N",
+    "city": "Lethbridge",
+    "province": "AB",
+    "postal_code": "T1H 2G3",
+    "country": "CA"
+   },
+   "address_full": "239 12 St N, Lethbridge, AB T1H 2G3",
+   "phone": "(403) 327-8881",
+   "email": "order.lethbridge@prosol.ca",
+   "hours": {
+    "mon_fri": "7:30am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Lethbridge",
+   "rate_title": "Pickup at our Lethbridge trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": false,
+   "shipstation_warehouse_id": null,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": null,
+   "map_corrections": [],
+   "notes": [
+    "New branch, not in prosol-location-map.json (first on Prosol's public list 2026-06-08). Needs build plan N5 before any PO or pickup booking.",
+    "Storefront stock location is 10057 or 10058 (first seen 2026-06-09); which is which is UNVERIFIED."
+   ],
+   "customer_name": "our Lethbridge trade counter",
+   "description": "239 12 St N, Lethbridge, AB T1H 2G3. Mon to Fri 7:30 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "REDD",
+   "map_code": "REDD",
+   "map_key": "10036",
+   "name": "Red Deer",
+   "city": "Red Deer",
+   "province": "AB",
+   "address": {
+    "street": "7619 Gaetz Ave W 4 & 5",
+    "city": "Red Deer",
+    "province": "AB",
+    "postal_code": "T4P 1M6",
+    "country": "CA"
+   },
+   "address_full": "7619 Gaetz Ave W 4 & 5, Red Deer, AB T4P 1M6",
+   "phone": "403 346-8383",
+   "email": "order.reddeer@prosol.ca",
+   "hours": {
+    "mon_fri": "7:30am - 4:30pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Red Deer",
+   "rate_title": "Pickup at our Red Deer trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869863,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 59,
+    "skus_ge5": 27,
+    "units": 769
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Red Deer trade counter",
+   "description": "7619 Gaetz Ave W 4 & 5, Red Deer, AB T4P 1M6. Mon to Fri 7:30 am to 4:30 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "REGI",
+   "map_code": "REGI",
+   "map_key": "10037",
+   "name": "Regina",
+   "city": "Regina",
+   "province": "SK",
+   "address": {
+    "street": "515 6th Avenue E",
+    "city": "Regina",
+    "province": "SK",
+    "postal_code": "S4N 5A3",
+    "country": "CA"
+   },
+   "address_full": "515 6th Avenue E, Regina, SK S4N 5A3",
+   "phone": "306 525-8215",
+   "email": "order.regina@prosol.ca",
+   "hours": {
+    "mon_fri": "7:30am - 4:30pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Regina",
+   "rate_title": "Pickup at our Regina trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869864,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 57,
+    "skus_ge5": 21,
+    "units": 648
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Regina trade counter",
+   "description": "515 6th Avenue E, Regina, SK S4N 5A3. Mon to Fri 7:30 am to 4:30 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "SASK",
+   "map_code": "SASK",
+   "map_key": "10039",
+   "name": "Saskatoon",
+   "city": "Saskatoon",
+   "province": "SK",
+   "address": {
+    "street": "3603 Millar Ave Unit 12",
+    "city": "Saskatoon",
+    "province": "SK",
+    "postal_code": "S7P 0B2",
+    "country": "CA"
+   },
+   "address_full": "3603 Millar Ave Unit 12, Saskatoon, SK S7P 0B2",
+   "phone": "306 651-5033",
+   "email": "order.saskatoon@prosol.ca",
+   "hours": {
+    "mon_fri": "8:00am - 4:30pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Saskatoon",
+   "rate_title": "Pickup at our Saskatoon trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869866,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 68,
+    "skus_ge5": 54,
+    "units": 1699
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Saskatoon trade counter",
+   "description": "3603 Millar Ave Unit 12, Saskatoon, SK S7P 0B2. Mon to Fri 8 am to 4:30 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "WINN",
+   "map_code": "WINN",
+   "map_key": "10049",
+   "name": "Winnipeg",
+   "city": "Winnipeg",
+   "province": "MB",
+   "address": {
+    "street": "167 Hutchings, Unit 2",
+    "city": "Winnipeg",
+    "province": "MB",
+    "postal_code": "R2X 2R4",
+    "country": "CA"
+   },
+   "address_full": "167 Hutchings, Unit 2, Winnipeg, MB R2X 2R4",
+   "phone": "204 632-1212",
+   "email": "order.winnipeg@prosol.ca",
+   "hours": {
+    "mon_fri": "7:30am - 4:30pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Winnipeg",
+   "rate_title": "Pickup at our Winnipeg trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1811347,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 51,
+    "skus_ge5": 34,
+    "units": 990
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Winnipeg trade counter",
+   "description": "167 Hutchings, Unit 2, Winnipeg, MB R2X 2R4. Mon to Fri 7:30 am to 4:30 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "BARR",
+   "map_code": "BARR",
+   "map_key": "10052",
+   "name": "Barrie",
+   "city": "Barrie",
+   "province": "ON",
+   "address": {
+    "street": "230 Bayview Dr #9",
+    "city": "Barrie",
+    "province": "ON",
+    "postal_code": "L4N 4Y8",
+    "country": "CA"
+   },
+   "address_full": "230 Bayview Dr #9, Barrie, ON L4N 4Y8",
+   "phone": "705 733-2212",
+   "email": "order.barrie@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Barrie",
+   "rate_title": "Pickup at our Barrie trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869873,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 65,
+    "skus_ge5": 50,
+    "units": 896
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Barrie trade counter",
+   "description": "230 Bayview Dr #9, Barrie, ON L4N 4Y8. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "CAMB",
+   "map_code": "CAMB",
+   "map_key": "10013",
+   "name": "Cambridge",
+   "city": "Cambridge",
+   "province": "ON",
+   "address": {
+    "street": "1731 Bishop St. North",
+    "city": "Cambridge",
+    "province": "ON",
+    "postal_code": "N1T 1N5",
+    "country": "CA"
+   },
+   "address_full": "1731 Bishop St. North, Cambridge, ON N1T 1N5",
+   "phone": "519 740-9311",
+   "email": "order.cambridge@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Cambridge",
+   "rate_title": "Pickup at our Cambridge trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1793463,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 62,
+    "skus_ge5": 42,
+    "units": 1216
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Cambridge trade counter",
+   "description": "1731 Bishop St. North, Cambridge, ON N1T 1N5. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "HAMI",
+   "map_code": "HAMI",
+   "map_key": "10021",
+   "name": "Hamilton",
+   "city": "Hamilton",
+   "province": "ON",
+   "address": {
+    "street": "47 Ditton Dr",
+    "city": "Hamilton",
+    "province": "ON",
+    "postal_code": "L8W 2E5",
+    "country": "CA"
+   },
+   "address_full": "47 Ditton Dr, Hamilton, ON L8W 2E5",
+   "phone": "905 575-8106",
+   "email": "order.hamilton@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Hamilton",
+   "rate_title": "Pickup at our Hamilton trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869855,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 65,
+    "skus_ge5": 52,
+    "units": 1303
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Hamilton trade counter",
+   "description": "47 Ditton Dr, Hamilton, ON L8W 2E5. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "KING",
+   "map_code": "KING",
+   "map_key": "10024",
+   "name": "Kingston",
+   "city": "Kingston",
+   "province": "ON",
+   "address": {
+    "street": "1663 Venture Drive, Unit 1D",
+    "city": "Kingston",
+    "province": "ON",
+    "postal_code": "K7P 0E9",
+    "country": "CA"
+   },
+   "address_full": "1663 Venture Drive, Unit 1D, Kingston, ON K7P 0E9",
+   "phone": "613 384-1212",
+   "email": "order.kingston@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Kingston",
+   "rate_title": "Pickup at our Kingston trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1504076,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 67,
+    "skus_ge5": 42,
+    "units": 1236
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Kingston trade counter",
+   "description": "1663 Venture Drive, Unit 1D, Kingston, ON K7P 0E9. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "KITC",
+   "map_code": "KITC",
+   "map_key": "10025",
+   "name": "Kitchener",
+   "city": "Kitchener",
+   "province": "ON",
+   "address": {
+    "street": "500 Bingemans Centre Drive, Unit #10",
+    "city": "Kitchener",
+    "province": "ON",
+    "postal_code": "N2B 3X9",
+    "country": "CA"
+   },
+   "address_full": "500 Bingemans Centre Drive, Unit #10, Kitchener, ON N2B 3X9",
+   "phone": "519 581-8484",
+   "email": "order.kitchener@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Kitchener",
+   "rate_title": "Pickup at our Kitchener trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869858,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 58,
+    "skus_ge5": 32,
+    "units": 567
+   },
+   "map_corrections": [
+    {
+     "field": "phone",
+     "map": "+19054181082",
+     "public": "519 581-8484",
+     "ref": "F2"
+    },
+    {
+     "field": "postal_code",
+     "map": "N2B1R9",
+     "public": "N2B 3X9",
+     "ref": "F2"
+    },
+    {
+     "field": "address",
+     "map": "500 Bingemans Center Drive",
+     "public": "500 Bingemans Centre Drive, Unit #10",
+     "detail": "map has no unit number (Unit #10)",
+     "ref": "F2"
+    }
+   ],
+   "notes": [],
+   "customer_name": "our Kitchener trade counter",
+   "description": "500 Bingemans Centre Drive, Unit #10, Kitchener, ON N2B 3X9. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "LOND",
+   "map_code": "LOND",
+   "map_key": "10027",
+   "name": "London",
+   "city": "London",
+   "province": "ON",
+   "address": {
+    "street": "94 Bessemer Court",
+    "city": "London",
+    "province": "ON",
+    "postal_code": "N6E 1K7",
+    "country": "CA"
+   },
+   "address_full": "94 Bessemer Court, London, ON N6E 1K7",
+   "phone": "519 668-7260",
+   "email": "order.london@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "London",
+   "rate_title": "Pickup at our London trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1793487,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 75,
+    "skus_ge5": 71,
+    "units": 1697
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our London trade counter",
+   "description": "94 Bessemer Court, London, ON N6E 1K7. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "MISS",
+   "map_code": "MISS",
+   "map_key": "10028",
+   "name": "Mississauga",
+   "city": "Mississauga",
+   "province": "ON",
+   "address": {
+    "street": "3240 Lenworth Dr",
+    "city": "Mississauga",
+    "province": "ON",
+    "postal_code": "L4X 2G1",
+    "country": "CA"
+   },
+   "address_full": "3240 Lenworth Dr, Mississauga, ON L4X 2G1",
+   "phone": "905 238-0223",
+   "email": "order.mississauga@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "7:00am - 11:00am",
+    "sun": "Closed"
+   },
+   "pickup_label": "Mississauga",
+   "rate_title": "Pickup at our Mississauga trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1824506,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 51,
+    "skus_ge5": 29,
+    "units": 627
+   },
+   "map_corrections": [
+    {
+     "field": "phone",
+     "map": "+19054181082",
+     "public": "905 238-0223",
+     "ref": "F2"
+    }
+   ],
+   "notes": [
+    "Shopify \"Ontario Warehouse\" is labelled Mississauga but sits at 6900 Airport Rd (International Centre), not this branch. Not used for pickup."
+   ],
+   "customer_name": "our Mississauga trade counter",
+   "description": "3240 Lenworth Dr, Mississauga, ON L4X 2G1. Mon to Fri 7 am to 5 pm, Sat 7 am to 11 am. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "OTTA",
+   "map_code": "OTTA",
+   "map_key": "10032",
+   "name": "Ottawa",
+   "city": "Ottawa",
+   "province": "ON",
+   "address": {
+    "street": "1153 Newmarket St",
+    "city": "Ottawa",
+    "province": "ON",
+    "postal_code": "K1B 4N4",
+    "country": "CA"
+   },
+   "address_full": "1153 Newmarket St, Ottawa, ON K1B 4N4",
+   "phone": "613 746-1212",
+   "email": "order.ottawa@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Ottawa",
+   "rate_title": "Pickup at our Ottawa trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1814007,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 73,
+    "skus_ge5": 41,
+    "units": 901
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Ottawa trade counter",
+   "description": "1153 Newmarket St, Ottawa, ON K1B 4N4. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "SCAR",
+   "map_code": "SCAR",
+   "map_key": "10040",
+   "name": "Scarborough",
+   "city": "Scarborough",
+   "province": "ON",
+   "address": {
+    "street": "1410 Warden Ave",
+    "city": "Scarborough",
+    "province": "ON",
+    "postal_code": "M1R 5A3",
+    "country": "CA"
+   },
+   "address_full": "1410 Warden Ave, Scarborough, ON M1R 5A3",
+   "phone": "416-609-3972",
+   "email": "order.scarborough@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "7:00am - 11:00am",
+    "sun": "Closed"
+   },
+   "pickup_label": "Scarborough",
+   "rate_title": "Pickup at our Scarborough trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869867,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 78,
+    "skus_ge5": 88,
+    "units": 1614
+   },
+   "map_corrections": [
+    {
+     "field": "phone",
+     "map": "+19054181082",
+     "public": "416-609-3972",
+     "ref": "F2"
+    },
+    {
+     "field": "address",
+     "map": "1412 Warden Ave.",
+     "public": "1410 Warden Ave",
+     "detail": "civic number 1412 in map, 1410 in public list",
+     "ref": "F2"
+    }
+   ],
+   "notes": [],
+   "customer_name": "our Scarborough trade counter",
+   "description": "1410 Warden Ave, Scarborough, ON M1R 5A3. Mon to Fri 7 am to 5 pm, Sat 7 am to 11 am. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "STCA",
+   "map_code": "STCA",
+   "map_key": "10041",
+   "name": "St. Catharines",
+   "city": "St. Catharines",
+   "province": "ON",
+   "address": {
+    "street": "113 Cushman Rd Unit # 52-54",
+    "city": "St. Catharines",
+    "province": "ON",
+    "postal_code": "L2M 6S9",
+    "country": "CA"
+   },
+   "address_full": "113 Cushman Rd Unit # 52-54, St. Catharines, ON L2M 6S9",
+   "phone": "905 685-3834",
+   "email": "order.stcatharines@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "St. Catharines",
+   "rate_title": "Pickup at our St. Catharines trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869868,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 71,
+    "skus_ge5": 50,
+    "units": 1333
+   },
+   "map_corrections": [
+    {
+     "field": "phone",
+     "map": "+19054181082",
+     "public": "905 685-3834",
+     "ref": "F2"
+    }
+   ],
+   "notes": [
+    "Map unit \"# 54\", public list \"# 52-54\" (minor)."
+   ],
+   "customer_name": "our St. Catharines trade counter",
+   "description": "113 Cushman Rd Unit # 52-54, St. Catharines, ON L2M 6S9. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "SUDB",
+   "map_code": "SUDB",
+   "map_key": "10043",
+   "name": "Sudbury",
+   "city": "Sudbury",
+   "province": "ON",
+   "address": {
+    "street": "922 Cambrian Heights Dr",
+    "city": "Sudbury",
+    "province": "ON",
+    "postal_code": "P3C 5M6",
+    "country": "CA"
+   },
+   "address_full": "922 Cambrian Heights Dr, Sudbury, ON P3C 5M6",
+   "phone": "705 525-4044",
+   "email": "order.sudbury@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Sudbury",
+   "rate_title": "Pickup at our Sudbury trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1786140,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 69,
+    "skus_ge5": 50,
+    "units": 1189
+   },
+   "map_corrections": [
+    {
+     "field": "postal_code",
+     "map": "P3C5L8",
+     "public": "P3C 5M6",
+     "ref": "F2"
+    }
+   ],
+   "notes": [],
+   "customer_name": "our Sudbury trade counter",
+   "description": "922 Cambrian Heights Dr, Sudbury, ON P3C 5M6. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "DOWN",
+   "map_code": "DOWN",
+   "map_key": "10017",
+   "name": "Downsview",
+   "city": "Toronto",
+   "province": "ON",
+   "address": {
+    "street": "255 Steeprock Drive",
+    "city": "Toronto",
+    "province": "ON",
+    "postal_code": "M3J 2X1",
+    "country": "CA"
+   },
+   "address_full": "255 Steeprock Drive, Toronto, ON M3J 2X1",
+   "phone": "416 630-4883",
+   "email": "order.downsview@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "7:00am - 11:00am",
+    "sun": "Closed"
+   },
+   "pickup_label": "Toronto Downsview",
+   "rate_title": "Pickup at our Toronto Downsview trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869852,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 58,
+    "skus_ge5": 30,
+    "units": 655
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Toronto Downsview trade counter",
+   "description": "255 Steeprock Drive, Toronto, ON M3J 2X1. Mon to Fri 7 am to 5 pm, Sat 7 am to 11 am. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "WCON",
+   "map_code": "WCON",
+   "map_key": "10001",
+   "name": "Vaughan",
+   "city": "Vaughan",
+   "province": "ON",
+   "address": {
+    "street": "161 Cidermill Ave",
+    "city": "Vaughan",
+    "province": "ON",
+    "postal_code": "L4K 4G5",
+    "country": "CA"
+   },
+   "address_full": "161 Cidermill Ave, Vaughan, ON L4K 4G5",
+   "phone": "905-418-1082",
+   "email": "order.vaughan@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Vaughan",
+   "rate_title": "Pickup at our Vaughan trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1791764,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 74,
+    "skus_ge5": 64,
+    "units": 3328
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Vaughan trade counter",
+   "description": "161 Cidermill Ave, Vaughan, ON L4K 4G5. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "WIND",
+   "map_code": "WIND",
+   "map_key": "10048",
+   "name": "Windsor",
+   "city": "Windsor",
+   "province": "ON",
+   "address": {
+    "street": "4445 County Rd 42",
+    "city": "Windsor",
+    "province": "ON",
+    "postal_code": "N9A 6J3",
+    "country": "CA"
+   },
+   "address_full": "4445 County Rd 42, Windsor, ON N9A 6J3",
+   "phone": "519 946-1255",
+   "email": "order.windsor@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Windsor",
+   "rate_title": "Pickup at our Windsor trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869871,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 58,
+    "skus_ge5": 29,
+    "units": 615
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Windsor trade counter",
+   "description": "4445 County Rd 42, Windsor, ON N9A 6J3. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "BROS",
+   "map_code": "BROS",
+   "map_key": "10051",
+   "name": "Brossard",
+   "city": "Brossard",
+   "province": "QC",
+   "address": {
+    "street": "2850 Boul Matte",
+    "city": "Brossard",
+    "province": "QC",
+    "postal_code": "J4Y 2P4",
+    "country": "CA"
+   },
+   "address_full": "2850 Boul Matte, Brossard, QC J4Y 2P4",
+   "phone": "450-500-1281",
+   "email": "order.brossard@prosol.ca",
+   "hours": {
+    "mon_fri": "6:30am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Brossard",
+   "rate_title": "Pickup at our Brossard trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869872,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 67,
+    "skus_ge5": 46,
+    "units": 1494
+   },
+   "map_corrections": [
+    {
+     "field": "postal_code",
+     "map": "J4Y0G5",
+     "public": "J4Y 2P4",
+     "ref": "not in F2: found by this build 2026-09-28, UNVERIFIED which is right"
+    }
+   ],
+   "notes": [
+    "Postal code differs from the map and is not in F2; check before any Canada Post booking."
+   ],
+   "customer_name": "our Brossard trade counter",
+   "description": "2850 Boul Matte, Brossard, QC J4Y 2P4. Mon to Fri 6:30 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "WGRF",
+   "map_code": "WGRF",
+   "map_key": "10004",
+   "name": "Saint-Laurent",
+   "city": "Saint-Laurent",
+   "province": "QC",
+   "address": {
+    "street": "4305 Griffith St.",
+    "city": "Saint-Laurent",
+    "province": "QC",
+    "postal_code": "H4T 2A2",
+    "country": "CA"
+   },
+   "address_full": "4305 Griffith St., Saint-Laurent, QC H4T 2A2",
+   "phone": "514 745-1212",
+   "email": "order.montreal@prosol.ca",
+   "hours": {
+    "mon_fri": "6:30am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Montreal Saint-Laurent",
+   "rate_title": "Pickup at our Montreal Saint-Laurent trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1791765,
+   "shopify_mirror_location": "Quebec Warehouse",
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 85,
+    "skus_ge5": 111,
+    "units": 3974
+   },
+   "map_corrections": [],
+   "notes": [
+    "Prosol lists weekday hours as \"6:30am - 17:00pm\"; normalized to 5:00pm. Prosol head office. Flagged chronically slow turnaround in run-orders DEPRIORITIZED_LOCS.",
+    "Shopify \"Quebec Warehouse\" mirrors this branch (placeholder stock incl. non-Prosol goods); not used for pickup."
+   ],
+   "customer_name": "our Montreal Saint-Laurent trade counter",
+   "description": "4305 Griffith St., Saint-Laurent, QC H4T 2A2. Mon to Fri 6:30 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "QUEB",
+   "map_code": "QUEB",
+   "map_key": "10035",
+   "name": "Quebec",
+   "city": "Quebec",
+   "province": "QC",
+   "address": {
+    "street": "2555 Ave Watt",
+    "city": "Quebec",
+    "province": "QC",
+    "postal_code": "G1P 3T2",
+    "country": "CA"
+   },
+   "address_full": "2555 Ave Watt, Quebec, QC G1P 3T2",
+   "phone": "418 656-9458",
+   "email": "order.quebec@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 5:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Quebec City",
+   "rate_title": "Pickup at our Quebec City trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869862,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 76,
+    "skus_ge5": 67,
+    "units": 1643
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Quebec City trade counter",
+   "description": "2555 Ave Watt, Quebec, QC G1P 3T2. Mon to Fri 7 am to 5 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "CHIC",
+   "map_code": "CHIC",
+   "map_key": "10014",
+   "name": "Saguenay",
+   "city": "Chicoutimi",
+   "province": "QC",
+   "address": {
+    "street": "1041 Rupert St.",
+    "city": "Chicoutimi",
+    "province": "QC",
+    "postal_code": "G7K 0A2",
+    "country": "CA"
+   },
+   "address_full": "1041 Rupert St., Chicoutimi, QC G7K 0A2",
+   "phone": "418 549-8886",
+   "email": "order.saguenay@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:00pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Saguenay",
+   "rate_title": "Pickup at our Saguenay trade counter",
+   "enabled": false,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1869851,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 61,
+    "skus_ge5": 31,
+    "units": 1013
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Saguenay trade counter",
+   "description": "1041 Rupert St., Chicoutimi, QC G7K 0A2. Mon to Fri 7 am to 4 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 2
+  },
+  {
+   "code": "MONC",
+   "map_code": "MONC",
+   "map_key": "10029",
+   "name": "Moncton",
+   "city": "Moncton",
+   "province": "NB",
+   "address": {
+    "street": "400 Edinburgh Dr",
+    "city": "Moncton",
+    "province": "NB",
+    "postal_code": "E1E 2L1",
+    "country": "CA"
+   },
+   "address_full": "400 Edinburgh Dr, Moncton, NB E1E 2L1",
+   "phone": "506 859-9494",
+   "email": "order.moncton@prosol.ca",
+   "hours": {
+    "mon_fri": "7:30am - 4:30pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Moncton",
+   "rate_title": "Pickup at our Moncton trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1852856,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 69,
+    "skus_ge5": 46,
+    "units": 1510
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Moncton trade counter",
+   "description": "400 Edinburgh Dr, Moncton, NB E1E 2L1. Mon to Fri 7:30 am to 4:30 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  },
+  {
+   "code": "DART",
+   "map_code": "DART",
+   "map_key": "10016",
+   "name": "Dartmouth",
+   "city": "Dartmouth",
+   "province": "NS",
+   "address": {
+    "street": "105 Akerley Blvd",
+    "city": "Dartmouth",
+    "province": "NS",
+    "postal_code": "B3B 1R7",
+    "country": "CA"
+   },
+   "address_full": "105 Akerley Blvd, Dartmouth, NS B3B 1R7",
+   "phone": "902 468-1990",
+   "email": "order.dartmouth@prosol.ca",
+   "hours": {
+    "mon_fri": "7:00am - 4:30pm",
+    "sat": "Closed",
+    "sun": "Closed"
+   },
+   "pickup_label": "Dartmouth",
+   "rate_title": "Pickup at our Dartmouth trade counter",
+   "enabled": true,
+   "pilot": false,
+   "in_location_map": true,
+   "shipstation_warehouse_id": 1852858,
+   "shopify_mirror_location": null,
+   "schluter_stock_2026_09_28": {
+    "coverage_pct": 61,
+    "skus_ge5": 44,
+    "units": 1272
+   },
+   "map_corrections": [],
+   "notes": [],
+   "customer_name": "our Dartmouth trade counter",
+   "description": "105 Akerley Blvd, Dartmouth, NS B3B 1R7. Mon to Fri 7 am to 4:30 pm. Usually ready in 2 to 4 business days. We email you when it's ready. Bring your order number and photo ID.",
+   "tier": 1
+  }
+ ]
 }
