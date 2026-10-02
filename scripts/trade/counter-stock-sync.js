@@ -53,6 +53,32 @@ const POOL = {
   zero: ['gid://shopify/Location/66861301927', 'gid://shopify/Location/82853724327', 'gid://shopify/Location/82853822631'], // Ontario, Quebec, Vancouver
 };
 const SET_BATCH = 250;
+// CFC's own shelf: Salesforce PBSI available -> the Shopify Sechelt Warehouse and Powell River locations (replacing the
+// old placeholder counts, Mac 2026-10-02). Staging and in-transit rows are left out.
+const CFC = {
+  'gid://shopify/Location/65050771623': ['Sechelt', 'Sechelt Warehouse', 'Sechelt Showroom'],
+  'gid://shopify/Location/65050837159': ['Powell River'],
+};
+
+/** Map shopifySku -> { shopifyLocationId: qty } from Salesforce (PBSI items are named by the Shopify SKU). */
+async function sfShelfStock(skus) {
+  const sf = require('../../lib/salesforce');
+  const conn = await sf.connect();
+  const byName = new Map(Object.entries(CFC).flatMap(([loc, names]) => names.map((n) => [n, loc])));
+  const out = new Map();
+  for (let i = 0; i < skus.length; i += 150) {
+    const list = skus.slice(i, i + 150).map((n) => `'${String(n).replace(/\\/g, '').replace(/'/g, "\\'")}'`).join(',');
+    const rows = await sf.query(conn, `SELECT PBSI__item_lookup__r.Name n, PBSI__location_lookup__r.Name l, SUM(PBSI__Quantity_Available__c) q FROM PBSI__PBSI_Inventory__c WHERE PBSI__item_lookup__r.Name IN (${list}) GROUP BY PBSI__item_lookup__r.Name, PBSI__location_lookup__r.Name`);
+    for (const r of rows) {
+      const loc = byName.get(r.l);
+      if (!loc) continue;
+      const m = out.get(r.n) || {};
+      m[loc] = (m[loc] || 0) + (Number(r.q) || 0);
+      out.set(r.n, m);
+    }
+  }
+  return out;
+}
 const ID_BATCH = 30;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -305,7 +331,7 @@ async function sfVendorCodes(names) {
   return out;
 }
 
-async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = console.log, gql = gqlRetry, makeClient, sfItems, snapDir = SNAP_DIR, gapMs = GAP_MS, idCache = ID_CACHE, snapshots = FBA_SNAPSHOTS } = {}) {
+async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = console.log, gql = gqlRetry, makeClient, sfItems, sfShelf, snapDir = SNAP_DIR, gapMs = GAP_MS, idCache = ID_CACHE, snapshots = FBA_SNAPSHOTS } = {}) {
   const started = Date.now();
   const counters = cs.countersFrom(JSON.parse(fs.readFileSync(BRANCHES, 'utf8')).branches);
   const located = counters.filter((c) => c.locationId);
@@ -347,9 +373,11 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
   const failRate = codes.size ? failed.length / codes.size : 0;
   const aborted = failRate > MAX_FAILED ? `${failed.length} of ${codes.size} lookups failed (${Math.round(failRate * 100)}%), over ${MAX_FAILED * 100}%: nothing written` : null;
 
-  const levels = await readLevels(gql, [...located.map((c) => c.locationId), POOL.locationId, ...POOL.zero]);
-  const variants = products.flatMap((p) => p.variants.map((v) => ({ id: v.id, productId: p.id, itemId: v.itemId, policy: v.policy, prosolSku: v.prosolSku, pooled: v.pooled })));
-  const plan = cs.planLocations({ variants, stockBySku, counters: located, pool: POOL, levels });
+  const levels = await readLevels(gql, [...located.map((c) => c.locationId), POOL.locationId, ...POOL.zero, ...Object.keys(CFC)]);
+  const variants = products.flatMap((p) => p.variants.map((v) => ({ id: v.id, productId: p.id, itemId: v.itemId, policy: v.policy, sku: v.sku, prosolSku: v.prosolSku, pooled: v.pooled })));
+  let shelf = null;
+  try { shelf = await (sfShelf || sfShelfStock)([...new Set(variants.map((v) => v.sku).filter(Boolean))]); } catch (e) { log(`Salesforce shelf stock failed, Sechelt/Powell River left as they are: ${e.message}`); }
+  const plan = cs.planLocations({ variants, stockBySku, counters: located, pool: POOL, levels, cfc: shelf ? { bySku: shelf, locations: Object.keys(CFC) } : null });
   const counts2 = { activate: plan.activate.length, set: plan.set.length, deny: plan.deny.length, deactivate: plan.deactivate.length, skipped: plan.skipped };
   log(`plan: ${counts2.activate} activations, ${counts2.set} quantities, ${counts2.deny} variants to "don't sell when out of stock", ${counts2.deactivate} unstocks, ${counts2.skipped} skipped`);
 
@@ -442,4 +470,4 @@ if (require.main === module) {
   }).catch((e) => { console.error(e.stack || e.message); process.exit(1); });
 }
 
-module.exports = { syncCounterStock, pickupProfiles, profileProducts, readLevels, pullStock, snapshotIds, GAP_MS, PROFILES, POOL };
+module.exports = { syncCounterStock, pickupProfiles, profileProducts, readLevels, pullStock, snapshotIds, sfShelfStock, GAP_MS, PROFILES, POOL, CFC };
