@@ -2517,13 +2517,23 @@ async function runPickupRunner(source) {
 }
 schedule('*/15 * * * *', () => runPickupRunner('15-min'), TZ);
 
-// Counter stock gate (lib/counter-stock.js, scripts/trade/counter-stock-sync.js): Prosol stock at each pickup counter
-// -> pz-no-<CODE> product tags that the hide-shipping app reads at checkout (Mac 2026-10-02: no pickup where the counter
-// doesn't have it). Gentle on Prosol (Mac doesn't want to be locked out): weekdays only, at COUNTER_STOCK_TIMES BC time
+// Counter stock (lib/counter-stock.js, scripts/trade/counter-stock-sync.js): Prosol stock -> Shopify inventory at each
+// counter location (Shopify's own pickup offers a counter only when it can fill the cart there) and, for Prosol-profile
+// variants, "don't sell when out of stock" with shipping stock = Prosol's network total at Calgary Warehouse (Mac
+// 2026-10-02: no pickup where the counter doesn't have it; "we don't want to sell things that are out of stock"). If it
+// fails or aborts, the previous numbers stay and Mac gets one email that day. Gentle on Prosol (Mac doesn't want to be locked out): weekdays only, at COUNTER_STOCK_TIMES BC time
 // (default 06:30,11:00,15:00), requests COUNTER_STOCK_GAP_MS apart (default 2000). Scheduled in Etc/GMT+7, BC's
 // permanent UTC-7: an America/Toronto conversion would drift an hour from November (Toronto falls back, BC doesn't,
 // and this Node's tzdata still thinks BC does). SHADOW (snapshot only) unless COUNTER_STOCK_LIVE=1.
 let counterStockBusy = false;
+let counterStockAlertDay = null;
+async function counterStockAlert(subject, detail) {
+  const day = new Date(Date.now() - 7 * 3600e3).toISOString().slice(0, 10);
+  if (counterStockAlertDay === day) return;
+  counterStockAlertDay = day;
+  try { await require('./lib/emailer').sendEmail({ to: process.env.MAC_CC_EMAIL || 'mac@customfc.ca', subject, html: `<p>${detail}</p><p>The previous stock numbers stay until the next run (weekdays 6:30, 11 and 3 BC).</p>` }); }
+  catch (e) { console.error('[counter-stock] alert email failed:', e.message); }
+}
 async function runCounterStock(source) {
   if (pipelineActive || counterStockBusy) return;
   counterStockBusy = true;
@@ -2531,11 +2541,13 @@ async function runCounterStock(source) {
   try {
     const r = await require('./scripts/trade/counter-stock-sync').syncCounterStock({ apply, log: (m) => console.log(`[counter-stock] ${m}`) });
     const s = r.summary;
-    audit.log({ action: 'counter-stock-sync', source, mode: s.mode, products: s.products, skus: s.skus, lookups: s.lookups, aborted: s.aborted, changing: s.productsChanging, written: s.written, writeErrors: s.writeErrors, runtimeSec: s.runtimeSec, snapshot: r.snapshotPath });
-    if (s.aborted) console.error(`[counter-stock ${source}] ${s.aborted}`);
+    audit.log({ action: 'counter-stock-sync', source, mode: s.mode, products: s.products, skus: s.skus, lookups: s.lookups, aborted: s.aborted, plan: s.plan, done: s.done, writeErrors: s.writeErrors, runtimeSec: s.runtimeSec, snapshot: r.snapshotPath });
+    if (s.aborted) { console.error(`[counter-stock ${source}] ${s.aborted}`); if (apply) await counterStockAlert('Counter stock sync skipped: Prosol lookups failing', s.aborted); }
+    else if (apply && s.writeErrors) await counterStockAlert(`Counter stock sync: ${s.writeErrors} Shopify write errors`, `Run ${source}: ${s.writeErrors} write errors. Snapshot ${r.snapshotPath}.`);
   } catch (err) {
     console.error(`[counter-stock ${source}] failed:`, err.message);
     audit.log({ action: 'counter-stock-sync', source, error: err.message });
+    if (apply) await counterStockAlert('Counter stock sync failed', err.message);
   } finally { counterStockBusy = false; }
 }
 for (const t of (process.env.COUNTER_STOCK_TIMES || '06:30,11:00,15:00').split(',').map((x) => x.trim()).filter(Boolean)) {

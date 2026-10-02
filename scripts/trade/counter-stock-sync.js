@@ -1,23 +1,27 @@
 #!/usr/bin/env node
 /**
- * Counter stock sync: Prosol stock at each pickup counter -> `pz-no-<CODE>` product tags, which the hide-shipping app
- * reads at checkout to drop "Pickup at our <X> trade counter" (lib/counter-stock.js; Mac 2026-10-02: "We cannot offer
- * a local pickup for a product that we do not have stock of at that location").
+ * Counter stock sync: Prosol stock -> Shopify inventory at each counter location (Shopify's own pickup offers a counter
+ * only when it can fill the cart there) and, for Prosol-profile variants, "don't sell when out of stock" with their
+ * shipping stock = Prosol's network total at the pool location (lib/counter-stock.js planLocations; Mac 2026-10-02:
+ * "We cannot offer a local pickup for a product that we do not have stock of at that location", "we don't want to sell
+ * things that are out of stock"). Counter locations: scripts/trade/native-counters.js.
  *
  *   node scripts/trade/counter-stock-sync.js              dry run: reads Shopify + Prosol, writes the snapshot, prints
- *   node scripts/trade/counter-stock-sync.js --apply      also writes the tag changes (tagsAdd / tagsRemove)
+ *   node scripts/trade/counter-stock-sync.js --apply      also writes the inventory, activations and policies
  *   node scripts/trade/counter-stock-sync.js --limit 20   first 20 products only (testing)
  *   node scripts/trade/counter-stock-sync.js --compare 5  also checks 5 products against checkInventory (live sync)
  *
- * Products: ACTIVE products with variants in the delivery profiles whose zones carry counter rates (Prosol and "Local
- * pickup only" today; found by reading the zones, not hard-coded).
+ * Products: ACTIVE products with variants in the Prosol profile (pooled: DENY + network total) and the "Local pickup
+ * only" profile (full-length trims: Coast pickup ships off Sechelt/PR, so their policy and shipping stock stay; they
+ * are gated at counters by being stocked there or not).
  * Prosol, gently (Mac 2026-10-02: don't get us locked out): one session, every request COUNTER_STOCK_GAP_MS apart
  * (default 2000). SKU -> Prosol product id is cached in data/trade/prosol-product-ids.json (seeded from the FBA stock
  * snapshots; misses looked up 40 SKUs a request, then one by one; not-found re-checked weekly), so a normal run is
  * only the stock calls: 30 products a request, limit=1000 rows, no sync_inventory. Prosol lists only in-stock
  * locations, so a missing one is 0.
- * Unknown stock (not at Prosol, lookup failed, no SKU) hides every counter for that product. More than 10% failed
- * lookups (Prosol down, session lost): nothing is written and the previous tags stay.
+ * Not at Prosol or no SKU: never stocked at a counter (so never offered pickup), policy and shipping stock untouched.
+ * A failed lookup leaves that variant as it is this run. More than 10% failed (Prosol down, session lost): nothing is
+ * written.
  * Snapshot: data/trade/counter-stock/<ts>.json (last 60 kept).
  */
 
@@ -38,6 +42,17 @@ const ID_CACHE = path.join(ROOT, 'data', 'trade', 'prosol-product-ids.json');
 const FBA_SNAPSHOTS = path.join(ROOT, 'data', 'fba', 'snapshots');
 const RECHECK_MISSING_MS = 7 * 864e5;
 const SKU_BATCH = 40;
+// The pickup products and how they're stocked (2026-10-02). Shipping pool: Calgary Warehouse carries the Prosol network
+// total; the other shipping warehouses' placeholder counts go to 0 for these variants. Sechelt / Powell River untouched.
+const PROFILES = [
+  { id: 'gid://shopify/DeliveryProfile/102840008871', name: 'Prosol', pooled: true },
+  { id: 'gid://shopify/DeliveryProfile/106780786855', name: 'Local pickup only', pooled: false },
+];
+const POOL = {
+  locationId: 'gid://shopify/Location/66856386727', // Calgary Warehouse
+  zero: ['gid://shopify/Location/66861301927', 'gid://shopify/Location/82853724327', 'gid://shopify/Location/82853822631'], // Ontario, Quebec, Vancouver
+};
+const SET_BATCH = 250;
 const ID_BATCH = 30;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -51,25 +66,42 @@ async function gqlRetry(query, variables) {
   }
 }
 
-/** Delivery profile ids whose zones carry "Pickup at our ... trade counter" rates. */
+/** The pickup profiles (PROFILES), checked to exist. */
 async function pickupProfiles(gql) {
-  const d = await gql(`{ deliveryProfiles(first: 30) { nodes { id name profileLocationGroups { locationGroupZones(first: 60) {
-    nodes { methodDefinitions(first: 40) { nodes { name } } } } } } } }`);
-  return d.deliveryProfiles.nodes.filter((p) => p.profileLocationGroups.some((g) => g.locationGroupZones.nodes.some((z) =>
-    z.methodDefinitions.nodes.some((m) => /^Pickup at our .+ trade counter$/.test(m.name))))).map((p) => ({ id: p.id, name: p.name }));
+  const d = await gql(`{ deliveryProfiles(first: 30) { nodes { id name } } }`);
+  const live = new Set(d.deliveryProfiles.nodes.map((p) => p.id));
+  return PROFILES.filter((p) => live.has(p.id));
 }
 
-/** ACTIVE products with their variants in the given profiles: [{ id, title, tags, variants: [{ id, sku }] }]. */
-async function profileProducts(gql, profileIds) {
+/** Shopify's inventory levels at the given locations: Map `${itemId}|${locationId}` -> { levelId, qty }. */
+async function readLevels(gql, locationIds) {
+  const out = new Map();
+  for (const loc of locationIds) {
+    let after = null;
+    do {
+      const d = await gql(`query($id: ID!, $a: String) { location(id: $id) { inventoryLevels(first: 250, after: $a) { pageInfo { hasNextPage endCursor }
+        nodes { id item { id } quantities(names: ["available"]) { quantity } } } } }`, { id: loc, a: after });
+      const page = d.location.inventoryLevels;
+      for (const n of page.nodes) out.set(`${n.item.id}|${loc}`, { levelId: n.id, qty: (n.quantities[0] || {}).quantity || 0 });
+      after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
+    } while (after);
+  }
+  return out;
+}
+
+/** ACTIVE products with their variants in the given profiles: [{ id, title, tags, variants: [{ id, sku, itemId, policy, pooled }] }]. */
+async function profileProducts(gql, profiles) {
   const byId = new Map();
   const counts = { items: 0, inactive: 0, overflow: 0 };
+  const profileIds = profiles.map((p) => p.id);
+  const pooledOf = new Map(profiles.map((p) => [p.id, !!p.pooled]));
   const want = new Set(profileIds);
   for (const pid of profileIds) {
     let after = null;
     do {
       const d = await gql(`query($id: ID!, $a: String) { deliveryProfile(id: $id) { profileItems(first: 8, after: $a) {
         pageInfo { hasNextPage endCursor }
-        nodes { product { id title tags status } variants(first: 100) { pageInfo { hasNextPage } nodes { id sku barcode } } } } } }`, { id: pid, a: after });
+        nodes { product { id title tags status } variants(first: 100) { pageInfo { hasNextPage } nodes { id sku barcode inventoryPolicy inventoryItem { id } } } } } } }`, { id: pid, a: after });
       const page = d.deliveryProfile.profileItems;
       for (const it of page.nodes) {
         counts.items++;
@@ -82,13 +114,13 @@ async function profileProducts(gql, profileIds) {
           let va = null;
           do {
             const v = await gql(`query($id: ID!, $a: String) { product(id: $id) { variants(first: 100, after: $a) { pageInfo { hasNextPage endCursor }
-              nodes { id sku barcode deliveryProfile { id } } } } }`, { id: it.product.id, a: va });
+              nodes { id sku barcode inventoryPolicy inventoryItem { id } deliveryProfile { id } } } } }`, { id: it.product.id, a: va });
             variants.push(...v.product.variants.nodes.filter((x) => x.deliveryProfile && want.has(x.deliveryProfile.id)));
             va = v.product.variants.pageInfo.hasNextPage ? v.product.variants.pageInfo.endCursor : null;
           } while (va);
         }
         const p = byId.get(it.product.id) || { id: it.product.id, title: it.product.title, tags: it.product.tags, variants: [] };
-        for (const v of variants) if (!p.variants.some((x) => x.id === v.id)) p.variants.push({ id: v.id, sku: v.sku || null, barcode: v.barcode || null });
+        for (const v of variants) if (!p.variants.some((x) => x.id === v.id)) p.variants.push({ id: v.id, sku: v.sku || null, barcode: v.barcode || null, itemId: v.inventoryItem ? v.inventoryItem.id : null, policy: v.inventoryPolicy, pooled: pooledOf.get(pid) });
         byId.set(it.product.id, p);
       }
       after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
@@ -274,9 +306,11 @@ async function sfVendorCodes(names) {
 async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = console.log, gql = gqlRetry, makeClient, sfItems, snapDir = SNAP_DIR, gapMs = GAP_MS, idCache = ID_CACHE, snapshots = FBA_SNAPSHOTS } = {}) {
   const started = Date.now();
   const counters = cs.countersFrom(JSON.parse(fs.readFileSync(BRANCHES, 'utf8')).branches);
+  const located = counters.filter((c) => c.locationId);
+  if (!located.length) throw new Error('no counter has a Shopify location (run scripts/trade/native-counters.js create)');
   const profiles = await pickupProfiles(gql);
-  if (!profiles.length) throw new Error('no delivery profile carries counter pickup rates');
-  const { products: all, counts } = await profileProducts(gql, profiles.map((p) => p.id));
+  if (!profiles.length) throw new Error('the pickup delivery profiles are gone');
+  const { products: all, counts } = await profileProducts(gql, profiles);
   const products = limit ? all.slice(0, limit) : all;
   const map = JSON.parse(fs.readFileSync(SKU_MAP, 'utf8')).mappings || {};
   const { prosolCodes } = require('../../lib/pickup-runner');
@@ -299,37 +333,71 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
   }
   const codes = new Map();
   for (const p of products) for (const v of p.variants) if (v.prosolSku && !codes.has(v.prosolSku)) codes.set(v.prosolSku, { apiSku: v.apiSku, prosolSku: v.prosolSku });
-  log(`${products.length} products, ${products.reduce((n, p) => n + p.variants.length, 0)} variants, ${codes.size} SKUs, ${counters.length} counters (profiles: ${profiles.map((p) => p.name).join(', ')})`);
+  log(`${products.length} products, ${products.reduce((n, p) => n + p.variants.length, 0)} variants, ${codes.size} SKUs, ${located.length} counter locations (profiles: ${profiles.map((p) => p.name).join(', ')})`);
 
   const { lookups, requests, pullSec, comparison } = await pullStock([...codes.values()], { log, makeClient, gapMs, idCache, snapshots, compare });
-  const by = (s) => Object.entries(lookups).filter(([, r]) => r.status === s);
+  const by = (st) => Object.entries(lookups).filter(([, r]) => r.status === st);
   const failed = by('failed');
   const notFound = by('not_found');
-  const stockBySku = Object.fromEntries(Object.entries(lookups).map(([k, r]) => [k, r.status === 'ok' ? r.stock : null]));
-  const changes = cs.computeTags({ products, stockBySku, counters });
+  // ok -> the stock map, not at Prosol -> null, failed -> undefined (planLocations leaves those variants alone)
+  const stockBySku = {};
+  for (const [k, r] of Object.entries(lookups)) if (r.status === 'ok') stockBySku[k] = r.stock; else if (r.status === 'not_found') stockBySku[k] = null;
   const failRate = codes.size ? failed.length / codes.size : 0;
   const aborted = failRate > MAX_FAILED ? `${failed.length} of ${codes.size} lookups failed (${Math.round(failRate * 100)}%), over ${MAX_FAILED * 100}%: nothing written` : null;
 
-  const perCounter = counters.map((c) => {
-    const t = cs.tagFor(c.code);
-    return { code: c.code, hidden: changes.filter((x) => x.want.includes(t)).length, add: changes.filter((x) => x.add.includes(t)).length, remove: changes.filter((x) => x.remove.some((r) => r.toUpperCase() === t.toUpperCase())).length };
-  });
-  const toWrite = changes.filter((x) => x.add.length || x.remove.length);
-  let written = 0;
+  const levels = await readLevels(gql, [...located.map((c) => c.locationId), POOL.locationId, ...POOL.zero]);
+  const variants = products.flatMap((p) => p.variants.map((v) => ({ id: v.id, productId: p.id, itemId: v.itemId, policy: v.policy, prosolSku: v.prosolSku, pooled: v.pooled })));
+  const plan = cs.planLocations({ variants, stockBySku, counters: located, pool: POOL, levels });
+  const counts2 = { activate: plan.activate.length, set: plan.set.length, deny: plan.deny.length, deactivate: plan.deactivate.length, skipped: plan.skipped };
+  log(`plan: ${counts2.activate} activations, ${counts2.set} quantities, ${counts2.deny} variants to "don't sell when out of stock", ${counts2.deactivate} unstocks, ${counts2.skipped} skipped`);
+
+  // Per counter: products whose every variant Prosol has there (what a one-product cart can pick up).
+  const stockedAt = (v, c) => { const st = v.prosolSku ? stockBySku[v.prosolSku] : null; return !!st && Number(st[c.mapKey]) >= 1; };
+  const perCounter = located.map((c) => ({ code: c.code, products: products.filter((p) => p.variants.length && p.variants.every((v) => stockedAt(v, c))).length }));
+
   const writeErrors = [];
+  const done = { activate: 0, set: 0, deny: 0, deactivate: 0 };
   if (apply && !aborted) {
-    for (const x of toWrite) {
+    const groupBy = (xs, k) => xs.reduce((m, x) => m.set(x[k], [...(m.get(x[k]) || []), x]), new Map());
+    for (const [itemId, xs] of groupBy(plan.activate, 'itemId')) {
       try {
-        if (x.add.length) {
-          const r = await gql(`mutation($id: ID!, $t: [String!]!) { tagsAdd(id: $id, tags: $t) { userErrors { message } } }`, { id: x.id, t: x.add });
-          if (r.tagsAdd.userErrors.length) throw new Error(r.tagsAdd.userErrors.map((e) => e.message).join('; '));
-        }
-        if (x.remove.length) {
-          const r = await gql(`mutation($id: ID!, $t: [String!]!) { tagsRemove(id: $id, tags: $t) { userErrors { message } } }`, { id: x.id, t: x.remove });
-          if (r.tagsRemove.userErrors.length) throw new Error(r.tagsRemove.userErrors.map((e) => e.message).join('; '));
-        }
-        written++;
-      } catch (e) { writeErrors.push({ id: x.id, title: x.title, error: e.message }); }
+        const r = await gql(`mutation($i: ID!, $u: [InventoryBulkToggleActivationInput!]!) { inventoryBulkToggleActivation(inventoryItemId: $i, inventoryItemUpdates: $u) { userErrors { field message } } }`,
+          { i: itemId, u: xs.map((x) => ({ locationId: x.locationId, activate: true })) });
+        if (r.inventoryBulkToggleActivation.userErrors.length) throw new Error(JSON.stringify(r.inventoryBulkToggleActivation.userErrors));
+        done.activate += xs.length;
+      } catch (e) { writeErrors.push({ step: 'activate', itemId, error: e.message }); }
+    }
+    for (let i = 0; i < plan.set.length; i += SET_BATCH) {
+      const batch = plan.set.slice(i, i + SET_BATCH);
+      try {
+        const r = await gql(`mutation($in: InventorySetQuantitiesInput!) { inventorySetQuantities(input: $in) { userErrors { field message } } }`,
+          { in: { name: 'available', reason: 'correction', ignoreCompareQuantity: true, referenceDocumentUri: 'gid://yourfloors/CounterStockSync/prosol', quantities: batch.map((x) => ({ inventoryItemId: x.itemId, locationId: x.locationId, quantity: x.qty })) } });
+        if (r.inventorySetQuantities.userErrors.length) throw new Error(JSON.stringify(r.inventorySetQuantities.userErrors).slice(0, 500));
+        done.set += batch.length;
+      } catch (e) { writeErrors.push({ step: 'set', from: i, error: e.message }); }
+    }
+    for (const [productId, xs] of groupBy(plan.deny, 'productId')) {
+      try {
+        const r = await gql(`mutation($p: ID!, $v: [ProductVariantsBulkInput!]!) { productVariantsBulkUpdate(productId: $p, variants: $v) { userErrors { field message } } }`,
+          { p: productId, v: xs.map((x) => ({ id: x.variantId, inventoryPolicy: 'DENY' })) });
+        if (r.productVariantsBulkUpdate.userErrors.length) throw new Error(JSON.stringify(r.productVariantsBulkUpdate.userErrors));
+        done.deny += xs.length;
+      } catch (e) { writeErrors.push({ step: 'deny', productId, error: e.message }); }
+    }
+    for (const [itemId, xs] of groupBy(plan.deactivate, 'itemId')) {
+      try {
+        const r = await gql(`mutation($i: ID!, $u: [InventoryBulkToggleActivationInput!]!) { inventoryBulkToggleActivation(inventoryItemId: $i, inventoryItemUpdates: $u) { userErrors { field message } } }`,
+          { i: itemId, u: xs.map((x) => ({ locationId: x.locationId, activate: false })) });
+        if (r.inventoryBulkToggleActivation.userErrors.length) throw new Error(JSON.stringify(r.inventoryBulkToggleActivation.userErrors));
+        done.deactivate += xs.length;
+      } catch (e) {
+        // Can't unstock (an open pickup order holds some): set 0 instead, which hides pickup for DENY variants.
+        writeErrors.push({ step: 'deactivate', itemId, error: e.message });
+        try {
+          await gql(`mutation($in: InventorySetQuantitiesInput!) { inventorySetQuantities(input: $in) { userErrors { field message } } }`,
+            { in: { name: 'available', reason: 'correction', ignoreCompareQuantity: true, referenceDocumentUri: 'gid://yourfloors/CounterStockSync/prosol', quantities: xs.map((x) => ({ inventoryItemId: itemId, locationId: x.locationId, quantity: 0 })) } });
+        } catch {}
+      }
     }
   }
 
@@ -338,40 +406,38 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
     profiles: profiles.map((p) => p.name), profileItems: counts.items, inactiveSkipped: counts.inactive, variantOverflow: counts.overflow,
     products: products.length, skus: codes.size, variantsWithoutSku: noSku, resolvedVia: via,
     lookups: { ok: by('ok').length, notFound: notFound.length, failed: failed.length }, prosolRequests: requests, pullSec, gapMs, comparison, aborted,
-    productsChanging: toWrite.length, written, writeErrors: writeErrors.length, perCounter,
-    pickupAnywhere: changes.filter((x) => x.want.length < counters.length).length,
+    plan: counts2, done, writeErrors: writeErrors.length, perCounter,
+    pickupAnywhere: products.filter((p) => located.some((c) => p.variants.length && p.variants.every((v) => stockedAt(v, c)))).length,
   };
   fs.mkdirSync(snapDir, { recursive: true });
   const snapshotPath = path.join(snapDir, `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
-  fs.writeFileSync(snapshotPath, JSON.stringify({ at: new Date().toISOString(), summary, counters, lookups,
-    products: products.map((p) => ({ id: p.id, title: p.title, variants: p.variants.map((v) => ({ sku: v.sku, barcode: v.barcode, prosolSku: v.prosolSku, via: v.via })) })),
-    changes: toWrite, writeErrors }, null, 1));
+  fs.writeFileSync(snapshotPath, JSON.stringify({ at: new Date().toISOString(), summary, counters: located, lookups,
+    products: products.map((p) => ({ id: p.id, title: p.title, variants: p.variants.map((v) => ({ id: v.id, sku: v.sku, barcode: v.barcode, prosolSku: v.prosolSku, via: v.via, policy: v.policy, pooled: v.pooled })) })),
+    plan, writeErrors }, null, 1));
   prune(snapDir);
-  return { summary, snapshotPath, notFound, failed, changes, products };
+  return { summary, snapshotPath, notFound, failed, products, plan };
 }
 
 if (require.main === module) {
   const apply = process.argv.includes('--apply');
   const arg = (name) => { const i = process.argv.indexOf(name); return i > 0 ? Number(process.argv[i + 1]) || 0 : 0; };
-  syncCounterStock({ apply, limit: arg('--limit'), compare: arg('--compare') }).then(({ summary, snapshotPath, notFound, failed, changes, products }) => {
+  syncCounterStock({ apply, limit: arg('--limit'), compare: arg('--compare') }).then(({ summary, snapshotPath, notFound, failed, products }) => {
     const titleOf = (sku) => { const p = products.find((x) => x.variants.some((v) => v.prosolSku === sku)); return p ? p.title : '?'; };
     console.log(`\n${summary.mode}: ${summary.runtimeSec}s. ${summary.products} products (${summary.profileItems} profile items, ${summary.inactiveSkipped} not active), ${summary.skus} SKUs, ${summary.variantsWithoutSku} variants without a SKU`);
     console.log(`Variant codes from: ${Object.entries(summary.resolvedVia).map(([k, n]) => `${k} ${n}`).join(', ')}`);
     const rq = summary.prosolRequests;
     console.log(`Prosol requests: ${rq.ids} id lookups + ${rq.stock} stock${rq.compare ? ` + ${rq.compare} compare` : ''}, Prosol part ${summary.pullSec}s at ${summary.gapMs} ms apart`);
-    if (summary.comparison) console.log(`Batched (no live sync) vs checkInventory (live sync):\n${summary.comparison.map((x) => `  ${x.apiSku}: ${x.match ? 'match' : `DIFF ${x.inv ? x.diffs.join('; ') : 'checkInventory returned nothing'}`} (${x.locations} locations)`).join('\n')}`);
+    if (summary.comparison) console.log(`Batched vs checkInventory (live sync):\n${summary.comparison.map((x) => `  ${x.apiSku}: ${x.match ? 'match' : `DIFF ${x.inv ? x.diffs.join('; ') : 'checkInventory returned nothing'}`} (${x.locations} locations)`).join('\n')}`);
     console.log(`Prosol lookups: ${summary.lookups.ok} ok, ${summary.lookups.notFound} not at Prosol, ${summary.lookups.failed} failed${summary.aborted ? `\nABORTED: ${summary.aborted}` : ''}`);
-    console.log(`Products with pickup at one or more counters: ${summary.pickupAnywhere} of ${summary.products}`);
-    console.log('\nCounter  hidden  +tags  -tags');
-    for (const c of summary.perCounter) console.log(`${c.code.padEnd(8)} ${String(c.hidden).padStart(6)} ${String(c.add).padStart(6)} ${String(c.remove).padStart(6)}`);
-    console.log(`\n${summary.productsChanging} products would change${summary.mode === 'apply' ? `, ${summary.written} written, ${summary.writeErrors} errors` : ''}.`);
+    console.log(`Products a counter can fill on their own: ${summary.pickupAnywhere} of ${summary.products}`);
+    console.log(`Plan: ${JSON.stringify(summary.plan)}${summary.mode === 'apply' ? `\nDone: ${JSON.stringify(summary.done)}, ${summary.writeErrors} write errors` : ''}`);
+    console.log('\nCounter  products');
+    for (const c of summary.perCounter) console.log(`${c.code.padEnd(8)} ${String(c.products).padStart(8)}`);
     if (notFound.length) console.log(`\nNot at Prosol (first 15): ${notFound.slice(0, 15).map(([k, r]) => `${r.apiSku}${r.apiSku !== k ? `/${k}` : ''} (${titleOf(k).slice(0, 50)})`).join('; ')}`);
     if (failed.length) console.log(`\nFailed (first 10): ${failed.slice(0, 10).map(([k, r]) => `${k}: ${r.error}`).join('; ')}`);
-    const ex = changes.filter((x) => x.want.length && x.want.length < 17).slice(0, 5);
-    if (ex.length) console.log(`\nExamples:\n${ex.map((x) => `  ${x.title.slice(0, 60)}: hidden at ${x.want.map((t) => t.slice(6)).join(' ')}`).join('\n')}`);
     console.log(`\nSnapshot: ${path.relative(ROOT, snapshotPath)}`);
     if (summary.aborted) process.exitCode = 2;
   }).catch((e) => { console.error(e.stack || e.message); process.exit(1); });
 }
 
-module.exports = { syncCounterStock, pickupProfiles, profileProducts, pullStock, snapshotIds, GAP_MS };
+module.exports = { syncCounterStock, pickupProfiles, profileProducts, readLevels, pullStock, snapshotIds, GAP_MS, PROFILES, POOL };
