@@ -2516,6 +2516,33 @@ async function runPickupRunner(source) {
   } finally { pickupRunnerBusy = false; }
 }
 schedule('*/15 * * * *', () => runPickupRunner('15-min'), TZ);
+
+// Counter stock gate (lib/counter-stock.js, scripts/trade/counter-stock-sync.js): Prosol stock at each pickup counter
+// -> pz-no-<CODE> product tags that the hide-shipping app reads at checkout (Mac 2026-10-02: no pickup where the counter
+// doesn't have it). Gentle on Prosol (Mac doesn't want to be locked out): weekdays only, at COUNTER_STOCK_TIMES BC time
+// (default 06:30,11:00,15:00), requests COUNTER_STOCK_GAP_MS apart (default 2000). Scheduled in Etc/GMT+7, BC's
+// permanent UTC-7: an America/Toronto conversion would drift an hour from November (Toronto falls back, BC doesn't,
+// and this Node's tzdata still thinks BC does). SHADOW (snapshot only) unless COUNTER_STOCK_LIVE=1.
+let counterStockBusy = false;
+async function runCounterStock(source) {
+  if (pipelineActive || counterStockBusy) return;
+  counterStockBusy = true;
+  const apply = process.env.COUNTER_STOCK_LIVE === '1';
+  try {
+    const r = await require('./scripts/trade/counter-stock-sync').syncCounterStock({ apply, log: (m) => console.log(`[counter-stock] ${m}`) });
+    const s = r.summary;
+    audit.log({ action: 'counter-stock-sync', source, mode: s.mode, products: s.products, skus: s.skus, lookups: s.lookups, aborted: s.aborted, changing: s.productsChanging, written: s.written, writeErrors: s.writeErrors, runtimeSec: s.runtimeSec, snapshot: r.snapshotPath });
+    if (s.aborted) console.error(`[counter-stock ${source}] ${s.aborted}`);
+  } catch (err) {
+    console.error(`[counter-stock ${source}] failed:`, err.message);
+    audit.log({ action: 'counter-stock-sync', source, error: err.message });
+  } finally { counterStockBusy = false; }
+}
+for (const t of (process.env.COUNTER_STOCK_TIMES || '06:30,11:00,15:00').split(',').map((x) => x.trim()).filter(Boolean)) {
+  const m = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) { console.error(`[counter-stock] bad COUNTER_STOCK_TIMES entry "${t}", skipped`); continue; }
+  schedule(`${Number(m[2])} ${Number(m[1])} * * 1-5`, () => runCounterStock(`${t} BC`), { timezone: 'Etc/GMT+7' });
+}
 schedule('0 19 * * *', async () => {
   const pr = require('./lib/pickup-runner');
   if (pr.mode() === 'all') return;

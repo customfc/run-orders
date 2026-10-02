@@ -47,3 +47,7 @@ public/po-preview-*.html
 public/cost-review-*.csv
 public/replacement-label-*.pdf
 data/large-order-releases.json
+
+# counter stock sync snapshots and its Prosol product id cache (scripts/trade/counter-stock-sync.js)
+data/trade/counter-stock/
+data/trade/prosol-product-ids.json
