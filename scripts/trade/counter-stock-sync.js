@@ -186,7 +186,9 @@ async function pullStock(codesList, { log = () => {}, makeClient, gapMs = GAP_MS
         }
       }
     }
-    for (const c of misses.filter((x) => !found.has(x.prosolSku) && !failedCodes.has(x.prosolSku))) { // sku-map pins for shared SKUs, the search fallback
+    // One by one (sku-map pins for shared SKUs, the search fallback: 2 to 4 requests each) only for codes never looked
+    // up; the weekly re-check of known not-found codes stays batched.
+    for (const c of misses.filter((x) => !found.has(x.prosolSku) && !failedCodes.has(x.prosolSku) && !cache[x.prosolSku])) {
       let id = null;
       try {
         for (const sku of [...new Set([c.apiSku, c.prosolSku])]) {
@@ -197,6 +199,7 @@ async function pullStock(codesList, { log = () => {}, makeClient, gapMs = GAP_MS
         found.set(c.prosolSku, { id: id || null, via: 'getProductId' });
       } catch { failedCodes.add(c.prosolSku); }
     }
+    for (const c of misses) if (!found.has(c.prosolSku) && !failedCodes.has(c.prosolSku)) found.set(c.prosolSku, { id: null, via: 'batch' });
     for (const [k, v] of found) cache[k] = { ...v, at: new Date(now).toISOString() };
     fs.mkdirSync(path.dirname(idCache), { recursive: true });
     fs.writeFileSync(idCache, JSON.stringify(cache, null, 1));
@@ -209,7 +212,10 @@ async function pullStock(codesList, { log = () => {}, makeClient, gapMs = GAP_MS
     const failedIds = new Set();
     for (let i = 0; i < productIds.length; i += ID_BATCH) {
       const batch = productIds.slice(i, i + ID_BATCH);
-      const rows = await allPages((page) => `/api/storefront/product_inventory_items?filter[product_id]=${batch.join(',')}&filter[where_is_in_stock]=true&limit=1000&page=${page}`);
+      // COUNTER_STOCK_SYNC=1 adds sync_inventory=true (same request count; Prosol refreshes each product first). Off, the
+      // numbers can lag: 2026-10-02, 3 of 4 samples were off by 1 to 3 at a counter, both ways, and a synced batch
+      // matched checkInventory every time.
+      const rows = await allPages((page) => `/api/storefront/product_inventory_items?filter[product_id]=${batch.join(',')}&filter[where_is_in_stock]=true${process.env.COUNTER_STOCK_SYNC === '1' ? '&sync_inventory=true' : ''}&limit=1000&page=${page}`);
       if (!rows) { batch.forEach((id) => failedIds.add(Number(id))); continue; }
       for (const id of batch) stockById.set(Number(id), {});
       for (const r of rows) {
