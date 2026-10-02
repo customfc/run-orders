@@ -24,7 +24,7 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `local-fulfillment.js` — pickup guard: Shopify pickup / local-delivery / "Pickup at our ..." orders never get a courier label or a Prosol PO (staging, manual buy, SO reconcile).
 - `pickup-runner.js` — runs every pickup order (Coast truck, counter pickups, split trims) every 15 min; SHADOW unless `PICKUP_RUNNER_LIVE=coast|all`; state `data/pickup-state.json`. Helpers: `pickup-io.js` (fulfil, refund trims), `pickup-counter-messages.js` (counter + split emails), `pickup-actions.js` / `pickup-messages.js` / `pickup-eta.js` (Coast), `branch-pickup.js` (counter resolution + PO email).
 - `trade-accounts.js` / `trade-applications.js` / `trade-verify.js` — ProZone one-tap approve, application intake, business check (CRA check digit + OrgBook BC).
-- `counter-stock.js` — counter pickup stock gate: Prosol stock per counter -> `pz-no-<CODE>` product tags for the hide-shipping app (sync `scripts/trade/counter-stock-sync.js`, cron every 2 h BC, SHADOW unless `COUNTER_STOCK_LIVE=1`, snapshots `data/trade/counter-stock/`).
+- `counter-stock.js` — counter pickup stock gate: Prosol stock per counter -> `pz-no-<CODE>` product tags for the hide-shipping app (sync `scripts/trade/counter-stock-sync.js`, weekdays at `COUNTER_STOCK_TIMES` BC time (default 06:30, 11:00, 15:00), about 84 batched Prosol requests a run, SHADOW unless `COUNTER_STOCK_LIVE=1`, `COUNTER_STOCK_SYNC=1` for live counts, snapshots `data/trade/counter-stock/`).
 
 ## Salesforce / Shopify / Amazon
 - `salesforce.js` — jsforce SO/PO + PBSI integration.
