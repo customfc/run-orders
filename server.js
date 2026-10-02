@@ -494,6 +494,96 @@ app.post('/sku-resolver/approve', express.urlencoded({ extended: false }), (req,
   }
 });
 
+// ── ProZone one-tap approve (lib/trade-applications.js, lib/trade-accounts.js) ──
+// The YourFloors CS agent on this Mini hands each ProZone application in (loopback only); Mac gets an email with a
+// signed Review link; the page shows the applicant and the welcome email; Approve turns their pricing on and sends it.
+const isLoopback = (req) => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+
+app.post('/api/prozone/applications', async (req, res) => {
+  if (!isLoopback(req)) return res.status(403).json({ error: 'loopback only' });
+  const apps = require('./lib/trade-applications');
+  try {
+    const app0 = apps.parseApplication(req.body?.text, req.body?.replyTo || null);
+    if (!app0.email) return res.status(400).json({ error: 'no applicant email' });
+    const { rec, isNew } = apps.recordApplication({ ...app0, raw: String(req.body?.text || '').slice(0, 4000) });
+    audit.log({ action: 'prozone-application', id: rec.id, email: app0.email, business: app0.business, isNew });
+    if (rec.status === 'pending' && isNew) {
+      const { subject, html } = apps.macEmail(rec);
+      await require('./lib/emailer').sendEmail({ to: process.env.MAC_CC_EMAIL || 'mac@customfc.ca', subject, html });
+      apps.setStatus(rec.id, { notifiedAt: new Date().toISOString() });
+    }
+    res.json({ ok: true, id: rec.id, status: rec.status, isNew });
+  } catch (err) {
+    audit.log({ action: 'prozone-application-failed', error: err.message });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+function proZoneRec(req) {
+  const apps = require('./lib/trade-applications');
+  const id = String(req.query?.id || req.body?.id || '');
+  const t = String(req.query?.t || req.body?.t || '');
+  if (!apps.verify(id, t)) return null;
+  const rec = apps.loadState().apps[id];
+  return rec ? { rec, id, t } : null;
+}
+
+app.get('/prozone/approve', (req, res) => {
+  const apps = require('./lib/trade-applications');
+  const hit = proZoneRec(req);
+  if (!hit) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  const { rec, id, t } = hit;
+  if (rec.status !== 'pending') {
+    return res.send(skuApprovePage(`Already ${rec.status}`, (e) => `<h2>${e(rec.app.business || rec.app.email)} is already ${e(rec.status)}.</h2>${rec.result?.code ? `<p>Client code ${e(rec.result.code)}.</p>` : ''}`));
+  }
+  const w = apps.welcomeEmail(rec.app, { code: '(their code)' });
+  res.send(skuApprovePage(`Approve ${rec.app.business || rec.app.email}`, (e) => `
+<h2>Approve ${e(rec.app.business || rec.app.name)} for ProZone?</h2>
+${apps.detailsHtml(rec.app)}
+<p>Approve turns on 20%/25% on Schluter (10% trims) for ${e(rec.app.email)}, makes their client code, and sends them this email from hello@yourfloors.ca:</p>
+<pre>${e(w.text)}</pre>
+<form method="post" action="/prozone/approve"><input type="hidden" name="id" value="${e(id)}"><input type="hidden" name="t" value="${e(t)}"><button type="submit">Approve and send</button></form>
+<form method="post" action="/prozone/decline" style="margin-top:16px"><input type="hidden" name="id" value="${e(id)}"><input type="hidden" name="t" value="${e(t)}"><button type="submit" style="background:#fff;color:#111;border:1px solid #ccc">Decline (no email sent)</button></form>`));
+});
+
+app.post('/prozone/approve', express.urlencoded({ extended: false }), async (req, res) => {
+  const apps = require('./lib/trade-applications');
+  const { approveAccount } = require('./lib/trade-accounts');
+  const hit = proZoneRec(req);
+  if (!hit) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  const { rec } = hit;
+  if (rec.status === 'approved') return res.send(skuApprovePage('Already approved', (e) => `<h2>Already approved.</h2><p>Client code ${e(rec.result?.code)}.</p>`));
+  let result;
+  try {
+    result = await approveAccount({ ...rec.app, business: rec.app.business || rec.app.name || rec.app.email });
+    apps.setStatus(rec.id, { status: 'approved', approvedAt: new Date().toISOString(), result });
+    audit.log({ action: 'prozone-approved', id: rec.id, email: rec.app.email, result });
+  } catch (err) {
+    audit.log({ action: 'prozone-approve-failed', id: rec.id, error: err.message });
+    return res.status(500).send(skuApprovePage('Failed', (e) => `<h2>Approve failed. Nothing was emailed.</h2><pre>${e(err.message)}</pre>`));
+  }
+  try {
+    const w = apps.welcomeEmail(rec.app, result);
+    await require('./lib/emailer').sendEmail({ to: rec.app.email, subject: w.subject, html: w.html, text: w.text });
+    apps.setStatus(rec.id, { welcomedAt: new Date().toISOString() });
+    audit.log({ action: 'prozone-welcome-sent', id: rec.id, email: rec.app.email });
+    res.send(skuApprovePage('Approved', (e) => `<h2>${e(rec.app.business || rec.app.email)} is approved.</h2><p>Pricing is on for ${e(rec.app.email)}. Client code ${e(result.code)}. Welcome email sent.</p>`));
+  } catch (err) {
+    audit.log({ action: 'prozone-welcome-failed', id: rec.id, error: err.message });
+    res.status(500).send(skuApprovePage('Approved, email failed', (e) => `<h2>Approved, but the welcome email failed.</h2><p>Pricing is on. Email error:</p><pre>${e(err.message)}</pre>`));
+  }
+});
+
+app.post('/prozone/decline', express.urlencoded({ extended: false }), (req, res) => {
+  const apps = require('./lib/trade-applications');
+  const hit = proZoneRec(req);
+  if (!hit) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  if (hit.rec.status === 'approved') return res.send(skuApprovePage('Already approved', () => '<h2>Already approved; nothing changed.</h2>'));
+  apps.setStatus(hit.rec.id, { status: 'declined', declinedAt: new Date().toISOString() });
+  audit.log({ action: 'prozone-declined', id: hit.rec.id, email: hit.rec.app.email });
+  res.send(skuApprovePage('Declined', (e) => `<h2>Declined ${e(hit.rec.app.business || hit.rec.app.email)}.</h2><p>No email was sent.</p>`));
+});
+
 // ── Large-order review gate: release ────────────────────────────────────────
 // The stage phase holds orders over the LARGE_ORDER_* thresholds and pages Mac.
 // This is the "release it from the dashboard" half. Optional warehouseCode pins
