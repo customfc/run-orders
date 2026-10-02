@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Re-send a counter pickup's branch email with our PO number, Prosol's item codes and a transfer request, for orders
+ * Re-send a counter pickup's branch email with our PO number and Prosol's item codes, for orders
  * the pickup runner sent before 285539d (it sent on the first tick with no PO, the Shopify SKU, and no stock check;
  * #1405 Regina, 2026-10-02). Uses the order's Salesforce PO; with --send and none yet (the pipeline's last stage pass
  * is 13:30 Toronto time), makes the SO + PO the SO reconcile's way first.
@@ -51,12 +51,13 @@ async function poFor(orderName) {
   try { await client.init(); stock = bp.checkStock(lines, b.map_code || b.code, await pio.branchStock(client, lines, b.map_code || b.code, branches)); }
   finally { try { await client.close(); } catch {} }
 
-  if (stock.status === 'HOLD') throw new Error(`stock HOLD for ${orderName}, nothing to send: ${JSON.stringify(stock.lines)}`);
+  // No transfer arrangement with Prosol (Mac 2026-10-02): the counter has to have it all.
+  if (stock.status !== 'READY') throw new Error(`${b.pickup_label} doesn't have everything for ${orderName}, nothing to send: ${stock.lines.map((l) => `${l.prosolSku} x ${l.quantity} (has ${l.have})`).join(', ')}`);
   let poNumber = await poFor(orderName);
   if (!poNumber && send) poNumber = await pio.ensurePo(orderName, require('../../lib/shopify-sf'), sf);
   if (!poNumber) poNumber = 'PO-(made on --send)';
-  const email = bp.buildPickupEmail({ order: { name: orderName, customer: { firstName: order.firstName, lastName: order.lastName } }, branch: { code: b.code, city: b.pickup_label }, lines, poNumber, stock });
-  const body = `This replaces our earlier email for order ${orderName}: it adds our PO number and your item code${stock.status === 'NEEDS_TRANSFER' ? ', and asks for a transfer in' : ''}.\n\n${email.body}`;
+  const email = bp.buildPickupEmail({ order: { name: orderName, customer: { firstName: order.firstName, lastName: order.lastName } }, branch: { code: b.code, city: b.pickup_label }, lines, poNumber });
+  const body = `This replaces our earlier email for order ${orderName}: it adds our PO number and your item code.\n\n${email.body}`;
   const to = process.env.KAITLYN_EMAIL || 'klazzarotto@prosol.ca';
   const cc = [b.email, process.env.MAC_CC_EMAIL || 'mac@customfc.ca'].filter(Boolean).join(', ');
   console.log(`To: ${to}\nCc: ${cc}\nSubject: ${email.subject}\n\n${body}\n\n(stock: ${stock.status})`);
@@ -64,7 +65,7 @@ async function poFor(orderName) {
   await require('../../lib/emailer').sendEmail({ to, cc, subject: email.subject, text: body,
     html: `<pre style="font-family:Arial,sans-serif;font-size:14px">${body.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</pre>` });
   const s2 = R.loadState();
-  Object.assign(s2.orders[orderName], { poNumber, transfer: stock.status === 'NEEDS_TRANSFER', resentAt: new Date().toISOString() });
+  Object.assign(s2.orders[orderName], { poNumber, resentAt: new Date().toISOString() });
   R.saveState(s2);
   console.log(`\nSent. ${orderName} now records ${poNumber}.`);
 })().catch((e) => { console.error(e.message); process.exit(1); });
