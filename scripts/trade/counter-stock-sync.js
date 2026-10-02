@@ -60,7 +60,9 @@ async function gqlRetry(query, variables) {
   const { graphql } = require('../../lib/shopify-graphql');
   for (let i = 0; ; i++) {
     try { return (await graphql(query, variables)).data; } catch (e) {
-      if (i >= 5 || !/throttl/i.test(e.message)) throw e;
+      // Throttles and dropped connections are retried (every write here sets an absolute value, so a retry is safe):
+      // the first live run (2026-10-02) lost one 250-quantity batch to an ECONNRESET.
+      if (i >= 5 || !/throttl|ECONNRESET|ETIMEDOUT|EPIPE|EAI_AGAIN|socket hang up|fetch failed|network|\b50[0234]\b/i.test(e.message)) throw e;
       await sleep(2000 * (i + 1));
     }
   }
