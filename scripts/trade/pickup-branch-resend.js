@@ -2,10 +2,12 @@
 /**
  * Re-send a counter pickup's branch email with our PO number, Prosol's item codes and a transfer request, for orders
  * the pickup runner sent before 285539d (it sent on the first tick with no PO, the Shopify SKU, and no stock check;
- * #1405 Regina, 2026-10-02). Looks the PO up, never makes one (the pipeline's SO reconcile or the runner does).
+ * #1405 Regina, 2026-10-02). Uses the order's Salesforce PO; with --send and none yet (the pipeline's last stage pass
+ * is 13:30 Toronto time), makes the SO + PO the SO reconcile's way first.
  *
- *   node scripts/trade/pickup-branch-resend.js '#1405'          dry run: prints the email
- *   node scripts/trade/pickup-branch-resend.js '#1405' --send   sends it (Mac's per-email OK) and records the PO
+ *   node scripts/trade/pickup-branch-resend.js '#1405'          dry run: prints the email, writes nothing
+ *   node scripts/trade/pickup-branch-resend.js '#1405' --send   makes the PO if needed, sends (Mac's per-email OK),
+ *                                                                records the PO in the runner state
  */
 
 'use strict';
@@ -43,21 +45,22 @@ async function poFor(orderName) {
   const order = await R.fetchOrder(gql, rec.id);
   if (!order || order.cancelledAt) throw new Error(`${orderName} not found or cancelled`);
 
-  const poNumber = await poFor(orderName);
-  if (!poNumber) throw new Error(`no Salesforce PO for ${orderName} yet (the pipeline's SO reconcile makes it); run again after the next pass`);
   const lines = order.lines.filter((l) => l.current > 0).map((l) => ({ sku: l.sku, ...R.prosolCodes(l.sku), quantity: l.current }));
   const client = new ProsolClientV2();
   let stock;
   try { await client.init(); stock = bp.checkStock(lines, b.map_code || b.code, await pio.branchStock(client, lines, b.map_code || b.code, branches)); }
   finally { try { await client.close(); } catch {} }
 
+  if (stock.status === 'HOLD') throw new Error(`stock HOLD for ${orderName}, nothing to send: ${JSON.stringify(stock.lines)}`);
+  let poNumber = await poFor(orderName);
+  if (!poNumber && send) poNumber = await pio.ensurePo(orderName, require('../../lib/shopify-sf'), sf);
+  if (!poNumber) poNumber = 'PO-(made on --send)';
   const email = bp.buildPickupEmail({ order: { name: orderName, customer: { firstName: order.firstName, lastName: order.lastName } }, branch: { code: b.code, city: b.pickup_label }, lines, poNumber, stock });
   const body = `This replaces our earlier email for order ${orderName}: it adds our PO number and your item code${stock.status === 'NEEDS_TRANSFER' ? ', and asks for a transfer in' : ''}.\n\n${email.body}`;
   const to = process.env.KAITLYN_EMAIL || 'klazzarotto@prosol.ca';
   const cc = [b.email, process.env.MAC_CC_EMAIL || 'mac@customfc.ca'].filter(Boolean).join(', ');
-  console.log(`To: ${to}\nCc: ${cc}\nSubject: ${email.subject}\n\n${body}\n\n(stock: ${stock.status}${stock.status === 'HOLD' ? ', NOT sendable: no stock anywhere' : ''})`);
+  console.log(`To: ${to}\nCc: ${cc}\nSubject: ${email.subject}\n\n${body}\n\n(stock: ${stock.status})`);
   if (!send) return console.log('\nDry run. Add --send to send it.');
-  if (stock.status === 'HOLD') throw new Error('stock HOLD: not sent');
   await require('../../lib/emailer').sendEmail({ to, cc, subject: email.subject, text: body,
     html: `<pre style="font-family:Arial,sans-serif;font-size:14px">${body.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</pre>` });
   const s2 = R.loadState();
