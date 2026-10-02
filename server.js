@@ -538,10 +538,11 @@ app.get('/prozone/approve', (req, res) => {
     return res.send(skuApprovePage(`Already ${rec.status}`, (e) => `<h2>${e(rec.app.business || rec.app.email)} is already ${e(rec.status)}.</h2>${rec.result?.code ? `<p>Client code ${e(rec.result.code)}.</p>` : ''}`));
   }
   const w = apps.welcomeEmail(rec.app, { code: '(their code)' });
-  res.send(skuApprovePage(`Approve ${rec.app.business || rec.app.email}`, (e) => `
-<h2>Approve ${e(rec.app.business || rec.app.name)} for ProZone?</h2>
+  const deal = rec.app.national ? '10% on accessories (national)' : '20%/25% on accessories, 10% on trims (Coast)';
+  res.send(skuApprovePage(`Approve ${rec.app.business || rec.app.email} (ProZone ${apps.programName(rec.app)})`, (e) => `
+<h2>Approve ${e(rec.app.business || rec.app.name)} for ProZone ${e(apps.programName(rec.app))}?</h2>
 ${apps.detailsHtml(rec.app)}
-<p>Approve turns on 20%/25% on Schluter (10% trims) for ${e(rec.app.email)}, makes their client code, and sends them this email from hello@yourfloors.ca:</p>
+<p>Approve turns on ${e(deal)} for ${e(rec.app.email)}, makes their client code, and sends them this email from hello@yourfloors.ca:</p>
 <pre>${e(w.text)}</pre>
 ${rec.app.verify?.level === 'invalid' ? '<p><b>Approve is off: the GST/HST number is not a real CRA number.</b></p>' : `<form method="post" action="/prozone/approve"><input type="hidden" name="id" value="${e(id)}"><input type="hidden" name="t" value="${e(t)}"><button type="submit">Approve and send</button></form>`}
 <form method="post" action="/prozone/decline" style="margin-top:16px"><input type="hidden" name="id" value="${e(id)}"><input type="hidden" name="t" value="${e(t)}"><button type="submit" style="background:#fff;color:#111;border:1px solid #ccc">Decline (no email sent)</button></form>`));
