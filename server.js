@@ -2494,6 +2494,12 @@ function pickupIo() {
     sendEmail: (m) => require('./lib/emailer').sendEmail(m),
     fulfill: (ids) => pio.fulfill(raw, ids),
     refundTrims: (order, lines) => pio.refundTrims(raw, order, lines),
+    branchStock: async (lines, code, branches) => {
+      const { ProsolClientV2 } = require('./scripts/shipstation/prosol-client-v2');
+      const c = new ProsolClientV2();
+      try { await c.init(); return await pio.branchStock(c, lines, code, branches); } finally { try { await c.close(); } catch {} }
+    },
+    ensurePo: (orderName) => pio.ensurePo(orderName, require('./lib/shopify-sf'), require('./lib/salesforce')),
     log: (o) => audit.log(o),
   };
 }
