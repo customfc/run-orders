@@ -53,6 +53,7 @@ const POOL = {
   zero: ['gid://shopify/Location/66861301927', 'gid://shopify/Location/82853724327', 'gid://shopify/Location/82853822631'], // Ontario, Quebec, Vancouver
 };
 const SET_BATCH = 250;
+const MOVE_TO = 'gid://shopify/Location/82853822631'; // Vancouver Warehouse: placeholders of products Salesforce doesn't have
 // CFC's own shelf: Salesforce PBSI available -> the Shopify Sechelt Warehouse and Powell River locations (replacing the
 // old placeholder counts, Mac 2026-10-02). Staging and in-transit rows are left out.
 const CFC = {
@@ -404,9 +405,14 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
         for (const n of d.nodes) if (n && n.variant && n.variant.product.status === 'ACTIVE') items.push({ itemId: n.id, sku: n.sku, titles: [n.variant.title, n.variant.product.title], sqftPerCarton: n.variant.product.metafield ? Number(n.variant.product.metafield.value) : null });
       }
       const rawOther = await (sfShelf || sfShelfStock)([...new Set(items.map((x) => x.sku).filter(Boolean))]);
-      otherShelf = cs.planOtherShelf({ items, shelf: rawOther, locations: Object.keys(CFC), levels });
-      log(`other products at Sechelt/Powell River: ${items.length} stocked, ${items.filter((x) => x.sku && rawOther.has(x.sku)).length} with a Salesforce item, ${otherShelf.length} counts to correct`);
-      plan.set.push(...otherShelf);
+      // Vancouver Warehouse shares the Sechelt / Powell River shipping group in every profile these products are in.
+      const vanLevels = await readLevels(gql, [MOVE_TO]);
+      for (const [k, v] of vanLevels) levels.set(k, v);
+      const o = cs.planOtherShelf({ items, shelf: rawOther, locations: Object.keys(CFC), levels, moveTo: MOVE_TO });
+      otherShelf = o.set;
+      log(`other products at Sechelt/Powell River: ${items.length} stocked, ${items.filter((x) => x.sku && rawOther.has(x.sku)).length} with a Salesforce item, ${o.set.length} counts to correct (${o.activate.length} moved to Vancouver Warehouse need stocking there)`);
+      plan.activate.push(...o.activate);
+      plan.set.push(...o.set);
     } catch (e) { log(`other products' shelf skipped: ${e.message}`); }
   }
   const counts2 = { activate: plan.activate.length, set: plan.set.length, deny: plan.deny.length, deactivate: plan.deactivate.length, skipped: plan.skipped };
