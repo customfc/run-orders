@@ -397,22 +397,30 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
   let otherShelf = [];
   if (shelf) {
     try {
+      // Every active variant outside the pickup profiles (Mac 2026-10-02 "everything on the shelf"), not only those
+      // Shopify already counts at Sechelt / Powell River.
       const pickupItems = new Set(variants.map((v) => v.itemId));
-      const ids = [...new Set([...levels.keys()].filter((k) => Object.keys(CFC).some((loc) => k.endsWith(`|${loc}`))).map((k) => k.split('|')[0]))].filter((id) => !pickupItems.has(id));
       const items = [];
-      for (let i = 0; i < ids.length; i += 100) {
-        const d = await gql(`query($ids: [ID!]!) { nodes(ids: $ids) { ... on InventoryItem { id sku variant { title product { title status metafield(namespace: "my_fields", key: "sq_ft_per_carton") { value } } } } } }`, { ids: ids.slice(i, i + 100) });
-        for (const n of d.nodes) if (n && n.variant && n.variant.product.status === 'ACTIVE') items.push({ itemId: n.id, sku: n.sku, titles: [n.variant.title, n.variant.product.title], sqftPerCarton: n.variant.product.metafield ? Number(n.variant.product.metafield.value) : null });
-      }
+      let after = null;
+      do {
+        const d = await gql(`query($a: String) { productVariants(first: 100, after: $a, query: "product_status:active") { pageInfo { hasNextPage endCursor }
+          nodes { sku title inventoryItem { id } product { title status metafield(namespace: "my_fields", key: "sq_ft_per_carton") { value } } } } }`, { a: after });
+        for (const n of d.productVariants.nodes) {
+          if (!n.inventoryItem || pickupItems.has(n.inventoryItem.id) || n.product.status !== 'ACTIVE') continue;
+          items.push({ itemId: n.inventoryItem.id, sku: n.sku, titles: [n.title, n.product.title], sqftPerCarton: n.product.metafield ? Number(n.product.metafield.value) : null });
+        }
+        after = d.productVariants.pageInfo.hasNextPage ? d.productVariants.pageInfo.endCursor : null;
+      } while (after);
       const rawOther = await (sfShelf || sfShelfStock)([...new Set(items.map((x) => x.sku).filter(Boolean))]);
       // Vancouver Warehouse shares the Sechelt / Powell River shipping group in every profile these products are in.
       const vanLevels = await readLevels(gql, [MOVE_TO]);
       for (const [k, v] of vanLevels) levels.set(k, v);
-      const o = cs.planOtherShelf({ items, shelf: rawOther, locations: Object.keys(CFC), levels, moveTo: MOVE_TO });
+      const o = cs.planOtherShelf({ items, shelf: rawOther, locations: Object.keys(CFC), levels, moveTo: MOVE_TO, pickup: coastPickup });
       otherShelf = o.set;
-      log(`other products at Sechelt/Powell River: ${items.length} stocked, ${items.filter((x) => x.sku && rawOther.has(x.sku)).length} with a Salesforce item, ${o.set.length} counts to correct (${o.activate.length} moved to Vancouver Warehouse need stocking there)`);
+      log(`other products: ${items.length} active variants, ${items.filter((x) => x.sku && rawOther.has(x.sku)).length} with a Salesforce shelf, ${o.set.length} counts to write, ${o.activate.length} to stock, ${o.deactivate.length} to unstock at Coast pickup`);
       plan.activate.push(...o.activate);
       plan.set.push(...o.set);
+      plan.deactivate.push(...o.deactivate);
     } catch (e) { log(`other products' shelf skipped: ${e.message}`); }
   }
   const counts2 = { activate: plan.activate.length, set: plan.set.length, deny: plan.deny.length, deactivate: plan.deactivate.length, skipped: plan.skipped };
