@@ -54,6 +54,9 @@ const POOL = {
 };
 const SET_BATCH = 250;
 const MOVE_TO = 'gid://shopify/Location/82853822631'; // Vancouver Warehouse: placeholders of products Salesforce doesn't have
+// Sold only while they're on our shelf (Mac 2026-10-02 on the matching mouldings: "don't have reliable stock of those"):
+// Custom Coastal stair nosing / reducer, Inlet reducer / T-cap, Mountain Click stair nosing / T-cap.
+const SHELF_ONLY = new Set(['11285', '11290', '11126', '11130', '11368', '11378']);
 // CFC's own shelf: Salesforce PBSI available -> the Shopify Sechelt Warehouse and Powell River locations (replacing the
 // old placeholder counts, Mac 2026-10-02). Staging and in-transit rows are left out.
 const CFC = {
@@ -415,7 +418,7 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
       // Vancouver Warehouse shares the Sechelt / Powell River shipping group in every profile these products are in.
       const vanLevels = await readLevels(gql, [MOVE_TO]);
       for (const [k, v] of vanLevels) levels.set(k, v);
-      const o = cs.planOtherShelf({ items, shelf: rawOther, locations: Object.keys(CFC), levels, moveTo: MOVE_TO, pickup: coastPickup });
+      const o = cs.planOtherShelf({ items, shelf: rawOther, locations: Object.keys(CFC), levels, moveTo: MOVE_TO, pickup: coastPickup, shelfOnly: SHELF_ONLY });
       otherShelf = o.set;
       log(`other products: ${items.length} active variants, ${items.filter((x) => x.sku && rawOther.has(x.sku)).length} with a Salesforce shelf, ${o.set.length} counts to write, ${o.activate.length} to stock, ${o.deactivate.length} to unstock at Coast pickup`);
       plan.activate.push(...o.activate);
@@ -515,4 +518,4 @@ if (require.main === module) {
   }).catch((e) => { console.error(e.stack || e.message); process.exit(1); });
 }
 
-module.exports = { syncCounterStock, pickupProfiles, profileProducts, readLevels, pullStock, snapshotIds, sfShelfStock, GAP_MS, PROFILES, POOL, CFC };
+module.exports = { syncCounterStock, pickupProfiles, profileProducts, readLevels, pullStock, snapshotIds, sfShelfStock, GAP_MS, PROFILES, POOL, CFC, SHELF_ONLY, MOVE_TO };
