@@ -391,6 +391,24 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
     }
   } catch (e) { log(`Salesforce shelf stock failed, Sechelt/Powell River left as they are: ${e.message}`); }
   const plan = cs.planLocations({ variants, stockBySku, counters: located, pool: POOL, levels, cfc: shelf ? { bySku: shelf, locations: Object.keys(CFC), pickup: coastPickup } : null });
+  // The rest of the catalog at the Sechelt / Powell River shipping locations (flooring, bulky, general): real shelf
+  // where Salesforce has the item and the unit converts; everything else is left as it is.
+  let otherShelf = [];
+  if (shelf) {
+    try {
+      const pickupItems = new Set(variants.map((v) => v.itemId));
+      const ids = [...new Set([...levels.keys()].filter((k) => Object.keys(CFC).some((loc) => k.endsWith(`|${loc}`))).map((k) => k.split('|')[0]))].filter((id) => !pickupItems.has(id));
+      const items = [];
+      for (let i = 0; i < ids.length; i += 100) {
+        const d = await gql(`query($ids: [ID!]!) { nodes(ids: $ids) { ... on InventoryItem { id sku variant { title product { title status metafield(namespace: "my_fields", key: "sq_ft_per_carton") { value } } } } } }`, { ids: ids.slice(i, i + 100) });
+        for (const n of d.nodes) if (n && n.variant && n.variant.product.status === 'ACTIVE') items.push({ itemId: n.id, sku: n.sku, titles: [n.variant.title, n.variant.product.title], sqftPerCarton: n.variant.product.metafield ? Number(n.variant.product.metafield.value) : null });
+      }
+      const rawOther = await (sfShelf || sfShelfStock)([...new Set(items.map((x) => x.sku).filter(Boolean))]);
+      otherShelf = cs.planOtherShelf({ items, shelf: rawOther, locations: Object.keys(CFC), levels });
+      log(`other products at Sechelt/Powell River: ${items.length} stocked, ${items.filter((x) => x.sku && rawOther.has(x.sku)).length} with a Salesforce item, ${otherShelf.length} counts to correct`);
+      plan.set.push(...otherShelf);
+    } catch (e) { log(`other products' shelf skipped: ${e.message}`); }
+  }
   const counts2 = { activate: plan.activate.length, set: plan.set.length, deny: plan.deny.length, deactivate: plan.deactivate.length, skipped: plan.skipped };
   log(`plan: ${counts2.activate} activations, ${counts2.set} quantities, ${counts2.deny} variants to "don't sell when out of stock", ${counts2.deactivate} unstocks, ${counts2.skipped} skipped`);
 
