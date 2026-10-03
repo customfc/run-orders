@@ -13,6 +13,11 @@
  *
  * Location name "<pickup label> trade counter" (customers see it at checkout; never the distributor's name), address
  * from the branch row, instructions = the row's hours and pickup note. Every write goes to data/trade/pickup-zones-log.jsonl.
+ *
+ * The Coast (Mac 2026-10-02, after #1408: Powell River pickup "Shelf only"): Sechelt and Powell River get their own
+ * pickup-only locations ("Sechelt warehouse pickup", "Powell River showroom pickup", id in the row's
+ * pickup_location_id), stocked by the sync with CFC's real shelf from Salesforce. The existing Sechelt Warehouse /
+ * Powell River locations stay shipping-only: 318 other products hold placeholder counts there.
  */
 
 'use strict';
@@ -37,18 +42,25 @@ async function gql(q, v) {
 }
 const ue = (label, x) => { if (x && x.userErrors && x.userErrors.length) throw new Error(`${label}: ${JSON.stringify(x.userErrors)}`); };
 
-const nameFor = (b) => `${b.pickup_label} trade counter`;
+const COAST_NAMES = { SECH: 'Sechelt warehouse pickup', PRIV: 'Powell River showroom pickup' };
+const COAST_ADDRESS = {
+  SECH: { address1: '5824 Sechelt Inlet Rd', city: 'Sechelt', provinceCode: 'BC', zip: 'V0N 3A3', countryCode: 'CA' },
+  PRIV: { address1: '7345 Duncan St', city: 'Powell River', provinceCode: 'BC', zip: 'V8A 1W6', countryCode: 'CA' },
+};
+const nameFor = (b) => (b.coast ? COAST_NAMES[b.code] : `${b.pickup_label} trade counter`);
+const idOf = (b) => (b.coast ? b.pickup_location_id : b.shopify_location_id);
 /** "Mon to Fri 7:30 am to 4:30 pm. We email you when it's ready, so please wait for that email. Bring ..." */
 function instructionsFor(b) {
   const d = String(b.description || '');
   const hours = (d.match(/(Mon to Fri[^.]*\.(?:\s*Sat[^.]*\.)?)/) || [])[1] || '';
-  return `${hours ? `${hours} ` : ''}We email you when your order is ready, so please wait for that email. Bring your order number and photo ID.`.trim();
+  return `${hours ? `${hours} ` : ''}We email you when your order is ready, so please wait for that email. Bring your order number${b.coast ? '' : ' and photo ID'}.`.trim();
 }
 function addressFor(b) {
+  if (b.coast) return COAST_ADDRESS[b.code];
   const a = b.address || {};
   return { address1: a.street, city: a.city, provinceCode: a.province, zip: a.postal_code, countryCode: 'CA' };
 }
-const counters = (all) => all.filter((b) => b.enabled && !b.coast && b.map_key);
+const counters = (all) => all.filter((b) => b.enabled && ((!b.coast && b.map_key) || (b.coast && COAST_NAMES[b.code])));
 
 async function locations() {
   const d = await gql(`{ locations(first: 250, includeInactive: true) { nodes { id name isActive fulfillsOnlineOrders address { address1 city zip }
@@ -59,16 +71,17 @@ async function locations() {
 async function main() {
   const cmd = args[0];
   const file = JSON.parse(fs.readFileSync(BRANCHES, 'utf8'));
-  const rows = counters(file.branches);
+  const only = args.find((x) => x.startsWith('--only='));
+  const rows = counters(file.branches).filter((b) => !only || only.slice(7).split(',').includes(b.code));
   const locs = await locations();
   const byId = new Map(locs.map((l) => [l.id, l]));
   const byName = new Map(locs.map((l) => [l.name, l]));
-  const locFor = (b) => (b.shopify_location_id && byId.get(b.shopify_location_id)) || byName.get(nameFor(b)) || null;
+  const locFor = (b) => (idOf(b) && byId.get(idOf(b))) || byName.get(nameFor(b)) || null;
 
   if (cmd === 'status' || !cmd) {
     for (const b of rows) {
       const l = locFor(b);
-      console.log(`${b.code.padEnd(5)} ${nameFor(b).padEnd(38)} ${l ? `${l.id.split('/').pop()} ${l.isActive ? 'active' : 'INACTIVE'} pickup ${l.localPickupSettingsV2 ? 'ON' : 'off'}` : 'no location'}${b.shopify_location_id && !l ? ' (saved id not found!)' : ''}`);
+      console.log(`${b.code.padEnd(5)} ${nameFor(b).padEnd(38)} ${l ? `${l.id.split('/').pop()} ${l.isActive ? 'active' : 'INACTIVE'} pickup ${l.localPickupSettingsV2 ? 'ON' : 'off'}` : 'no location'}${idOf(b) && !l ? ' (saved id not found!)' : ''}`);
     }
     return;
   }
@@ -86,7 +99,7 @@ async function main() {
         log({ action: 'locationAdd', code: b.code, id: l.id, input });
         console.log(`created ${b.code} ${l.id}`);
       }
-      if (b.shopify_location_id !== l.id) { b.shopify_location_id = l.id; changed++; }
+      if (b.coast ? b.pickup_location_id !== l.id : b.shopify_location_id !== l.id) { if (b.coast) b.pickup_location_id = l.id; else b.shopify_location_id = l.id; changed++; }
     }
     if (LIVE && changed) {
       fs.writeFileSync(BRANCHES, JSON.stringify(file, null, 2) + '\n');
@@ -102,7 +115,7 @@ async function main() {
       if (!LIVE) { console.log(`would turn pickup ${cmd === 'pickup-on' ? 'on' : 'off'} at ${l.name}${cmd === 'pickup-on' ? `: ${instructionsFor(b)}` : ''}`); continue; }
       if (cmd === 'pickup-on') {
         const r = await gql(`mutation($s: DeliveryLocationLocalPickupEnableInput!) { locationLocalPickupEnable(localPickupSettings: $s) { localPickupSettings { pickupTime } userErrors { field message } } }`,
-          { s: { locationId: l.id, pickupTime: PICKUP_TIME, instructions: instructionsFor(b) } });
+          { s: { locationId: l.id, pickupTime: b.coast ? 'TWENTY_FOUR_HOURS' : PICKUP_TIME, instructions: instructionsFor(b) } });
         ue(`pickup on ${b.code}`, r.locationLocalPickupEnable);
       } else {
         const r = await gql(`mutation($l: ID!) { locationLocalPickupDisable(locationId: $l) { locationId userErrors { field message } } }`, { l: l.id });

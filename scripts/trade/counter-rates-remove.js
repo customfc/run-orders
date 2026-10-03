@@ -5,7 +5,8 @@
  * Powell River) and every Standard rate stay. A "Local pickup only" zone left with no rate is deleted (trims can't ship
  * there anyway; with no zone Shopify offers them only native pickup, which is the point).
  *
- *   node scripts/trade/counter-rates-remove.js plan                      read-only: what would go
+ *   node scripts/trade/counter-rates-remove.js plan [--coast]            read-only: what would go (--coast: the
+ *                                                                        Sechelt and Powell River rates too)
  *   node scripts/trade/counter-rates-remove.js apply --live              save the before-state, delete, re-read, verify
  *   node scripts/trade/counter-rates-remove.js rollback --before=<file> --live
  *                                                                        re-create the deleted rates (and zones)
@@ -30,7 +31,9 @@ const opt = (k) => { const a = args.find((x) => x.startsWith(`--${k}=`)); return
 const log = (o) => fs.appendFileSync(LOG, JSON.stringify({ at: new Date().toISOString(), script: 'counter-rates-remove', ...o }) + '\n');
 async function gql(q, v) { const r = await graphql(q, v); if (r.errors) throw new Error(JSON.stringify(r.errors).slice(0, 400)); return r.data; }
 
-const COUNTER_RATE = /^Pickup at our .+ trade counter$/;
+// --coast also takes the two Coast rates out (Mac 2026-10-02 "Shelf only": Sechelt and Powell River use Shopify's own
+// pickup at their pickup-only locations, stocked from the shelf).
+const COUNTER_RATE = args.includes('--coast') ? /^Pickup at our (.+ trade counter|Sechelt warehouse|Powell River showroom)$/ : /^Pickup at our .+ trade counter$/;
 
 async function readProfile(id) {
   const d = await gql(`query($id: ID!) { deliveryProfile(id: $id) { id name profileLocationGroups { locationGroup { id }

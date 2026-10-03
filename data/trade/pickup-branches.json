@@ -77,7 +77,8 @@
         "mon_fri": "7:30am - 5:00pm",
         "sat": "9:00am - 3:00pm",
         "sun": "Closed"
-      }
+      },
+      "pickup_location_id": "gid://shopify/Location/87457923239"
     },
     {
       "code": "PRIV",
@@ -98,7 +99,8 @@
         "mon_fri": "8:30am - 5:00pm",
         "sat": "Closed",
         "sun": "Closed"
-      }
+      },
+      "pickup_location_id": "gid://shopify/Location/87457956007"
     },
     {
       "code": "ABBY",

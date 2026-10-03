@@ -60,7 +60,7 @@ const CFC = {
   'gid://shopify/Location/65050837159': ['Powell River'],
 };
 
-/** Map shopifySku -> { shopifyLocationId: qty } from Salesforce (PBSI items are named by the Shopify SKU). */
+/** Map shopifySku -> { shopifyLocationId: qty, uom } from Salesforce (PBSI items are named by the Shopify SKU). */
 async function sfShelfStock(skus) {
   const sf = require('../../lib/salesforce');
   const conn = await sf.connect();
@@ -76,6 +76,8 @@ async function sfShelfStock(skus) {
       m[loc] = (m[loc] || 0) + (Number(r.q) || 0);
       out.set(r.n, m);
     }
+    const items = await sf.query(conn, `SELECT Name, PBSI__defaultunitofmeasure__c FROM PBSI__PBSI_Item__c WHERE Name IN (${list})`);
+    for (const it of items) if (out.has(it.Name)) out.get(it.Name).uom = it.PBSI__defaultunitofmeasure__c || 'EA';
   }
   return out;
 }
@@ -129,7 +131,7 @@ async function profileProducts(gql, profiles) {
     do {
       const d = await gql(`query($id: ID!, $a: String) { deliveryProfile(id: $id) { profileItems(first: 8, after: $a) {
         pageInfo { hasNextPage endCursor }
-        nodes { product { id title tags status } variants(first: 100) { pageInfo { hasNextPage } nodes { id sku barcode inventoryPolicy inventoryItem { id } } } } } } }`, { id: pid, a: after });
+        nodes { product { id title tags status } variants(first: 100) { pageInfo { hasNextPage } nodes { id sku title barcode inventoryPolicy inventoryItem { id } } } } } } }`, { id: pid, a: after });
       const page = d.deliveryProfile.profileItems;
       for (const it of page.nodes) {
         counts.items++;
@@ -142,13 +144,13 @@ async function profileProducts(gql, profiles) {
           let va = null;
           do {
             const v = await gql(`query($id: ID!, $a: String) { product(id: $id) { variants(first: 100, after: $a) { pageInfo { hasNextPage endCursor }
-              nodes { id sku barcode inventoryPolicy inventoryItem { id } deliveryProfile { id } } } } }`, { id: it.product.id, a: va });
+              nodes { id sku title barcode inventoryPolicy inventoryItem { id } deliveryProfile { id } } } } }`, { id: it.product.id, a: va });
             variants.push(...v.product.variants.nodes.filter((x) => x.deliveryProfile && want.has(x.deliveryProfile.id)));
             va = v.product.variants.pageInfo.hasNextPage ? v.product.variants.pageInfo.endCursor : null;
           } while (va);
         }
         const p = byId.get(it.product.id) || { id: it.product.id, title: it.product.title, tags: it.product.tags, variants: [] };
-        for (const v of variants) if (!p.variants.some((x) => x.id === v.id)) p.variants.push({ id: v.id, sku: v.sku || null, barcode: v.barcode || null, itemId: v.inventoryItem ? v.inventoryItem.id : null, policy: v.inventoryPolicy, pooled: pooledOf.get(pid) });
+        for (const v of variants) if (!p.variants.some((x) => x.id === v.id)) p.variants.push({ id: v.id, sku: v.sku || null, title: v.title || '', barcode: v.barcode || null, itemId: v.inventoryItem ? v.inventoryItem.id : null, policy: v.inventoryPolicy, pooled: pooledOf.get(pid) });
         byId.set(it.product.id, p);
       }
       after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
@@ -373,11 +375,22 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
   const failRate = codes.size ? failed.length / codes.size : 0;
   const aborted = failRate > MAX_FAILED ? `${failed.length} of ${codes.size} lookups failed (${Math.round(failRate * 100)}%), over ${MAX_FAILED * 100}%: nothing written` : null;
 
-  const levels = await readLevels(gql, [...located.map((c) => c.locationId), POOL.locationId, ...POOL.zero, ...Object.keys(CFC)]);
+  // Coast pickup-only locations (native-counters.js): stocked from the shelf of the matching shipping location.
+  const coastPickup = Object.fromEntries(JSON.parse(fs.readFileSync(BRANCHES, 'utf8')).branches.filter((b) => b.coast && b.pickup_location_id && b.shopify_location_id && CFC[b.shopify_location_id]).map((b) => [b.pickup_location_id, b.shopify_location_id]));
+  const levels = await readLevels(gql, [...located.map((c) => c.locationId), POOL.locationId, ...POOL.zero, ...Object.keys(CFC), ...Object.keys(coastPickup)]);
   const variants = products.flatMap((p) => p.variants.map((v) => ({ id: v.id, productId: p.id, itemId: v.itemId, policy: v.policy, sku: v.sku, prosolSku: v.prosolSku, pooled: v.pooled })));
   let shelf = null;
-  try { shelf = await (sfShelf || sfShelfStock)([...new Set(variants.map((v) => v.sku).filter(Boolean))]); } catch (e) { log(`Salesforce shelf stock failed, Sechelt/Powell River left as they are: ${e.message}`); }
-  const plan = cs.planLocations({ variants, stockBySku, counters: located, pool: POOL, levels, cfc: shelf ? { bySku: shelf, locations: Object.keys(CFC) } : null });
+  try {
+    const raw = await (sfShelf || sfShelfStock)([...new Set(variants.map((v) => v.sku).filter(Boolean))]);
+    // Into Shopify's selling unit per variant (a roll, not its square feet): keyed by SKU, so one row per SKU.
+    shelf = new Map();
+    for (const p of products) for (const v of p.variants) {
+      const r = v.sku && raw.get(v.sku);
+      if (!r || shelf.has(v.sku)) continue;
+      shelf.set(v.sku, Object.fromEntries(Object.entries(r).filter(([k]) => k !== 'uom').map(([loc, q]) => [loc, cs.shelfUnits(q, r.uom, [v.title, p.title])])));
+    }
+  } catch (e) { log(`Salesforce shelf stock failed, Sechelt/Powell River left as they are: ${e.message}`); }
+  const plan = cs.planLocations({ variants, stockBySku, counters: located, pool: POOL, levels, cfc: shelf ? { bySku: shelf, locations: Object.keys(CFC), pickup: coastPickup } : null });
   const counts2 = { activate: plan.activate.length, set: plan.set.length, deny: plan.deny.length, deactivate: plan.deactivate.length, skipped: plan.skipped };
   log(`plan: ${counts2.activate} activations, ${counts2.set} quantities, ${counts2.deny} variants to "don't sell when out of stock", ${counts2.deactivate} unstocks, ${counts2.skipped} skipped`);
 
