@@ -1052,8 +1052,9 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
   }
 
   for (const order of inScope) {
-    // Pickup and local-delivery orders never get a courier label (lib/local-fulfillment.js). Fails closed: a Shopify
-    // order whose delivery method can't be read is held this run and retried on the next.
+    // Pickup and local-delivery orders never get a courier label, and neither does an order Shopify shows as cancelled,
+    // refunded in full (a pending refund counts) or emptied of lines (lib/local-fulfillment.js). Fails closed: a
+    // Shopify order that can't be read is held this run and retried on the next.
     if (isShopifyOrder(order)) {
       const v = await localVerdict(order);
       if (v.action !== 'ship') {

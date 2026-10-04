@@ -336,6 +336,7 @@ async function buyLabelForOrder({ orderId, carrierCode, serviceCode, packageCode
 
   // Pickup / local-delivery belt (lib/local-fulfillment.js), before anything can write to ShipStation: a Shopify
   // order picked up in Sechelt or Powell River, or delivered by CFC's truck, never gets a courier label here either.
+  // Same lookup carries the refund guard: cancelled, refunded in full or emptied in Shopify means no label.
   // Fails closed when the order or its delivery method can't be read.
   {
     const { localVerdict } = require('./lib/local-fulfillment');
@@ -351,7 +352,7 @@ async function buyLabelForOrder({ orderId, carrierCode, serviceCode, packageCode
     }
     if (verdict && verdict.action !== 'ship') {
       audit.log({ action: 'buy-label', orderId, success: false, error: `local-fulfillment guard: ${verdict.reason}` });
-      return { success: false, error: verdict.reason, code: 'LOCAL_FULFILLMENT' };
+      return { success: false, error: verdict.reason, code: ['CANCELLED', 'REFUNDED', 'REMOVED'].includes(verdict.kind) ? 'REFUNDED' : 'LOCAL_FULFILLMENT' };
     }
   }
 
