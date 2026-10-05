@@ -14,7 +14,7 @@ const ALERT_TO = process.env.SAMPLE_WATCH_EMAIL || 'mac@customfc.ca';
   const state = loadState();
   const scan = await scanSamples({ state });
   console.log(`open sample orders: ${scan.orders.length}`);
-  for (const o of scan.orders) console.log(`  #${o.order} ${String(o.age).padStart(2)}d  ${o.stage.padEnd(11)} ${o.customer} — ${o.detail || 'moving normally'}`);
+  for (const o of scan.orders) console.log(`  #${o.order} ${String(o.age).padStart(2)}d  ${o.stage.padEnd(17)} ${o.customer} — ${o.detail || 'moving normally'}`);
 
   const now = new Date();
   const { followUps } = await scanFollowUps({ state, now });

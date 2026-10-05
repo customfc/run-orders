@@ -57,5 +57,5 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `prosol-stock.js` — Prosol stock lookup (also source of `cost_cad`).
 - `analytics-db.js` + `analytics-schema.sql` + `analytics-views.sql` — SQLite analytics layer.
 - `analytics-alerts.js` — analytics alerting.
-- `sample-watch.js` — sample-order watchdog (samples carry no SKU, so other watchdogs miss them); 08:30 weekday email digest (`data/sample-watch-state.json`). Also names each sample customer to follow up with, once, 3 days after UPS shows the samples delivered (deliveries older than 14 days are skipped).
+- `sample-watch.js` — sample-order watchdog (samples carry no SKU, so other watchdogs miss them); 08:30 weekday email digest (`data/sample-watch-state.json`). Also names each sample customer to follow up with, once, 3 days after UPS shows the samples delivered (deliveries older than 14 days are skipped). A label is "idle" only if the carrier never scanned it; a scanned label on an order still open 5 days after pickup is `open-after-pickup` (unmarked, or a second vendor's half has no tracking).
 - `integration-health.js` — cross-integration health monitor.
