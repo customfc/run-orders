@@ -3226,7 +3226,7 @@ const COMMAND_HELP = `Commands:
 /buy <orderId> — approve & ship a held re-buy (see /held)
 /release <orderNumber> [WH_CODE] [now] — release a large order held for review; optional branch pin (e.g. WCAS); "now" runs stage→pickups immediately. /release list · /release drop <orderNumber>
 /orphans — show bought-but-never-emailed labels from the last 4 days (no-email strand)
-/health — check integration health (store syncs, PO creation, mail watcher)
+/health — check integration health (store syncs, PO creation)
 /pause — halt all pipeline runs until /resume
 /resume — clear pause
 /help — this help
