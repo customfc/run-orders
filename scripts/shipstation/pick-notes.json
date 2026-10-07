@@ -1,0 +1,11 @@
+{
+  "_doc": "Per-product pick instructions for Prosol branches (lib/pick-notes.js). `codes` match the api_sku / prosol_sku the pipeline uses. `note` prints on that order in the branch email. `min_spare` = units a branch must hold beyond the order quantity before routing picks it first (default 1); routing still falls back to exact cover if no branch has the spare.",
+  "notes": [
+    {
+      "codes": ["C030882-4", "C030882-01"],
+      "note": "Sealer's Choice Gold QUART 946 mL (C030882-01). Do not substitute PFAS-Free (C030882-4-PF) or the pint.",
+      "min_spare": 2,
+      "why": "2026-10-07: 2 'wrong item' returns and a 1-star on B000UOJGME; Burnaby held 40 PFAS-Free quarts vs 1 regular. Mac approved the pick note + routing."
+    }
+  ]
+}

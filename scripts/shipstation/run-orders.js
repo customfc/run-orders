@@ -712,14 +712,17 @@ function requiredQtyBySku(order) {
 // single unit (order 701-2156847 -> Richmond). The old qty>=2 "phantom last
 // unit" guard (added for the 2026-04-21 702-7750339 -> Burnaby incident) was
 // necessary but insufficient: it never scaled with order size.
-function scoreWarehouseAgainstOrder(locId, inventoryBySku, requiredBySku) {
+function scoreWarehouseAgainstOrder(locId, inventoryBySku, requiredBySku, { perSkuSpare = false } = {}) {
   let minSurplus = Infinity;
   for (const [key, entry] of Object.entries(inventoryBySku)) {
     const need = requiredBySku[key] || 0;
     const stock = entry.locationStock?.[locId];
     const have = (stock && stock.available) ? (Number(stock.quantity) || 0) : 0;
     if (have < need) return -Infinity; // can't cover this SKU's full quantity
-    const surplus = have - need;
+    // pick-notes.json min_spare: some products need more than the usual 1 spare
+    // before a branch is preferred (Sealer's Choice Gold quart: a branch with 1
+    // regular quart and 40 PFAS-Free ones picked the wrong jug, 2026-10-07).
+    const surplus = have - need - (perSkuSpare && need ? require('../../lib/pick-notes').spareFor(key) - 1 : 0);
     if (surplus < minSurplus) minSurplus = surplus;
   }
   return minSurplus === Infinity ? 0 : minSurplus;
@@ -764,7 +767,7 @@ function determineWarehouse(order, inventoryBySku) {
   // Pass 1: nearest branch that covers the whole order with >= 1 spare per SKU
   // (phantom-last-unit guard, scaled to the order quantity).
   for (const b of branches) {
-    if (scoreWarehouseAgainstOrder(b.prosolLocId, inventoryBySku, requiredBySku) >= 1) {
+    if (scoreWarehouseAgainstOrder(b.prosolLocId, inventoryBySku, requiredBySku, { perSkuSpare: true }) >= 1) {
       return { prosolLocId: b.prosolLocId, location: b.location };
     }
   }

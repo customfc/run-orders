@@ -158,3 +158,16 @@ test('single-carrier quotes still resolve', () => {
   assert.match(chooseNonCpCarrier({ ups: q(30), purolator: null, warehouseId: PROSOL_BURNABY }).note, /pickups are DOWN/);
   assert.equal(chooseNonCpCarrier({ ups: null, purolator: null }).winner, null);
 });
+
+test('pick-notes min_spare: Sealer\'s Choice Gold quart skips a branch holding 2 when another holds 3+', () => {
+  // Burnaby (10010) is nearest to V5B but holds only 2 regular quarts; min_spare 2 needs 1 + 2 = 3.
+  const order = { shipTo: { postalCode: 'V5B 3A9' }, normalizedProvince: 'BC', resolvedItems: [{ apiSku: 'C030882-4', qty: 1 }] };
+  const inv = { 'C030882-4': { locationStock: {
+    '10010': { available: true, quantity: 2 },
+    '10038': { available: true, quantity: 5 },
+  } } };
+  assert.equal(determineWarehouse(order, inv).prosolLocId, 10038);
+  // With nobody holding the spare, it still ships from a branch that covers the order.
+  const thin = { 'C030882-4': { locationStock: { '10010': { available: true, quantity: 2 } } } };
+  assert.equal(determineWarehouse(order, thin).prosolLocId, 10010);
+});
