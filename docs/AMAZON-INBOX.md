@@ -10,7 +10,8 @@ and the account averaged 69.9 h. This reads Amazon mail only, so supplier traffi
 ## What it does with each new Amazon message
 
 1. Ignores anything that isn't from `@marketplace.amazon.ca` (buyer and Amazon CS threads) or an A-to-z notice.
-2. Skips threads hello@ already replied to, and "thanks" messages (marked read, no card).
+2. Skips threads hello@ already replied to. A "thanks" message is NOT skipped: Amazon still counts it against the 24 h
+   response clock, so it gets a one-line acknowledgement (carded, or sent on its own with `AMAZON_INBOX_AUTOSEND_THANKS=1`).
 3. Gathers the order's facts: Amazon status, items and cancel requests, every ShipStation shipment (split children
    too) with live tracking, refunds and A-to-z money, and what the returns autopilot did.
 4. Opus drafts the reply from those facts only (French for French buyers), following the email rules: plain text, no
