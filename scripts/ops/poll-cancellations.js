@@ -26,6 +26,7 @@ const sp = require('../../lib/sp-api');
 const { findOrderByAmazonOrderId, cancelOrder } = require('../../lib/shipstation-v2');
 const { notify } = require('../../lib/telegram');
 const { open } = require('../../lib/analytics-db');
+const { buyerRequestedCancel, cancelRequestFromOrder } = require('../../lib/amazon-cancel-request');
 
 const MARKETPLACE = process.env.AMAZON_SP_MARKETPLACE_ID || 'A2EUQ1WTGCTBG2'; // Amazon.ca
 
@@ -75,10 +76,16 @@ async function listBuyerCancellationsFromApi({ lookbackMinutes = 60 * 24 * 7 } =
     const orders = page.payload?.Orders || [];
     for (const o of orders) {
       if (o.FulfillmentChannel !== 'MFN') continue;
-      // Amazon returns the flag as a boolean literal, sometimes stringified
-      const flagged = o.IsBuyerRequestedCancellation === true || o.IsBuyerRequestedCancellation === 'true';
-      if (!flagged) continue;
-      matches.push(o);
+      // The request lives on each ORDER ITEM (BuyerRequestedCancel); the order-level
+      // field this used to read is never sent, so the guard never fired (lib/amazon-cancel-request.js).
+      let req = cancelRequestFromOrder(o);
+      if (!req.requested) {
+        await new Promise(r => setTimeout(r, 2100)); // getOrderItems: 0.5 req/s
+        try { req = await buyerRequestedCancel(o.AmazonOrderId, sp); }
+        catch (e) { console.warn(`[poll-cancel] items for ${o.AmazonOrderId} failed (${e.message.slice(0, 80)}); next poll retries`); continue; }
+      }
+      if (!req.requested) continue;
+      matches.push({ ...o, BuyerCancelReason: req.reason });
     }
     nextToken = page.payload?.NextToken;
   } while (nextToken);
@@ -117,7 +124,7 @@ function markAlerted(db, amazonOrderId) {
 
 async function handleOrder(db, order, { dryRun }) {
   const id = order.AmazonOrderId;
-  const reason = order.CancelReason || order.BuyerRequestedCancelReason || '(reason not provided)';
+  const reason = order.BuyerCancelReason || order.CancelReason || order.BuyerRequestedCancelReason || '(reason not provided)';
   const summary = {
     order: id,
     reason,
