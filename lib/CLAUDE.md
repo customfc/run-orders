@@ -32,6 +32,7 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `shopify-graphql.js` — Shopify Admin GraphQL.
 - `sp-api.js` / `sp-api-reports.js` / `sp-api-inbound.js` — Amazon SP-API base / reports / FBA inbound.
 - `amazon-po.js` — Amazon PO drafts/creation.
+- `amazon-returns-autopilot.js` — Amazon MFN returns: refund without return (≤$60, consumables ≤$150), else prepaid Purolator label to the shipping branch + Prosol heads-up, refund on first scan; holds go to Mac with a one-tap approve (`/returns/approve`). Every 2 h; SHADOW unless `RETURNS_AUTOPILOT_LIVE=1`. IO in `amazon-returns-io.js`, Salesforce RMAs in `amazon-return-sf.js` (`RETURNS_SF_LIVE=1`). State `data/returns-autopilot.json`. See `docs/RETURNS.md`.
 
 ## FBA
 - `fba-inbound-orchestrator.js` · `fba-inbound-plans.js` — FBA inbound flow + plans.

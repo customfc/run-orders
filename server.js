@@ -495,6 +495,46 @@ app.post('/sku-resolver/approve', express.urlencoded({ extended: false }), (req,
   }
 });
 
+// ── Amazon returns one-tap approve (lib/amazon-returns-autopilot.js, docs/RETURNS.md) ──
+// Mac's hold email links here. GET shows what will happen; POST marks it approved and kicks a run.
+app.get('/returns/approve', (req, res) => {
+  const ap = require('./lib/amazon-returns-autopilot');
+  const order = String(req.query.order || '');
+  const t = String(req.query.t || '');
+  if (!ap.verifyApprove(order, t)) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This approve link is not valid.</h2>'));
+  const e = ap.loadState().orders?.[order];
+  if (!e) return res.status(404).send(skuApprovePage('Not found', (x) => `<h2>No return on file for ${x(order)}.</h2>`));
+  if (e.stage !== 'held') return res.send(skuApprovePage('Nothing to approve', (x) => `<h2>${x(order)} is ${x(e.stage)}.</h2>`));
+  if (e.manual || !e.decision) return res.send(skuApprovePage('Needs Seller Central', (x) => `<h2>${x(order)} can't be settled with a tap.</h2><p>${x(e.why)}</p>`));
+  const what = e.decision === 'label'
+    ? `Buy a ${ap.money(e.quote?.cents)} Purolator return label to ${e.quote?.branch || 'the branch'}, email it to the buyer, and refund ${ap.money(e.totalCents)} when Purolator scans it.`
+    : `Refund ${ap.money(e.totalCents)} now and tell the buyer to keep it.`;
+  res.send(skuApprovePage(`Approve ${order}`, (x) => `
+<h2>Amazon return ${x(order)}</h2>
+<p>${(e.items || []).map((i) => `${x(i.qty)}x ${x(i.name)}`).join('<br>')}</p>
+<p>Held because: ${x(e.why)}</p>
+<p><strong>${x(what)}</strong></p>
+<form method="post" action="/returns/approve">
+<input type="hidden" name="order" value="${x(order)}"><input type="hidden" name="t" value="${x(t)}">
+<button type="submit">Approve</button></form>`));
+});
+
+app.post('/returns/approve', express.urlencoded({ extended: false }), (req, res) => {
+  const ap = require('./lib/amazon-returns-autopilot');
+  const order = String(req.body?.order || '');
+  if (!ap.verifyApprove(order, String(req.body?.t || ''))) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This approve link is not valid.</h2>'));
+  const cur = ap.loadState().orders?.[order];
+  if (!cur || cur.stage !== 'held' || cur.manual || !cur.decision) return res.send(skuApprovePage('Nothing to approve', (x) => `<h2>${x(order)} is ${x(cur?.stage || 'not on file')}.</h2>`));
+  try {
+    const e = ap.approve(order);
+    audit.log({ action: 'returns-approved', order, decision: e.decision, cents: e.totalCents });
+    setImmediate(() => runReturnsAutopilot('approve-link'));
+    res.send(skuApprovePage('Approved', (x) => `<h2>Approved ${x(order)}.</h2><p>It goes out within a few minutes. You'll get the usual returns email when it's done.</p>`));
+  } catch (err) {
+    res.status(500).send(skuApprovePage('Failed', (x) => `<h2>Approve failed</h2><pre>${x(err.message)}</pre>`));
+  }
+});
+
 // ── ProZone one-tap approve (lib/trade-applications.js, lib/trade-accounts.js) ──
 // The YourFloors CS agent on this Mini hands each ProZone application in (loopback only); Mac gets an email with a
 // signed Review link; the page shows the applicant and the welcome email; Approve turns their pricing on and sends it.
@@ -2517,6 +2557,29 @@ async function runPickupRunner(source) {
   } finally { pickupRunnerBusy = false; }
 }
 schedule('*/15 * * * *', () => runPickupRunner('15-min'), TZ);
+
+// Amazon returns autopilot (lib/amazon-returns-autopilot.js, docs/RETURNS.md): every open MFN return gets a refund
+// without return (cheap / consumable), a prepaid Purolator label to the branch that shipped it (refund on first scan),
+// or a hold Mac approves with one tap. Every 2 h, 06:40-16:40 BC. SHADOW unless RETURNS_AUTOPILOT_LIVE=1; Salesforce
+// RMAs only with RETURNS_SF_LIVE=1. SHADOW keeps the last result in data/returns-autopilot-shadow.json and sends nothing.
+let returnsAutopilotBusy = false;
+async function runReturnsAutopilot(source) {
+  if (returnsAutopilotBusy) return;
+  returnsAutopilotBusy = true;
+  const live = process.env.RETURNS_AUTOPILOT_LIVE === '1';
+  try {
+    const out = await require('./lib/amazon-returns-autopilot').run({ io: require('./lib/amazon-returns-io').createIo(), live });
+    if (live) {
+      if (out.actions.length || out.errors.length) audit.log({ action: 'returns-autopilot-tick', source, actions: out.actions, held: out.held.map((h) => h.order), errors: out.errors });
+    } else {
+      fsRaw.writeFileSync(path.join(__dirname, 'data', 'returns-autopilot-shadow.json'), JSON.stringify({ at: new Date().toISOString(), source, ...out }, null, 1));
+    }
+  } catch (err) {
+    console.error(`[returns-autopilot ${source}] failed:`, err.message);
+    if (live) audit.log({ action: 'returns-autopilot-failed', source, error: err.message });
+  } finally { returnsAutopilotBusy = false; }
+}
+schedule('40 9-19/2 * * *', () => runReturnsAutopilot('2-hourly'), TZ);
 
 // Counter stock (lib/counter-stock.js, scripts/trade/counter-stock-sync.js): Prosol stock -> Shopify inventory at each
 // counter location (Shopify's own pickup offers a counter only when it can fill the cart there) and, for Prosol-profile

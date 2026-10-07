@@ -55,4 +55,6 @@ data/trade/native-before/
 
 # refund attempt locks (scripts/ops/issue-refund.js) and incident case packs with customer data
 data/refund-attempts/
+# returns autopilot state and shadow output: Amazon order IDs, refund amounts (repo is public)
+data/returns-autopilot*.json
 docs/REFUND-RECOVERY-PLAN-*.md
