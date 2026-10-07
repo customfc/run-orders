@@ -53,24 +53,42 @@ async function facts(orderId) {
   let refunds = 0, claims = 0;
   try {
     const fe = (await sp.listFinancialEventsByOrder(orderId))?.payload?.FinancialEvents || {};
-    refunds = (fe.RefundEventList || []).length;
+    // Total refunded, from every charge adjustment on every refund event (amounts come back negative).
+    const sum = (list) => -(list || []).reduce((t, ev) => t + (ev.ShipmentItemAdjustmentList || []).reduce((a, it) =>
+      a + (it.ItemChargeAdjustmentList || []).reduce((b, c) => b + Number(c.ChargeAmount?.CurrencyAmount || 0), 0), 0), 0);
+    refunds = (fe.RefundEventList || []).length ? `${(fe.RefundEventList || []).length} refund(s), $${sum(fe.RefundEventList).toFixed(2)} in total` : 0;
     claims = (fe.GuaranteeClaimEventList || []).length;
   } catch { /* facts stay partial; the card shows what we have */ }
-  // ShipStation: every order whose number starts with this one (split children
-  // carry suffixes), then every non-voided shipment and its tracking.
-  const shipments = [];
+  // ShipStation: shipments on every order carrying this number (split children
+  // carry suffixes), plus the pipeline's own label log, because a deleted
+  // ShipStation order leaves its labels with no order number at all (Slav,
+  // 701-2953867-2160265: four delivered rolls that order-number search can't see).
+  const found = new Map();
   const orders = (j(await ss.v1Request('GET', `/orders?orderNumber=${encodeURIComponent(orderId)}&pageSize=20`))?.orders) || [];
   for (const o of orders.filter((x) => String(x.orderNumber).includes(orderId))) {
     const sh = (j(await ss.v1Request('GET', `/shipments?orderId=${o.orderId}&pageSize=50`))?.shipments) || [];
-    for (const s of sh.filter((x) => !x.voided && !x.isReturnLabel)) {
-      const t = j(await ss.v2Request('GET', `/v2/labels/se-${s.shipmentId}/track`)) || {};
-      shipments.push({
-        tracking: s.trackingNumber, carrier: String(s.carrierCode || '').replace(/_walleted$/, ''), shipDate: String(s.shipDate || '').slice(0, 10),
-        status: t.status_code || '?', scanned: ['IT', 'AT', 'DE', 'EX'].includes(t.status_code), delivered: t.status_code === 'DE' ? String(t.actual_delivery_date || '').slice(0, 10) || 'yes' : null,
-        lastEvent: (t.events || [])[0]?.description || null, // V2 events are newest-first
-      });
-      await sleep(300);
+    for (const s of sh.filter((x) => !x.voided && !x.isReturnLabel)) found.set(s.trackingNumber, s);
+  }
+  try {
+    const Database = require('better-sqlite3');
+    const db = new Database(path.join(__dirname, '..', '..', 'data', 'analytics.sqlite'), { readonly: true });
+    const rows = db.prepare('SELECT DISTINCT tracking_number FROM shipping_labels WHERE order_number = ? AND tracking_number IS NOT NULL').all(orderId);
+    db.close();
+    for (const { tracking_number: trk } of rows) {
+      if (found.has(trk)) continue;
+      const s = ((j(await ss.v1Request('GET', `/shipments?trackingNumber=${encodeURIComponent(trk)}`))?.shipments) || []).find((x) => !x.voided);
+      if (s) found.set(trk, s);
     }
+  } catch { /* label log unavailable: ShipStation results stand */ }
+  const shipments = [];
+  for (const s of found.values()) {
+    const t = j(await ss.v2Request('GET', `/v2/labels/se-${s.shipmentId}/track`)) || {};
+    shipments.push({
+      tracking: s.trackingNumber, carrier: String(s.carrierCode || '').replace(/_walleted$/, ''), shipDate: String(s.shipDate || '').slice(0, 10),
+      status: t.status_code || '?', scanned: ['IT', 'AT', 'DE', 'EX'].includes(t.status_code), delivered: t.status_code === 'DE' ? String(t.actual_delivery_date || '').slice(0, 10) || 'yes' : null,
+      lastEvent: (t.events || [])[0]?.description || null, // V2 events are newest-first
+    });
+    await sleep(300);
   }
   let returns = null;
   try {
