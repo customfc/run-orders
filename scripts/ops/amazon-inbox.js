@@ -46,7 +46,7 @@ async function repliedInConversation(conversationId, afterIso) {
   return (r.value || []).some((m) => m.sentDateTime && m.sentDateTime > afterIso);
 }
 
-async function facts(orderId) {
+async function facts(orderId, { trackings = [] } = {}) {
   const order = (await sp.getOrder(orderId))?.payload;
   if (!order) return null;
   const items = (await sp.getOrderItems(orderId))?.payload?.OrderItems || [];
@@ -80,6 +80,11 @@ async function facts(orderId) {
       if (s) found.set(trk, s);
     }
   } catch { /* label log unavailable: ShipStation results stand */ }
+  for (const trk of trackings) {
+    if (found.has(trk)) continue;
+    const s = ((j(await ss.v1Request('GET', `/shipments?trackingNumber=${encodeURIComponent(trk)}`))?.shipments) || []).find((x) => !x.voided);
+    if (s) found.set(trk, s);
+  }
   const shipments = [];
   for (const s of found.values()) {
     const t = j(await ss.v2Request('GET', `/v2/labels/se-${s.shipmentId}/track`)) || {};
