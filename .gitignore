@@ -52,3 +52,7 @@ data/large-order-releases.json
 data/trade/counter-stock/
 data/trade/prosol-product-ids.json
 data/trade/native-before/
+
+# refund attempt locks (scripts/ops/issue-refund.js) and incident case packs with customer data
+data/refund-attempts/
+docs/REFUND-RECOVERY-PLAN-*.md
