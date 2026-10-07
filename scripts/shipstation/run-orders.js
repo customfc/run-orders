@@ -15,6 +15,7 @@ const skuResolver = require('../../lib/sku-resolver');
 const { isPickupOnly, pickupOnlyMessage } = require('../../lib/trade-pickup-only');
 const { isCatalogEntry } = require('../../lib/trade-skumap');
 const { localVerdict } = require('../../lib/local-fulfillment');
+const kerdiCheck = require('../../lib/kerdi-check');
 
 // Airtight mapping guard: before staging an order, confirm the Prosol code we
 // resolved is the same product/size the customer actually ordered — comparing
@@ -211,6 +212,30 @@ async function ssRequest(method, endpoint, body = null) {
     return ssRequest(method, endpoint, body);
   }
   return res;
+}
+
+// Kerdi-Line parts on the same buyer's other orders from the last 14 days (any
+// status), as vendor codes. Robert bought the 36" grate on one order and the 40"
+// channel two days later; only both together show the mismatch.
+async function kerdiOtherCodes(order) {
+  const name = String(order.shipTo?.name || '').trim();
+  if (!name) return [];
+  try {
+    const since = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
+    const res = await ssRequest('GET', `/orders?customerName=${encodeURIComponent(name)}&orderDateStart=${since}&pageSize=50`);
+    if (res.status !== 200) return [];
+    const postal = String(order.shipTo?.postalCode || '').replace(/\s/g, '').toUpperCase();
+    const codes = [];
+    for (const o of JSON.parse(res.body).orders || []) {
+      if (o.orderId === order.orderId || o.orderStatus === 'cancelled') continue;
+      if (postal && String(o.shipTo?.postalCode || '').replace(/\s/g, '').toUpperCase() !== postal) continue;
+      for (const i of o.items || []) {
+        const m = SKU_MAPPINGS[i.sku];
+        codes.push(m && typeof m === 'object' ? (m.prosol_sku || m.api_sku || i.sku) : i.sku);
+      }
+    }
+    return codes;
+  } catch { return []; }
 }
 
 async function fetchAwaitingOrders() {
@@ -1101,6 +1126,23 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
     if (guardHalt) {
       rejected.push({ orderNumber: order.orderNumber, reason: guardHalt });
       continue;
+    }
+
+    // Kerdi-Line size check (lib/kerdi-check.js, Mac 2026-10-07): an Amazon order
+    // whose Kerdi-Line parts don't line up with the buyer's recent orders (channel
+    // with no grate, mismatched lengths, the 3" ABS flange kit) is held and the
+    // buyer is asked once (lib/pipeline.js). It ships after 24 h with no stop.
+    if (orderSource(order) === 'amazon_ca') {
+      const codes = resolved.map((i) => i.prosolSku || i.apiSku);
+      if (codes.some((c) => kerdiCheck.parse(c))) {
+        const issues = kerdiCheck.assess(codes, await kerdiOtherCodes(order));
+        const d = kerdiCheck.decide({ orderNumber: order.orderNumber, shipByDate: order.shipByDate, issues });
+        if (d.hold) {
+          rejected.push({ orderNumber: order.orderNumber, reason: `Kerdi-Line check: waiting on the buyer (${d.reason})`, kerdi: true, kerdiIssues: issues, kerdiAsked: !!d.asked, customerEmail: order.customerEmail, shipToName: order.shipTo?.name || '' });
+          continue;
+        }
+        if (issues.length) onProgress({ type: 'status', message: `Kerdi-Line check ${order.orderNumber}: ${d.why}`, orderNumber: order.orderNumber });
+      }
     }
 
     // Large-order review gate: hold high-value/heavy/many-box orders for a human

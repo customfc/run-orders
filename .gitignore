@@ -60,3 +60,5 @@ data/returns-autopilot*.json
 docs/REFUND-RECOVERY-PLAN-*.md
 # Amazon inbox handler state: order IDs, buyer messages (repo is public)
 data/amazon-inbox*.json
+# Kerdi-Line check state: order IDs, buyer relay addresses (repo is public)
+data/kerdi-check.json
