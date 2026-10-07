@@ -15,6 +15,7 @@ even when `Label to be paid by: Seller`), so buyers paid $21-$25 to mail back a 
 | Buyer already shipped it on Amazon's label | Refund now |
 | Anything else | Purolator return label to the branch that shipped it, emailed to the buyer as a PDF; Kaitlyn gets a heads-up; refund on Purolator's first scan (on delivery above **$300**) |
 | Label quote is **35%** or more of the refund | Refund without return instead |
+| Label return requested more than **14 days** ago (`RETURNS_STALE_LABEL_DAYS`) | Held: they may have mailed it already; Mac's tap sends the label |
 | A-to-Z claim, unauthorised purchase, refund over **$600**, label over **$30**, past **$1,000** of auto refunds today, no branch/address | Held: Mac gets one email with a one-tap approve link (or "handle in Seller Central" when a tap can't settle it) |
 
 All thresholds are env vars (`RETURNS_RETURNLESS_MAX`, `RETURNS_CONSUMABLE_MAX`, `RETURNS_AUTO_REFUND_MAX`,
