@@ -44,7 +44,7 @@ const ue = (label, x) => { if (x && x.userErrors && x.userErrors.length) throw n
 
 const COAST_NAMES = { SECH: 'Sechelt warehouse pickup', PRIV: 'Powell River showroom pickup' };
 const COAST_ADDRESS = {
-  SECH: { address1: '5824 Sechelt Inlet Rd', city: 'Sechelt', provinceCode: 'BC', zip: 'V0N 3A3', countryCode: 'CA' },
+  SECH: { address1: '5824 Sechelt Inlet Rd', city: 'Sechelt', provinceCode: 'BC', zip: 'V7Z 0G1', countryCode: 'CA' },
   PRIV: { address1: '7345 Duncan St', city: 'Powell River', provinceCode: 'BC', zip: 'V8A 1W6', countryCode: 'CA' },
 };
 const nameFor = (b) => (b.coast ? COAST_NAMES[b.code] : `${b.pickup_label} trade counter`);
