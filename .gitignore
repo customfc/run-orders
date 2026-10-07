@@ -58,3 +58,5 @@ data/refund-attempts/
 # returns autopilot state and shadow output: Amazon order IDs, refund amounts (repo is public)
 data/returns-autopilot*.json
 docs/REFUND-RECOVERY-PLAN-*.md
+# Amazon inbox handler state: order IDs, buyer messages (repo is public)
+data/amazon-inbox*.json

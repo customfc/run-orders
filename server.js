@@ -535,6 +535,46 @@ app.post('/returns/approve', express.urlencoded({ extended: false }), (req, res)
   }
 });
 
+// ── Amazon buyer messages: Mac's Send link (lib/amazon-inbox.js, docs/AMAZON-INBOX.md) ──
+// GET shows the buyer's message, the facts and the draft in an editable box; POST sends it into the Amazon thread
+// from hello@. The send runs as a child process so the yourfloors-cs mailbox login never loads into this server.
+function runAmazonInboxCli(args) {
+  return new Promise((resolve, reject) => {
+    require('child_process').execFile(process.execPath, [path.join(__dirname, 'scripts', 'ops', 'amazon-inbox.js'), ...args],
+      { cwd: __dirname, timeout: 15 * 60 * 1000, maxBuffer: 8e6 }, (err, stdout, stderr) => (err ? reject(new Error((stderr || err.message).slice(-600))) : resolve(stdout)));
+  });
+}
+app.get('/amazon-inbox/send', (req, res) => {
+  const inbox = require('./lib/amazon-inbox');
+  const k = String(req.query.k || ''), t = String(req.query.t || '');
+  if (!inbox.verifySend(k, t)) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  const e = inbox.loadState().messages?.[k];
+  if (!e) return res.status(404).send(skuApprovePage('Not found', () => '<h2>Message not found.</h2>'));
+  if (e.status === 'sent' || e.status === 'auto_sent') return res.send(skuApprovePage('Already sent', (x) => `<h2>Already sent ${x(e.sentAt || '')}.</h2><pre>${x(e.reply)}</pre>`));
+  res.send(skuApprovePage(`Reply ${e.orderId || ''}`, (x) => `
+<h2>Amazon ${x(e.orderId || '')} ${x(e.name || '')}</h2>
+<p><strong>They wrote:</strong> ${x(e.said)}</p>
+<pre>${x(e.facts)}</pre>
+${e.action ? `<p><strong>Needs your OK:</strong> ${x(e.action)}</p>` : ''}
+<form method="post" action="/amazon-inbox/send">
+<input type="hidden" name="k" value="${x(k)}"><input type="hidden" name="t" value="${x(t)}">
+<textarea name="text" rows="12" style="width:100%;font:15px/1.4 -apple-system,system-ui,sans-serif">${x(e.reply)}</textarea>
+<p><button type="submit">Send to buyer</button></p></form>`));
+});
+app.post('/amazon-inbox/send', express.urlencoded({ extended: false }), async (req, res) => {
+  const inbox = require('./lib/amazon-inbox');
+  const k = String(req.body?.k || ''), t = String(req.body?.t || '');
+  if (!inbox.verifySend(k, t)) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  const text = String(req.body?.text || '').trim();
+  if (!text) return res.status(400).send(skuApprovePage('Empty', () => '<h2>The reply is empty.</h2>'));
+  try {
+    await runAmazonInboxCli([`--send=${k}`, `--text-b64=${Buffer.from(text, 'utf8').toString('base64')}`]);
+    res.send(skuApprovePage('Sent', (x) => `<h2>Sent.</h2><pre>${x(text)}</pre>`));
+  } catch (err) {
+    res.status(500).send(skuApprovePage('Failed', (x) => `<h2>Send failed</h2><pre>${x(err.message)}</pre>`));
+  }
+});
+
 // ── ProZone one-tap approve (lib/trade-applications.js, lib/trade-accounts.js) ──
 // The YourFloors CS agent on this Mini hands each ProZone application in (loopback only); Mac gets an email with a
 // signed Review link; the page shows the applicant and the welcome email; Approve turns their pricing on and sends it.
@@ -2580,6 +2620,19 @@ async function runReturnsAutopilot(source) {
   } finally { returnsAutopilotBusy = false; }
 }
 schedule('40 9-19/2 * * *', () => runReturnsAutopilot('2-hourly'), TZ);
+
+// Amazon buyer messages (lib/amazon-inbox.js, docs/AMAZON-INBOX.md): every 30 min, 06:00-20:30 BC, read hello@ for
+// Amazon mail only, draft replies from the order's facts and email Mac a card with a Send link. LIVE (records + cards)
+// only with AMAZON_INBOX_LIVE=1; replies to buyers go out only on Mac's tap, or for carrier-backed tracking answers
+// with AMAZON_INBOX_AUTOSEND=1.
+let amazonInboxBusy = false;
+schedule('5,35 9-23 * * *', async () => {
+  if (amazonInboxBusy || process.env.AMAZON_INBOX_LIVE !== '1') return;
+  amazonInboxBusy = true;
+  try { await runAmazonInboxCli(['--live']); }
+  catch (err) { console.error('[amazon-inbox] failed:', err.message); audit.log({ action: 'amazon-inbox-failed', error: err.message.slice(0, 500) }); }
+  finally { amazonInboxBusy = false; }
+}, TZ);
 
 // Counter stock (lib/counter-stock.js, scripts/trade/counter-stock-sync.js): Prosol stock -> Shopify inventory at each
 // counter location (Shopify's own pickup offers a counter only when it can fill the cart there) and, for Prosol-profile

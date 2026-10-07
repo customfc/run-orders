@@ -32,6 +32,8 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `shopify-graphql.js` — Shopify Admin GraphQL.
 - `sp-api.js` / `sp-api-reports.js` / `sp-api-inbound.js` — Amazon SP-API base / reports / FBA inbound.
 - `amazon-po.js` — Amazon PO drafts/creation.
+- `amazon-inbox.js` — Amazon buyer messages in hello@: reads Amazon mail only, gathers the order's facts, Opus drafts the reply, Mac gets a card with a Send link (`/amazon-inbox/send`). Every 30 min with `AMAZON_INBOX_LIVE=1`; auto-sends only carrier-backed tracking answers with `AMAZON_INBOX_AUTOSEND=1`. CLI `scripts/ops/amazon-inbox.js`, see `docs/AMAZON-INBOX.md`.
+- `amazon-cancel-request.js` — the buyer's cancel request is on each order ITEM (`BuyerRequestedCancel`), not the order; used by poll-cancellations and the orphan sweep.
 - `amazon-returns-autopilot.js` — Amazon MFN returns: refund without return (≤$60, consumables ≤$150), else prepaid Purolator label to the shipping branch + Prosol heads-up, refund on first scan; holds go to Mac with a one-tap approve (`/returns/approve`). Every 2 h; SHADOW unless `RETURNS_AUTOPILOT_LIVE=1`. IO in `amazon-returns-io.js`, Salesforce RMAs in `amazon-return-sf.js` (`RETURNS_SF_LIVE=1`). State `data/returns-autopilot.json`. See `docs/RETURNS.md`.
 
 ## FBA
