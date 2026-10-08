@@ -619,7 +619,7 @@ app.get('/prozone/approve', (req, res) => {
     return res.send(skuApprovePage(`Already ${rec.status}`, (e) => `<h2>${e(rec.app.business || rec.app.email)} is already ${e(rec.status)}.</h2>${rec.result?.code ? `<p>Client code ${e(rec.result.code)}.</p>` : ''}`));
   }
   const w = apps.welcomeEmail(rec.app, { code: '(their code)' });
-  const deal = rec.app.national ? '20% on accessories, 10% on trims (national)' : '20%/25% on accessories, 10% on trims (Coast)';
+  const deal = rec.app.national ? '20% on accessories, trims included (national)' : '20%/25% on accessories, trims included (Coast)';
   res.send(skuApprovePage(`Approve ${rec.app.business || rec.app.email} (ProZone ${apps.programName(rec.app)})`, (e) => `
 <h2>Approve ${e(rec.app.business || rec.app.name)} for ProZone ${e(apps.programName(rec.app))}?</h2>
 ${apps.detailsHtml(rec.app)}
@@ -666,6 +666,34 @@ app.post('/prozone/decline', express.urlencoded({ extended: false }), (req, res)
   apps.setStatus(hit.rec.id, { status: 'declined', declinedAt: new Date().toISOString() });
   audit.log({ action: 'prozone-declined', id: hit.rec.id, email: hit.rec.app.email });
   res.send(skuApprovePage('Declined', (e) => `<h2>Declined ${e(hit.rec.app.business || hit.rec.app.email)}.</h2><p>No email was sent.</p>`));
+});
+
+// ── ProZone earnings: Mac's weekly one-tap (lib/trade-earnings-run.js, scripts/trade/earnings.js --propose emails it).
+// Opening the link changes nothing; the POST issues the store credit for the current batch only.
+app.get('/prozone/earnings', (req, res) => {
+  const er = require('./lib/trade-earnings-run');
+  const b = String(req.query.b || '');
+  const t = String(req.query.t || '');
+  if (!er.verify(b, t)) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  const batch = er.loadState().batch;
+  if (!batch || batch.id !== b) return res.send(skuApprovePage('Out of date', () => "<h2>This is not the current list. Use the latest ProZone earnings email.</h2>"));
+  res.send(skuApprovePage(`ProZone earnings ${b}`, () => er.reviewPage(batch, t)));
+});
+
+app.post('/prozone/earnings', express.urlencoded({ extended: false }), async (req, res) => {
+  const er = require('./lib/trade-earnings-run');
+  const b = String(req.body?.b || '');
+  const t = String(req.body?.t || '');
+  if (!er.verify(b, t)) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  try {
+    const { graphql } = require('./lib/shopify-graphql');
+    const { results } = await er.withLock(() => er.apply(graphql, b, { rate: require('./lib/trade-rules').earnRate() }));
+    audit.log({ action: 'prozone-earnings-applied', batch: b, results });
+    res.send(skuApprovePage('Earnings issued', () => `<h2>Done</h2>${er.resultsTable(results)}`));
+  } catch (err) {
+    audit.log({ action: 'prozone-earnings-failed', batch: b, error: err.message });
+    res.status(500).send(skuApprovePage('Not issued', (e) => `<h2>Nothing more was issued.</h2><pre>${e(err.message)}</pre>`));
+  }
 });
 
 // ── Pickup runner one-taps (Mac) and the customer's trim choice (via the CS agent, loopback only) ──
