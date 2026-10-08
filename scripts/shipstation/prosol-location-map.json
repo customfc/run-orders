@@ -276,7 +276,7 @@
       "order.kelowna@prosol.ca"
     ],
     "address": "459 Banks Rd.",
-    "postal_code": "V1X6A3",
+    "postal_code": "V1X6A2",
     "active": true,
     "shipstation_warehouse_id": 1869857,
     "is_main_hub": false,
@@ -313,13 +313,13 @@
     "contact_email": [
       "order.kitchener@prosol.ca"
     ],
-    "address": "500 Bingemans Center Drive",
-    "postal_code": "N2B1R9",
+    "address": "500 Bingemans Centre Drive Unit 10",
+    "postal_code": "N2B3X9",
     "active": true,
     "shipstation_warehouse_id": 1869858,
     "is_main_hub": false,
     "contact_phone": [
-      "+19054181082"
+      "+15195818484"
     ]
   },
   "10026": {
@@ -376,7 +376,7 @@
     "shipstation_warehouse_id": 1824506,
     "is_main_hub": false,
     "contact_phone": [
-      "+19054181082"
+      "+19052380223"
     ]
   },
   "10029": {
@@ -560,13 +560,13 @@
     "contact_email": [
       "order.scarborough@prosol.ca"
     ],
-    "address": "1412 Warden Ave.",
+    "address": "1410 Warden Ave.",
     "postal_code": "M1R5A3",
     "active": true,
     "shipstation_warehouse_id": 1869867,
     "is_main_hub": false,
     "contact_phone": [
-      "+19054181082"
+      "+14166093972"
     ]
   },
   "10041": {
@@ -585,7 +585,7 @@
     "shipstation_warehouse_id": 1869868,
     "is_main_hub": false,
     "contact_phone": [
-      "+19054181082"
+      "+19056853834"
     ]
   },
   "10043": {
@@ -599,7 +599,7 @@
       "order.sudbury@prosol.ca"
     ],
     "address": "922 Cambrian Heights Drive Unit 1",
-    "postal_code": "P3C5L8",
+    "postal_code": "P3C5M6",
     "active": true,
     "shipstation_warehouse_id": 1786140,
     "is_main_hub": false,
@@ -961,5 +961,56 @@
     "shipstation_warehouse_id": 1837638,
     "is_main_hub": true,
     "note": "Old/deleted SS warehouse ID — same as Prosol Concord"
+  },
+  "10057": {
+    "id": 10057,
+    "code": "LETH",
+    "city": "Lethbridge",
+    "province": "AB",
+    "lat": 0,
+    "lng": 0,
+    "contact_email": [],
+    "address": "239 12 St N",
+    "postal_code": "T1H2G3",
+    "active": false,
+    "is_main_hub": false,
+    "contact_phone": [
+      "+14033278881"
+    ],
+    "note": "Added 2026-10-08 from Prosol (02 research prosol-network.md F1 and pickup-branches.json). INACTIVE: no ShipStation warehouse yet, so routing and pickups skip it."
+  },
+  "10058": {
+    "id": 10058,
+    "code": "GRPR",
+    "city": "Grande Prairie",
+    "province": "AB",
+    "lat": 0,
+    "lng": 0,
+    "contact_email": [],
+    "address": "11041 96 Avenue",
+    "postal_code": "T8V5W1",
+    "active": false,
+    "is_main_hub": false,
+    "contact_phone": [
+      "+17805324801"
+    ],
+    "note": "Added 2026-10-08 from Prosol (02 research prosol-network.md F1 and pickup-branches.json). INACTIVE: no ShipStation warehouse yet, so routing and pickups skip it."
+  },
+  "keln_pending": {
+    "id": "keln_pending",
+    "code": "KELN",
+    "city": "Kelowna",
+    "province": "BC",
+    "lat": 0,
+    "lng": 0,
+    "contact_email": [],
+    "address": "830 McCurdy Pl",
+    "postal_code": "V1X8C8",
+    "active": false,
+    "is_main_hub": false,
+    "contact_phone": [
+      "+17784845575"
+    ],
+    "note": "Added 2026-10-08 from Prosol (02 research prosol-network.md F1 and pickup-branches.json). INACTIVE: no ShipStation warehouse yet, so routing and pickups skip it. Prosol stock location id not seen yet."
   }
 }
