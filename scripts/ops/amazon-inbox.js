@@ -4,7 +4,7 @@
  *
  *   node scripts/ops/amazon-inbox.js                 # dry run: draft every unanswered Amazon message, send nothing
  *   node scripts/ops/amazon-inbox.js --live          # record + email Mac the cards (AMAZON_INBOX_AUTOSEND=1 also auto-sends tracking answers)
- *   node scripts/ops/amazon-inbox.js --send=KEY [--text-b64=...]   # send a carded reply (what the Send link runs)
+ *   node scripts/ops/amazon-inbox.js --send=KEY [--text-b64=...] [--refund-done]   # send a carded reply (what the Send link runs)
  *   node scripts/ops/amazon-inbox.js --state
  *
  * hello@yourfloors.ca is read and answered through the yourfloors-cs mailbox login
@@ -50,13 +50,11 @@ async function facts(orderId, { trackings = [] } = {}) {
   const order = (await sp.getOrder(orderId))?.payload;
   if (!order) return null;
   const items = (await sp.getOrderItems(orderId))?.payload?.OrderItems || [];
-  let refunds = 0, claims = 0;
+  let refunds = 0, claims = 0, refundCents = 0;
   try {
     const fe = (await sp.listFinancialEventsByOrder(orderId))?.payload?.FinancialEvents || {};
-    // Total refunded, from every charge adjustment on every refund event (amounts come back negative).
-    const sum = (list) => -(list || []).reduce((t, ev) => t + (ev.ShipmentItemAdjustmentList || []).reduce((a, it) =>
-      a + (it.ItemChargeAdjustmentList || []).reduce((b, c) => b + Number(c.ChargeAmount?.CurrencyAmount || 0), 0), 0), 0);
-    refunds = (fe.RefundEventList || []).length ? `${(fe.RefundEventList || []).length} refund(s), $${sum(fe.RefundEventList).toFixed(2)} in total` : 0;
+    refundCents = refundSumCents(fe.RefundEventList);
+    refunds = (fe.RefundEventList || []).length ? `${(fe.RefundEventList || []).length} refund(s), $${(refundCents / 100).toFixed(2)} in total` : 0;
     claims = (fe.GuaranteeClaimEventList || []).length;
   } catch { /* facts stay partial; the card shows what we have */ }
   // ShipStation: shipments on every order carrying this number (split children
@@ -106,8 +104,31 @@ async function facts(orderId, { trackings = [] } = {}) {
   return {
     orderId, status: order.OrderStatus, placed: String(order.PurchaseDate || '').slice(0, 10), total: order.OrderTotal?.Amount,
     items: items.map((i) => ({ qty: i.QuantityOrdered, title: String(i.Title || '').slice(0, 90), shipped: i.QuantityShipped, cancelRequested: String(i.BuyerRequestedCancel?.IsBuyerRequestedCancel) === 'true' })),
-    shipments, refunds, claims, returns,
+    shipments, refunds, refundCents, claims, returns,
   };
+}
+
+// Total refunded, from every charge adjustment on every refund event (amounts come back negative).
+function refundSumCents(list) {
+  return -Math.round(100 * (list || []).reduce((t, ev) => t + (ev.ShipmentItemAdjustmentList || []).reduce((a, it) =>
+    a + (it.ItemChargeAdjustmentList || []).reduce((b, c) => b + Number(c.ChargeAmount?.CurrencyAmount || 0), 0), 0), 0));
+}
+
+/**
+ * What's been refunded on the order for the Send check (lib/amazon-inbox.js checkRefund): the larger of Amazon's
+ * finance records and our own refund-script submissions (data/audit.jsonl), which show a refund before Amazon posts it.
+ */
+async function refundCents(orderId) {
+  const fe = (await sp.listFinancialEventsByOrder(orderId))?.payload?.FinancialEvents || {};
+  let ours = 0;
+  try {
+    for (const line of require('fs').readFileSync(path.join(__dirname, '..', '..', 'data', 'audit.jsonl'), 'utf8').split('\n')) {
+      if (!line.includes(orderId) || !line.includes('"amazon-refund-submitted"')) continue;
+      const a = JSON.parse(line);
+      if (a.order === orderId) ours += Math.round(Number(a.amount || 0) * 100);
+    }
+  } catch { /* no audit log: Amazon's records stand */ }
+  return Math.max(refundSumCents(fe.RefundEventList), ours);
 }
 
 async function send(entry) {
@@ -122,7 +143,7 @@ async function notifyMac(out) {
     L.push(`${label}${e.orderId || '(no order id)'}  ${e.name || ''}  ${e.receivedAt?.slice(0, 16).replace('T', ' ')} UTC`);
     L.push(`They wrote: ${e.said || e.subject}`);
     L.push('', e.facts, '');
-    if (e.action) L.push(`Needs your OK: ${e.action}`);
+    if (e.action) L.push(inbox.refundNeeded(e) ? `Do this first, Send does not do it: ${e.action}` : `Needs your OK: ${e.action}`);
     if (e.reply) L.push('Draft reply:', e.reply);
     if (t && e.reply) L.push('', `Send (or edit first): ${PUBLIC_BASE}/amazon-inbox/send?k=${e.key}&t=${t}`);
     else if (!e.reply) L.push('', 'Handle in Seller Central.');
@@ -141,7 +162,7 @@ async function notifyMac(out) {
 }
 
 const io = {
-  listMessages, repliedInConversation, facts, send, notifyMac,
+  listMessages, repliedInConversation, facts, refundCents, send, notifyMac,
   bodyText: (m) => graph.bodyText(m.body),
   draft: (args) => inbox.draftWithClaude(args),
   markRead: (id) => graph.markRead(id),
@@ -155,7 +176,7 @@ const io = {
   const key = arg('send');
   if (key) {
     const b64 = arg('text-b64');
-    const e = await inbox.sendCarded(key, { io, text: b64 ? Buffer.from(b64, 'base64').toString('utf8') : undefined });
+    const e = await inbox.sendCarded(key, { io, text: b64 ? Buffer.from(b64, 'base64').toString('utf8') : undefined, refundDone: has('refund-done') });
     console.log(JSON.stringify({ ok: true, order: e.orderId, status: e.status }));
     return;
   }

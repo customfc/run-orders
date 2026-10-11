@@ -20,7 +20,13 @@ and the account averaged 69.9 h. This reads Amazon mail only, so supplier traffi
    em dashes, no phone, no links, no supplier names, never asks for feedback, apologises only for our own mistakes,
    promises a refund/replacement/label only when it already happened (otherwise it flags "needs your OK").
 5. Mac gets one email per run: what the buyer wrote, the facts, the draft and a Send link. The link opens the draft in
-   an editable box; Send replies in the Amazon thread from hello@.
+   an editable box; Send replies in the Amazon thread from hello@. **Send only sends the email; it never refunds.** A
+   card whose action is a refund reads "Do this first, Send does not do it".
+   Before sending, a reply that tells the buyer they were refunded is checked against the order: Amazon's finance
+   records or a refund-script submission in `data/audit.jsonl` must show a refund (a new one, if the card asked for
+   one). If not, nothing is sent and the page says "Not sent: no refund yet". A Seller Central refund can take a day to
+   reach Amazon's records, so the page has a "The refund is done" box that skips the check (`--refund-done` on the
+   CLI). Why: 702-4021580-3477824 (2026-10-09) was told "We have issued a full refund" and none existed for 41 h.
 6. A carded message still unanswered after 18 h is listed once more ("still unanswered").
 7. A-to-z notices are carded with the facts and "answer in Seller Central".
 

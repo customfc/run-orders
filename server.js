@@ -596,10 +596,11 @@ app.get('/amazon-inbox/send', (req, res) => {
 <h2>Amazon ${x(e.orderId || '')} ${x(e.name || '')}</h2>
 <p><strong>They wrote:</strong> ${x(e.said)}</p>
 <pre>${x(e.facts)}</pre>
-${e.action ? `<p><strong>Needs your OK:</strong> ${x(e.action)}</p>` : ''}
+${e.action ? (inbox.refundNeeded(e) ? `<p><strong>Do this first, Send does not do it:</strong> ${x(e.action)}</p>` : `<p><strong>Needs your OK:</strong> ${x(e.action)}</p>`) : ''}
 <form method="post" action="/amazon-inbox/send">
 <input type="hidden" name="k" value="${x(k)}"><input type="hidden" name="t" value="${x(t)}">
 <textarea name="text" rows="12" style="width:100%;font:15px/1.4 -apple-system,system-ui,sans-serif">${x(e.reply)}</textarea>
+${inbox.refundNeeded(e) || inbox.claimsRefund(e.reply) ? '<p><label><input type="checkbox" name="refund_done" value="1"> The refund is done (only needed if Amazon doesn\'t show it yet)</label></p>' : ''}
 <p><button type="submit">Send to buyer</button></p></form>`));
 });
 app.post('/amazon-inbox/send', express.urlencoded({ extended: false }), async (req, res) => {
@@ -609,11 +610,15 @@ app.post('/amazon-inbox/send', express.urlencoded({ extended: false }), async (r
   const text = String(req.body?.text || '').trim();
   if (!text) return res.status(400).send(skuApprovePage('Empty', () => '<h2>The reply is empty.</h2>'));
   try {
-    await runAmazonInboxCli([`--send=${k}`, `--text-b64=${Buffer.from(text, 'utf8').toString('base64')}`]);
+    await runAmazonInboxCli([`--send=${k}`, `--text-b64=${Buffer.from(text, 'utf8').toString('base64')}`, ...(req.body?.refund_done === '1' ? ['--refund-done'] : [])]);
     res.send(skuApprovePage('Sent', (x) => `<h2>Sent.</h2><pre>${x(text)}</pre>`));
   } catch (err) {
     res.locals.tapError = err.message;
-    res.status(500).send(skuApprovePage('Failed', (x) => `<h2>Send failed</h2><pre>${x(err.message)}</pre>`));
+    // checkRefund (lib/amazon-inbox.js): the reply says refunded but Amazon shows no refund. Nothing was sent.
+    const notDone = /No (new )?refund on Amazon order/.test(err.message);
+    res.status(notDone ? 409 : 500).send(skuApprovePage(notDone ? 'Refund first' : 'Failed', (x) => notDone
+      ? `<h2>Not sent: no refund yet</h2><p>${x((err.message.match(/No (new )?refund on Amazon order[\s\S]*?and Send\./) || [err.message])[0])}</p><p><a href="javascript:history.back()">Back to the reply</a></p>`
+      : `<h2>Send failed</h2><pre>${x(err.message)}</pre>`));
   }
 });
 
