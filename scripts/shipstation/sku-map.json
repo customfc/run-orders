@@ -13,6 +13,20 @@
     "max_pkg_weight_lb": "Max package weight in lb when combining (used with heat_sheet)"
   },
   "mappings": {
+    "4657": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "AQUA MIX\u00ae Enrich N' Seal - Quart (946mL)",
+      "note": "Auto-mapped 2026-10-05 by sku-resolver: Shopify SKU 4657 = SF item 4657 (vendor Prosol Inc. C100251-01); Shopify showed 5 at Sechelt.",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
+      "verified": true,
+      "auto_discovered": true,
+      "discovered_by": "sku-resolver-exact",
+      "cost_cad": 75.97,
+      "sf_item": "4657"
+    },
     "KMSMV10235/114": {
       "api_sku": "KMSMV10235114",
       "prosol_sku": "KMSMV10235114",
@@ -144,10 +158,12 @@
       "cost_cad": 43.12,
       "retail_cad": 61.6,
       "cost_source": "prosol-offers-loc10010",
-      "api_sku": "32014",
-      "prosol_sku": "Q32014QC",
+      "api_sku": "HALT_DISCONTINUED_32014",
+      "prosol_sku": "HALT_DISCONTINUED_Q32014QC",
       "product": "QEP - Xtreme 8.25\" Glass Tile Nipper with Pro Control Settings",
-      "note": "Shopify SKU equals QEP mfg SKU; exact Prosol filter[sku] hit (product id 82685). Added 2026-08-05, order 1329.",
+      "note": "DISCONTINUED. Prosol dropped product 82685 (Q32014QC): no filter[sku] or filter[id] hit, zero stock everywhere, verified 2026-10-09. Was 32014/Q32014QC, added 2026-08-05 (order 1329). Shopify product 11037061906599 set DRAFT 2026-10-11. Order 1412 (Pander-Scott) offered Rubi 71970 swap or full refund 2026-10-11.",
+      "source": "DISCONTINUED",
+      "discontinued": "2026-10-09",
       "verified": true
     },
     "B007PS2IR8": {
