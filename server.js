@@ -24,6 +24,8 @@ const cryptoRaw = require('crypto');
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+// Audit line for every tap-link page opened and button pressed (lib/tap-log.js).
+app.use(require('./lib/tap-log').middleware(audit.log));
 
 const PORT = process.env.PORT || 3456;
 
@@ -495,6 +497,44 @@ app.post('/sku-resolver/approve', express.urlencoded({ extended: false }), (req,
   }
 });
 
+// ── Discontinued desk taps (lib/discontinued.js) ─────────────────────────────
+// Offer the swap / Refund / Ship the swap / Mark discontinued. GET shows exactly
+// what will happen, including the customer email; only the button POSTs.
+app.get('/discontinued/act', (req, res) => {
+  const desk = require('./lib/discontinued');
+  const o = String(req.query.o || '');
+  const a = String(req.query.a || '');
+  const t = String(req.query.t || '');
+  const rec = desk.verifyAction(o, a, t);
+  if (!rec) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid or has expired.</h2>'));
+  const d = desk.describeAction(rec, a);
+  const title = { offer: 'Offer the swap', refund: 'Refund', ship: 'Ship the swap', halt: 'Mark discontinued' }[a];
+  if (d.blocked) return res.status(409).send(skuApprovePage(title, (e) => `<h2>${e(d.blocked)}</h2>`));
+  res.send(skuApprovePage(`${title}: order ${rec.orderNumber}`, (e) => `
+<h2>${e(title)}: order ${e(rec.orderNumber)}?</h2>
+<p>${e(rec.itemName)} (SKU ${e(rec.sku)})${rec.substitute ? `<br>Substitute: ${e(rec.substitute.name)}` : ''}</p>
+<ul>${d.steps.map((s) => `<li>${e(s)}</li>`).join('')}</ul>
+${d.email ? `<p><b>${e(d.email.subject)}</b></p><pre>${e(d.email.text)}</pre>` : ''}
+<form method="post" action="/discontinued/act">
+<input type="hidden" name="o" value="${e(o)}"><input type="hidden" name="a" value="${e(a)}"><input type="hidden" name="t" value="${e(t)}">
+<button type="submit">${e(title)}</button></form>`));
+});
+
+app.post('/discontinued/act', express.urlencoded({ extended: false }), async (req, res) => {
+  const desk = require('./lib/discontinued');
+  const o = String(req.body?.o || '');
+  const a = String(req.body?.a || '');
+  try {
+    const r = await desk.act(o, a, String(req.body?.t || ''));
+    if (!r.ok) return res.status(r.status || 400).send(skuApprovePage('Not done', (e) => `<h2>${e(r.message)}</h2>`));
+    res.send(skuApprovePage('Done', (e) => `<h2>Done.</h2><ul>${r.done.map((s) => `<li>${e(s)}</li>`).join('')}</ul>`));
+  } catch (err) {
+    res.locals.tapError = err.message;
+    audit.log({ action: 'discontinued-act-failed', orderNumber: o, tap: a, error: err.message });
+    res.status(500).send(skuApprovePage('Failed', (e) => `<h2>That did not finish</h2><pre>${e(err.message)}</pre><p>Nothing after the failing step ran.</p>`));
+  }
+});
+
 // ── Amazon returns one-tap approve (lib/amazon-returns-autopilot.js, docs/RETURNS.md) ──
 // Mac's hold email links here. GET shows what will happen; POST marks it approved and kicks a run.
 app.get('/returns/approve', (req, res) => {
@@ -531,6 +571,7 @@ app.post('/returns/approve', express.urlencoded({ extended: false }), (req, res)
     setImmediate(() => runReturnsAutopilot('approve-link'));
     res.send(skuApprovePage('Approved', (x) => `<h2>Approved ${x(order)}.</h2><p>It goes out within a few minutes. You'll get the usual returns email when it's done.</p>`));
   } catch (err) {
+    res.locals.tapError = err.message;
     res.status(500).send(skuApprovePage('Failed', (x) => `<h2>Approve failed</h2><pre>${x(err.message)}</pre>`));
   }
 });
@@ -571,6 +612,7 @@ app.post('/amazon-inbox/send', express.urlencoded({ extended: false }), async (r
     await runAmazonInboxCli([`--send=${k}`, `--text-b64=${Buffer.from(text, 'utf8').toString('base64')}`]);
     res.send(skuApprovePage('Sent', (x) => `<h2>Sent.</h2><pre>${x(text)}</pre>`));
   } catch (err) {
+    res.locals.tapError = err.message;
     res.status(500).send(skuApprovePage('Failed', (x) => `<h2>Send failed</h2><pre>${x(err.message)}</pre>`));
   }
 });

@@ -7,6 +7,7 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `map-rules.js` — sku-map rule resolution (title-is-truth, slashes, ASIN aliases).
 - `auto-map.js` — exact-identity SKU auto-mapping (shadow-first).
 - `sku-resolver.js` — unmapped-SKU resolver: exact tier auto-maps provable Sechelt stock during staging; everything else gets an Opus mapping proposal emailed with a one-tap approve link (`/sku-resolver/approve`), re-emailed daily while the order waits (`data/sku-resolver-state.json`).
+- `discontinued.js` — discontinued-at-Prosol desk (#1412, 2026-10-11): staging tags "No Prosol inventory result" rows (`prosolGone`); after the pass it confirms in its own Prosol session (every code form + pinned product id; a still-listed product is a blip, emailed only if it lasts 3 h), Opus picks an in-stock substitute that code re-checks (stock, cost, list >= 80% of what they paid), and Mac gets one email of taps (`/discontinued/act`): Shopify = Offer the swap / Refund, Amazon = Mark discontinued. Offer/refund also HALT the SKU (`sku-map-file.writeEntry`) and DRAFT the listing. Ship the swap writes a per-order swap that staging, the Prosol email and the SF PO apply (`applySwaps`). Reminders daily, offers every 3 days. State `data/discontinued-state.json`; CLI `scripts/ops/discontinued.js status|offered`.
 - `schluter-map.js` — Schluter-specific SKU mapping.
 - `ops-state.js` — persisted ops state (`data/ops-state/`).
 - `audit.js` — append-only audit trail (`data/audit.jsonl`).
@@ -51,6 +52,7 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `large-order-releases.js` — human release for the large-order review gate (`/release`, `POST /api/orders/release`, `data/large-order-releases.json`, 14-day TTL, optional branch pin).
 
 ## Email / messaging
+- `tap-log.js` — audit line for every emailed tap link Mac opens (`tap-open`) or presses (`tap-press`): record keys, HTTP status, error, Tailscale IP, browser; never tokens or reply text. Links only resolve on the tailnet, so no line = the page never loaded (phone off Tailscale / NordVPN on). `grep '"action":"tap-' data/audit.jsonl`.
 - `emailer.js` — nodemailer send path.
 - `resend-email.js` — Resend helper (CFC; `RESEND_API_KEY`).
 - `imap-watcher.js` · `mail-watcher.js` — inbound IMAP polling (no Mail.app scraping).

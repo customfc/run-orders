@@ -12,6 +12,8 @@ const { validateMapping } = require('../../lib/mapping-guard');
 const { sampleOf, sampleRefHandle } = require('../../lib/sample-item');
 const largeReleases = require('../../lib/large-order-releases');
 const skuResolver = require('../../lib/sku-resolver');
+const discontinued = require('../../lib/discontinued');
+const skuMapFile = require('../../lib/sku-map-file');
 const { isPickupOnly, pickupOnlyMessage } = require('../../lib/trade-pickup-only');
 const { isCatalogEntry } = require('../../lib/trade-skumap');
 const { localVerdict } = require('../../lib/local-fulfillment');
@@ -358,6 +360,13 @@ function persistMappingToFile(key, entry) {
 function liveAddMapping(key, entry) {
   SKU_MAPPINGS[key] = entry;
   persistMappingToFile(key, entry);
+}
+
+// Insert OR replace a mapping LIVE (in memory and on disk). liveAddMapping only
+// inserts; the discontinued desk needs to replace an entry with its HALT_.
+function liveSetMapping(key, entry) {
+  skuMapFile.writeEntry(key, entry);
+  SKU_MAPPINGS[key] = entry;
 }
 
 // A line the resolver can work on: no sku-map entry at all, or an UNMAPPED*
@@ -1058,6 +1067,9 @@ function largeOrderReasons(profile) {
 async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress = () => {} } = {}) {
   onProgress({ type: 'status', message: filterOrderNumber ? `Fetching order ${filterOrderNumber}...` : 'Fetching awaiting_shipment orders from ShipStation...' });
   const allOrders = await fetchAwaitingOrders();
+  // An approved swap for a discontinued item (lib/discontinued.js): the line is
+  // resolved as the substitute. In memory only; ShipStation keeps the original.
+  for (const o of allOrders) o.items = discontinued.applySwaps(o.orderNumber, o.items);
   let inScope = allOrders.filter(isInScope);
   if (filterOrderNumber) {
     inScope = inScope.filter(o => o.orderNumber === filterOrderNumber);
@@ -1243,7 +1255,19 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
               await sleep(5000);
             }
             const inv = inventoryCache.get(cacheKey);
-            if (!inv) throw new Error(`No Prosol inventory result for ${primary}${fallback ? ` (also tried ${fallback})` : ''}`);
+            if (!inv) {
+              // Tagged for lib/discontinued.js: Prosol may have dropped the product (#1412, 2026-10-07).
+              const err = new Error(`No Prosol inventory result for ${primary}${fallback ? ` (also tried ${fallback})` : ''}`);
+              const line = order.resolvedItems.find((it) => (it.apiSku || it.prosolSku) === primary) || {};
+              err.prosolGone = {
+                sku: line.sku || primary, itemName: line.name || null, qty: line.qty || 1,
+                apiSku: primary, prosolSku: fallback || line.prosolSku || null,
+                channel: orderSource(order), orderDate: order.orderDate || null,
+                unitPrice: line.original?.unitPrice ?? null,
+                shipTo: { name: order.shipTo?.name || null, city: order.shipTo?.city || null, state: order.shipTo?.state || null },
+              };
+              throw err;
+            }
             inventoryBySku[cacheKey] = inv;
           }
 
@@ -1295,7 +1319,7 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
         plannedAssignments.push(assignment);
         onProgress({ type: 'order-planned', orderNumber: order.orderNumber, warehouse: warehouseLabel, carrier: formatCarrier(rate.winner.carrierCode), cost: formatMoney(rate.winner.shipmentCost) });
       } catch (error) {
-        planningErrors.push({ orderNumber: order.orderNumber, reason: error.message });
+        planningErrors.push({ orderNumber: order.orderNumber, reason: error.message, ...(error.prosolGone ? { prosolGone: error.prosolGone } : {}) });
         onProgress({ type: 'order-error', orderNumber: order.orderNumber, reason: error.message });
       }
     }
@@ -1443,4 +1467,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, isShopifyOrder, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage, bestCommonService, chooseNonCpCarrier };
+module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, isShopifyOrder, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, liveSetMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage, bestCommonService, chooseNonCpCarrier };
