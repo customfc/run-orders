@@ -14,6 +14,7 @@
  *
  * Writes data/prosol-catalog/<date>/report.json plus CSVs:
  *   to-import.csv          every product the import creates (Salesforce match as info columns)
+ *   flooring-no-coverage.csv  flooring Prosol publishes no coverage for (left out; --include-flooring-without-coverage)
  *   qoh-crosswalk.csv      Salesforce item → the vendor code we create, for Automayt's QOH load
  *   conflicts.csv          scope "import": blocks a product from the import (shared Prosol code);
  *                          scope "qoh": only matters for matching Salesforce QOH onto our items
@@ -67,8 +68,13 @@ function main() {
 
   // Import-side conflict: two passing products with one Prosol code can't both have it as a vendor code.
   const collisions = pc.codeCollisions(importable);
-  const colliding = new Set([...collisions.values()].flat());
-  const toImport = importable.filter((r) => !colliding.has(r.id));
+  const settled = pc.resolveCollisions(collisions, new Map(importable.map((r) => [r.id, r])));
+  const colliding = new Set([...settled.held.values()].flat());
+  // Flooring is per sq ft / ft (Mac, 2026-10-14); flooring with no coverage in Prosol's data stays out.
+  const includeNoCoverage = !!args['include-flooring-without-coverage'];
+  const noCoverage = importable.filter((r) => { const f = pc.flooringUnit(r); return f && f.noCoverage; });
+  const noCoverageIds = new Set(includeNoCoverage ? [] : noCoverage.map((r) => r.id));
+  const toImport = importable.filter((r) => !colliding.has(r.id) && !settled.drop.has(r.id) && !noCoverageIds.has(r.id));
 
   // QOH-side (information for Automayt's load; none of these stop the import)
   const sfMatched = importable.filter((r) => statusOf(r) === 'matched');
@@ -98,8 +104,12 @@ function main() {
       [`${minLocations}+ branches`]: passing.length,
       'of which discontinued at Prosol (left out)': passing.length - importable.length,
       importable: importable.length,
-      'share a Prosol code with another passing product (held for a person)': colliding.size,
       sharedProsolCodes: collisions.size,
+      'shared codes merged into one item (same code and price)': settled.keep.size,
+      'listings folded into another item': settled.drop.size,
+      'share a Prosol code, prices differ (held for a person)': colliding.size,
+      'flooring without coverage in Prosol data (left out)': includeNoCoverage ? 0 : noCoverage.length,
+      'flooring per sq ft / ft (coverage known)': importable.filter((r) => { const f = pc.flooringUnit(r); return f && f.unit; }).length,
       toImport: toImport.length,
     },
     salesforceInfo: {
@@ -116,7 +126,7 @@ function main() {
     costs: { toImportPriced: priced.length, toImportPricedOk: pricedOk.length, toImportNotYetPriced: toImport.length - priced.length },
     toImportByCategory: countBy(toImport, (r) => pc.automaytCategory(r)),
     toImportByManufacturer: countBy(toImport, (r) => r.manufacturer, 25),
-    toImportByUnit: countBy(toImport, (r) => r.pricing_measure_unit || 'each'),
+    toImportByUnit: countBy(toImport, (r) => { const f = pc.flooringUnit(r); return f && f.unit ? f.unit : 'each'; }),
   };
   fs.writeFileSync(path.join(dir, 'report.json'), JSON.stringify(report, null, 1));
 
@@ -130,10 +140,14 @@ function main() {
       msrp: r.msrp_price != null ? (r.msrp_price / 100).toFixed(2) : '', cost: c && c.cost != null ? c.cost : '',
       measure: r.pricing_measure_unit ? `${r.pricing_measure} ${r.pricing_measure_unit}` : '',
       sf_status: d.status, sf_via: d.via || '', sf_items: d.sf.map((h) => `${h.name} (${h.vendorItemId || '-'}, ${h.vendorName || '-'})`).join('; '),
+      automayt_unit: (pc.flooringUnit(r) || {}).unit || 'each', box_quantity: (pc.flooringUnit(r) || {}).unit ? r.pricing_measure : '',
+      unit_cost: c && c.cost != null ? pc.unitCostFor(r, c.cost) : '',
+      merged_listings: (settled.keep.get(r.id) || []).map((t) => `${t.id} ${t.manufacturer}`).join('; '),
     };
   };
-  const header = ['prosol_id', 'prosol_sku', 'maker_sku', 'automayt_vendor_code', 'name', 'manufacturer', 'automayt_category', 'locations', 'units', 'stock_as_of', 'msrp', 'cost', 'measure', 'sf_status', 'sf_via', 'sf_items'];
+  const header = ['prosol_id', 'prosol_sku', 'maker_sku', 'automayt_vendor_code', 'name', 'manufacturer', 'automayt_category', 'locations', 'units', 'stock_as_of', 'msrp', 'cost', 'measure', 'automayt_unit', 'box_quantity', 'unit_cost', 'merged_listings', 'sf_status', 'sf_via', 'sf_items'];
   writeCsv(path.join(dir, 'to-import.csv'), header, toImport.map(row));
+  writeCsv(path.join(dir, 'flooring-no-coverage.csv'), header, noCoverage.map(row));
 
   // Crosswalk for Automayt's QOH load: one row per Salesforce item a passing product claims.
   const QOH_ADVICE = {
@@ -158,7 +172,8 @@ function main() {
   const byId = new Map(records.map((r) => [r.id, r]));
   const sfById = new Map(sfItems.map((i) => [i.id, i]));
   writeCsv(path.join(dir, 'conflicts.csv'), ['scope', 'kind', ...header], [
-    ...importable.filter((r) => colliding.has(r.id)).map((r) => ({ scope: 'import', kind: `Prosol code ${r.prosol_sku} shared by ${collisions.get(pc.normCode(r.prosol_sku || r.sku)).length} passing products; one vendor code can't be two items`, ...row(r) })),
+    ...importable.filter((r) => colliding.has(r.id)).map((r) => ({ scope: 'import', kind: `Prosol code ${r.prosol_sku} shared by ${collisions.get(pc.normCode(r.prosol_sku || r.sku)).length} passing products at different prices; one vendor code can't be two items`, ...row(r) })),
+    ...importable.filter((r) => settled.drop.has(r.id)).map((r) => ({ scope: 'merged', kind: `same Prosol code and price as another listing: folded into that item as an alias`, ...row(r) })),
     ...sfAmbiguous.filter((r) => !colliding.has(r.id)).map((r) => ({ scope: 'qoh', kind: 'matches 2+ Salesforce items (legacy duplicates): their QOH lands on one item', ...row(r) })),
     ...sfTaken.filter((r) => !colliding.has(r.id)).map((r) => ({ scope: 'qoh', kind: 'short code also on another vendor\'s Salesforce item: that QOH is a different product', ...row(r) })),
     ...sharedSfImportable.map((x) => {

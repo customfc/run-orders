@@ -33,7 +33,7 @@ An unknown value throws, so a typo stops the pos phase loudly instead of guessin
 
 **Shadow mode** starts the mirror only after Salesforce has answered and can't change or fail that result. Every error is caught; a mirror still running after `AUTOMAYT_SHADOW_TIMEOUT_MS` (default 90000) is abandoned. Each mirror writes one `automayt-shadow` line to `data/audit.jsonl` and adds `automaytShadow: { ok, error, soNumber, poNumber, requestIds }` to the result. It writes to Automayt what cutover would: the Shopify SO + Prosol PO, Amazon period-SO lines + one PO per parcel received into Amazon Fulfillment, FBA stock POs. Amazon shares one ShipStation fetch between both backends. Shadow never emails anyone.
 
-**Turning shadow on (staging, after Automayt seeds Prosol, Treeco and Amazon Fulfillment):** in the Mini's `.env` set `AUTOMAYT_API_BASE=https://staging.automayt.dev/api/v1`, `AUTOMAYT_API_KEY=<staging key>`, `AMAZON_PERIOD_ANCHOR=<any Salesforce period start, e.g. 2026-09-24>`, `ERP_BACKEND=automayt-shadow`; map the six fixed records once under system `run-orders` (`erp.mapRef`); restart. Off again: remove `ERP_BACKEND`, restart.
+**Turning shadow on (staging, after Automayt seeds Prosol, Treeco and Amazon Fulfillment):** in the Mini's `.env` set `AUTOMAYT_API_BASE=https://staging.automayt.dev/api/v1`, `AUTOMAYT_API_KEY=<staging key>`, `AMAZON_PERIOD_ANCHOR=<any Salesforce period start, e.g. 2026-09-24>`, `ERP_BACKEND=automayt-shadow`; map the six fixed records once under system `run-orders` (`node scripts/automayt/map-fixed.js`: status with candidates, then `map <name> <id> --confirm`); restart. Step by step for the day a key arrives: `scripts/automayt/test-day.md`. Off again: remove `ERP_BACKEND`, restart.
 
 **Deliberate differences from Salesforce:** no fuzzy title or code-prefix item match (a miss auto-creates from the sku-map or goes to review); a vendor code shared by two items stops the line; PO lines carry the item cost (the Salesforce Shopify flow wrote the sale price there); a Shopify order whose SO already exists is skipped, as in Salesforce, but the guard can only see SOs that carry `channel: shopify` and the order number, so staff entering a Shopify order by hand in Automayt must fill both.
 
@@ -72,7 +72,10 @@ First full pass: 2026-10-01 on beta1, 22 of 22 steps, run `261001172010`. Replay
 
 1. Set `AMAZON_PERIOD_ANCHOR=2026-10-22` (the period open at go-live; it is also the guard's line: that period and earlier are never opened by run-orders in production).
 2. **Before the first Nov 1 pass, map the migrated Amazon period order once:** find the migrated Oct 22 - Nov 4 order in Automayt, then `node scripts/automayt/channel-tax.js map-period --period 2026-10-22 --so <SO number>` (dry run: prints the order) and, after confirming it is that period's order, the same with `--confirm`. A mapping can never be re-pointed, so map only the confirmed record. Without it the guard refuses every Oct 22 - Nov 4 parcel and alerts.
-3. Map the six fixed records (above) and set `ERP_BACKEND=automayt`.
+3. Map the six fixed records (`node scripts/automayt/map-fixed.js`, above) and set `ERP_BACKEND=automayt`.
+4. **`AMAZON_ANCHOR_PERIOD`**: open question with Automayt is whether the open Oct 22 - Nov 4 order migrates (Automayt imports only QOH from Salesforce). `migrated` (default, the safe choice) = map it as in step 2; `open` = it was not migrated, so run-orders opens `period:2026-10-22` itself on the first Nov 1 parcel. Periods before the anchor are always refused. Until one is done, every Oct 22 - Nov 4 parcel is refused with an ALERT and nothing is created.
+
+The day a key arrives: `scripts/automayt/test-day.md` (staging and production, step by step).
 
 ## Tax
 
@@ -113,14 +116,16 @@ Three scripts, all built so the run can be repeated:
 
 Snapshots live in `data/prosol-catalog/<date>/` (gitignored). The import progress file (`import-<env>.jsonl`) records each product's outcome: created, exists, duplicate, ambiguous, skipped or error. A re-run skips the finished ones.
 
-**Mapping** (`lib/prosol-catalog.js toItemInput`, tested). Products whose Prosol code is shared with another passing product are held, because Automayt would link the second one to the first one's item; `conflicts.csv` (scope `import`) lists them. At import time, a match on an existing Automayt item that is a short code on another vendor's item, or that is ambiguous, is also held for a person.
+**Mapping** (`lib/prosol-catalog.js toItemInput`, tested). Two passing products can't share a Prosol code (Automayt would link the second to the first one's item). When the code AND the price match, it's one product listed twice: `resolveCollisions` imports the listing Prosol updated most recently and carries the others' barcodes as aliases and their ids as extra `prosol` external refs (2026-10-14: all 11 such codes were Perfect Level Master T-Lock parts listed again as "PTX Group - Lash and Wedge Kit"; all 11 merge into the Perfect Level Master listing). Same code at a different price is held (`conflicts.csv` scope `import`). At import time, a match on an existing Automayt item that is a short code on another vendor's item, or that is ambiguous, is also held for a person.
 - `vendor_code` is Prosol's code, stripped the run-orders way (no `/` or `-`), which is what `autoCreateItem` writes and the order flows look up.
 - `item_number` is the maker's code, stripped.
 - The raw Prosol code, the maker's code (when it differs, as with Aqua Mix and Mapei) and the barcode are added as aliases.
 - The Prosol product id is an external ref (`system: prosol`).
-- `unit` is `each`, meaning Prosol's selling unit: the piece, roll, carton or pack a Prosol PO line orders. Products Prosol prices by area or length keep the measure in the description ("- 60 SqFt", "- 5 LnFt"), where `lib/pbsi-uom.js` reads coverage from.
+- **Flooring is per square foot or foot (Mac, 2026-10-14: "flooring is never sold by the carton").** For LVP, Laminate, Carpet, Tile and Hardwood with a Prosol pricing measure, `unit` is `sqft` or `lnft`, cost and retail are divided by the coverage, and `box_quantity` is the coverage. Prosol's price is for the whole tile, carton or roll (offers checked 2026-10-14: RT38S $47.32 for a 4 sq ft tile = $11.83/sq ft; TW55 $237.25 for a 50 ft roll = $4.745/ft). Flooring with no coverage in Prosol's data (209 products, mostly Tarkett commercial) is left out (`flooring-no-coverage.csv`; `--include-flooring-without-coverage` brings them in per piece). LVP and Carpet require lots in Automayt; a per sq ft LVP create works on beta1 (stocking_unit sqft, box_quantity 4).
+- Everything else is `each`, meaning Prosol's selling unit: the piece, roll, box or pack a Prosol PO line orders. The measure stays in the description ("- 60 SqFt", "- 5 LnFt").
 - Cost is our Prosol offer; retail is the offer's regular price, falling back to msrp.
-- Category is mapped from Prosol's category tree to Automayt's ten categories (`CATEGORY_RULES`, default Accessories).
+- Category is mapped from Prosol's category tree to Automayt's ten categories (`CATEGORY_RULES`, default Accessories). Mac, 2026-10-14: tools, trims, shower parts etc. stay under Accessories (a category can be changed later with PATCH).
+- `brand` = `manufacturer` = the maker (190 makers; Schluter 2,307, M-D PRO 860, Mapei 578...).
 - `stock_status` is `Special Order`.
 
 **Never a duplicate.** Each product's codes go through `POST /items/batch-lookup` against whatever Automayt already has: items auto-created by an order, seeded, or loaded by the QOH import if it ran first. The codes tried are Prosol's code, its leading-zero form and the maker's code, each also slash-stripped; then the same codes as item numbers, never short numbers. The outcomes:
@@ -133,7 +138,7 @@ If the QOH load runs first and creates items itself, ours come back as "matched"
 
 `prosol-catalog-report.js` matches the catalogue offline against a read-only Salesforce pull. It's information only: the crosswalk for the QOH load.
 
-**Guards.** `--apply` against beta1 or staging needs `AUTOMAYT_TEST_CODE_PREFIX` (e.g. `ROTEST-`), so the real catalogue never lands in a shared test tenant. Production needs `--production` and a live key, and refuses the test-only settings. Writes are paced to the key's `write_per_minute` from `/whoami`, minus 5. The transport now reports each response's `x-ratelimit-*` window.
+**Guards.** `--apply` against beta1 needs `AUTOMAYT_TEST_CODE_PREFIX` (e.g. `ROTEST-`), so the real catalogue never lands in a shared test tenant. Staging takes the real codes only with `--real-codes` (CFC's own test tenant; confirm with Aaron first). `--ids=1,2` limits a run to those Prosol product ids. Production needs `--production` and a live key, and refuses the test-only settings. Writes are paced to the key's `write_per_minute` from `/whoami`, minus 5. The transport now reports each response's `x-ratelimit-*` window.
 
 **Prosol API facts (2026-10-14):**
 - `append=is_clearance` returns a 504 at any page size, so clearance isn't pulled.
@@ -158,8 +163,11 @@ If the QOH load runs first and creates items itself, ours come back as "matched"
 | **Stock at 2 or more branches (the rule)** | **11,965** |
 | of which discontinued at Prosol, left out | 1,022 |
 | Importable | 10,943 |
-| share a Prosol code with another passing product, held for a person (`conflicts.csv` scope `import`) | 22 (11 codes) |
-| **to import, in one run** | **10,921** |
+| share a Prosol code with another passing product: same price, merged into one item each | 11 codes (11 listings folded in) |
+| share a Prosol code at a different price, held for a person | 0 |
+| flooring with no coverage in Prosol's data, left out (`flooring-no-coverage.csv`) | 209 |
+| flooring per sq ft / ft (coverage known) | 29 (25 sq ft, 4 ft) |
+| **to import, in one run** | **10,723** (10,694 each, 25 sq ft, 4 ft) |
 
 Salesforce, for information (`qoh-crosswalk.csv`, `conflicts.csv` scope `qoh`). None of these stops the import:
 
@@ -174,7 +182,7 @@ Salesforce, for information (`qoh-crosswalk.csv`, `conflicts.csv` scope `qoh`). 
 | Salesforce Prosol items whose product isn't imported (below the rule or discontinued), so likewise no item | 458 |
 
 How the earlier 56 conflicts changed meaning once nothing is subtracted:
-- The 22 shared Prosol codes still block those products. One vendor code can't be two items, whatever Salesforce has.
+- The 22 shared-code products were 11 Perfect Level Master parts listed twice; each pair now merges into one item (same code, same price).
 - The 19 Salesforce duplicates and 15 short-code coincidences no longer block anything. Salesforce items don't become Automayt items, so these products are imported. They matter only to the QOH load: sum or pick for the 19, and keep the 15 apart.
 - The Salesforce items claimed by two Prosol products are now 3 (5 counted products the rule drops). That's QOH only.
 
@@ -184,7 +192,7 @@ Matching by Salesforce item Name was tried and dropped. Every one of the 355 Nam
 - Branch counts against Prosol's live inventory (`sync_inventory=true`): 29 of 30 sampled products had the same count, and all 30 landed on the same side of the rule.
 - Cost slice of 300 spread across the importable list: 299 priced. 283 priced at Burnaby, 16 needed a second branch and 1 a third. The median cost is 0.70 × msrp. The slice averaged about 2 s a product at `--rps=1`.
 
-**Run time for the one import (10,921 products).**
+**Run time for the one import (10,723 products).**
 - Cost pull (`--phase=costs`): 10,622 still to price (299 done) at about 2 s a product at `--rps=1` is about 5.9 hours, resumable. Run it overnight, and never alongside another Prosol-heavy job.
 - Creates at 55 a minute: about 3.3 hours (3.0 at the full 60). Lookups add a few minutes: about 85 batch calls against a 30-a-minute limit, interleaved.
 - About 9 to 10 hours end to end. Both steps can be resumed, so they can be split across two nights.
@@ -198,7 +206,7 @@ Matching by Salesforce item Name was tried and dropped. Every one of the 355 Nam
 **Production run order:**
 1. Production key, Prosol vendor mapped. The run doesn't need to wait for Automayt's QOH load, and should preferably go before it, so the load lands on our items.
 2. Run `--phase=lists`, then `--phase=sf` on the same day, then `--phase=costs` overnight.
-3. Run `prosol-catalog-report.js`. A person settles the 22 shared Prosol codes (`conflicts.csv` scope `import`). Hand `qoh-crosswalk.csv` and the `qoh` conflicts to Automayt for their load.
+3. Run `prosol-catalog-report.js`. Check `conflicts.csv` scope `import` is empty (shared codes at the same price merge on their own). Hand Automayt the 54 QOH exceptions (`qoh` conflicts: two Salesforce items for one product, or a short code on a different product); everything else matches by vendor code, ignoring dashes and spaces, QOH only.
 4. Dry run against production.
 5. `--apply --production`.
 6. After that, run `--sync` weekly.

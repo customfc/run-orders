@@ -9,11 +9,13 @@
  *
  *   node scripts/automayt/prosol-catalog-import.js                       # dry run: what would be created
  *   node scripts/automayt/prosol-catalog-import.js --apply --limit=200   # beta1/staging rehearsal (needs AUTOMAYT_TEST_CODE_PREFIX)
+ *   node scripts/automayt/prosol-catalog-import.js --apply --real-codes  # the real catalogue into staging (CFC's test tenant)
+ *   ... --ids=25418,49911                                                 # only these Prosol product ids
  *   node scripts/automayt/prosol-catalog-import.js --apply --production  # production: live key + this flag, nothing else
  *   node scripts/automayt/prosol-catalog-import.js --sync [--apply]      # re-check imported items against a newer snapshot
  *
  * Options: --date=YYYY-MM-DD (snapshot, default newest), --min-locations=2,
- *          --include-discontinued, --limit=N, --writes-per-minute=N (default:
+ *          --include-discontinued, --include-flooring-without-coverage, --limit=N, --writes-per-minute=N (default:
  *          the key's write_per_minute from /whoami, minus a margin).
  *
  * Selection: the product has stock at --min-locations or more Prosol locations
@@ -86,8 +88,12 @@ function guard(args) {
   } else if (args.production) {
     throw new Error(`--production given but AUTOMAYT_API_BASE is ${base}`);
   }
-  if (args.apply && env !== 'production' && !process.env.AUTOMAYT_TEST_CODE_PREFIX) {
-    throw new Error(`refusing to write the real catalogue into ${env}: set AUTOMAYT_TEST_CODE_PREFIX (e.g. ROTEST-) for a rehearsal`);
+  // Staging is CFC's own test tenant: the real catalogue (real codes, no prefix) may go there with --real-codes,
+  // so shadow mode finds items by their real vendor codes. beta1 is shared and always needs the prefix.
+  if (args['real-codes'] && env !== 'staging') throw new Error('--real-codes is for staging only');
+  const realCodesOk = env === 'staging' && args['real-codes'] && !process.env.AUTOMAYT_TEST_CODE_PREFIX;
+  if (args.apply && env !== 'production' && !process.env.AUTOMAYT_TEST_CODE_PREFIX && !realCodesOk) {
+    throw new Error(`refusing to write the real catalogue into ${env}: set AUTOMAYT_TEST_CODE_PREFIX (e.g. ROTEST-) for a rehearsal${env === 'staging' ? ', or pass --real-codes to load the real catalogue into staging' : ''}`);
   }
   return { base, env };
 }
@@ -149,12 +155,16 @@ async function importRun(args, snapDir, { env }) {
     const c = costs.get(r.id);
     if (c && c.cost != null) priced.push({ rec: r, cost: c.cost, retail: c.retail }); else unpriced.push(r);
   }
-  // Products sharing a Prosol code can't each get it as a vendor code; a person picks (see conflicts.csv).
+  // Products sharing a Prosol code can't each get it as a vendor code. Same code and price = one product
+  // listed twice: import one, the others ride along (resolveCollisions). A group whose prices differ is
+  // held for a person (conflicts.csv).
   const collisions = pc.codeCollisions(selected);
-  const colliding = new Set([...collisions.values()].flat());
-  let todo = priced.filter((x) => !done.has(x.rec.id) && !colliding.has(x.rec.id));
+  const settled = pc.resolveCollisions(collisions, new Map(selected.map((r) => [r.id, r])));
+  const colliding = new Set([...settled.held.values()].flat());
+  let todo = priced.filter((x) => !done.has(x.rec.id) && !colliding.has(x.rec.id) && !settled.drop.has(x.rec.id));
+  if (args.ids) { const want = new Set(String(args.ids).split(',').map(Number)); todo = todo.filter((x) => want.has(x.rec.id)); }
   if (args.limit) todo = pc.spread(todo, Math.min(Number(args.limit), todo.length));
-  log(`${env}: ${selected.length} pass the ${minLocations}-location rule, ${priced.length} priced, ${unpriced.length} still need a cost pull, ${colliding.size} share a Prosol code with another product (skipped); ${done.size} already done; this run ${todo.length}${args.apply ? '' : ' (DRY RUN)'}`);
+  log(`${env}: ${selected.length} pass the ${minLocations}-location rule, ${priced.length} priced, ${unpriced.length} still need a cost pull, ${settled.keep.size} shared codes merged into one item each, ${colliding.size} held for a person; ${done.size} already done; this run ${todo.length}${args.apply ? '' : ' (DRY RUN)'}`);
 
   const who = (await am.get('/whoami')).data;
   const scopes = new Set((who.key && who.key.scopes) || []);
@@ -186,7 +196,7 @@ async function importRun(args, snapDir, { env }) {
         continue;
       }
       if (v.status === 'ambiguous') { bump('ambiguous'); record({ ...base, status: 'ambiguous', candidates: v.candidates.map((c) => c.id), via: v.via }); continue; }
-      const input = pc.toItemInput(rec, { cost: x.cost, retail: x.retail });
+      const input = pc.toItemInput(rec, { cost: x.cost, retail: x.retail, includeFlooringWithoutCoverage: !!args['include-flooring-without-coverage'], twins: settled.keep.get(rec.id) || [] });
       if (input.skip) { bump(`skip:${input.skip}`); record({ ...base, status: 'skipped', reason: input.skip }); continue; }
       if (!args.apply) { bump('would-create'); if (samples.length < 5) samples.push(input); continue; }
       await pace();
@@ -211,7 +221,7 @@ async function importRun(args, snapDir, { env }) {
   }
   log(`done: ${JSON.stringify(counts)}`);
   if (samples.length) console.log('sample inputs:\n' + samples.map((s) => JSON.stringify(s)).join('\n'));
-  const report = { env, at: new Date().toISOString(), apply: !!args.apply, minLocations, selected: selected.length, priced: priced.length, unpriced: unpriced.length, sharedProsolCode: colliding.size, alreadyDone: done.size, thisRun: todo.length, counts, writesPerMinute: perMinute };
+  const report = { env, at: new Date().toISOString(), apply: !!args.apply, minLocations, selected: selected.length, priced: priced.length, unpriced: unpriced.length, sharedCodesMerged: settled.keep.size, sharedProsolCodeHeld: colliding.size, alreadyDone: done.size, thisRun: todo.length, counts, writesPerMinute: perMinute };
   fs.writeFileSync(path.join(snapDir, `import-${env}-report${args.apply ? '' : '-dry'}.json`), JSON.stringify(report, null, 1));
   return report;
 }
@@ -245,9 +255,10 @@ async function syncRun(args, snapDir, { env }) {
     if (!c || c.cost == null || l.status === 'exists') continue; // only items this importer created carry our cost
     const item = (await am.get(`/items/${l.automaytId}`)).data;
     const current = item && item.cost ? Number(item.cost.vendor_cost ?? item.cost.real_cost ?? NaN) : NaN;
-    if (Number.isFinite(current) && Math.abs(current - c.cost) < 0.005) continue;
-    out.costChanged.push({ id: l.id, automaytId: l.automaytId, sku: rec.prosol_sku, from: Number.isFinite(current) ? current : null, to: c.cost });
-    if (args.apply) { await pace(); await erp.updateItem(l.automaytId, { cost: String(c.cost) }); }
+    const target = pc.unitCostFor(rec, c.cost); // per sq ft / ft for flooring with coverage
+    if (Number.isFinite(current) && Math.abs(current - target) < 0.00005) continue;
+    out.costChanged.push({ id: l.id, automaytId: l.automaytId, sku: rec.prosol_sku, from: Number.isFinite(current) ? current : null, to: target });
+    if (args.apply) { await pace(); await erp.updateItem(l.automaytId, { cost: String(target) }); }
   }
   const report = { env, at: new Date().toISOString(), apply: !!args.apply, snapshot: path.basename(snapDir), checked: list.length, costChanged: out.costChanged.length, belowRule: out.belowRule.length, discontinued: out.discontinued.length, missingFromSnapshot: out.missingFromSnapshot.length, detail: out };
   fs.writeFileSync(path.join(snapDir, `sync-${env}-report${args.apply ? '' : '-dry'}.json`), JSON.stringify(report, null, 1));
