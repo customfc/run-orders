@@ -30,8 +30,9 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 
 ## Automayt (replaces Salesforce, see `../docs/AUTOMAYT.md`)
 - `automayt.js` — Open API transport: bearer key, required Idempotency-Key, same-key retries, 8 in flight, `AutomaytError` with `code` + `request_id`.
-- `automayt-erp.js` — domain calls: external-ref fixed records, items, SOs (procurement external), Amazon 14-day period SO, confirmed POs, receipts, cancels, notes, payables.
+- `automayt-erp.js` — domain calls: external-ref fixed records, items (create, `updateItem` PATCH), SOs (procurement external), Amazon 14-day period SO, confirmed POs, receipts, cancels, notes, payables.
 - `automayt-orders.js` — Automayt twins of the Shopify, Amazon and FBA SO/PO flows, same result shapes as the Salesforce originals.
+- `prosol-catalog.js` — Prosol catalogue → Automayt items (pure): 2+ branch stock rule, Salesforce dedupe, category/unit mapping, `toItemInput` for `createItem`. Scripts in `scripts/automayt/prosol-catalog-*.js`, see `../docs/AUTOMAYT.md` "Prosol catalogue".
 - `erp-backend.js` — `ERP_BACKEND` switch every SO/PO caller goes through: `salesforce` (default) | `automayt-shadow` (mirror after SF, never fails SF) | `automayt`.
 - `channel-tax.js` — pure tax math: Shopify order money (paid line totals, tax by code as `tax_charged`, fee, refunds), the Amazon Finances transactions counted like Seller Central's Date Range report, CFC GST/HST vs Amazon-withheld provincial tax by province, the period tax line, a Date Range CSV parser.
 - `channel-tax-io.js` — Finances API pull, Amazon order provinces (analytics DB, then Orders API), Shopify money fetch, records under `data/channel-tax/` (gitignored). CLI `scripts/automayt/channel-tax.js`; read-only check against Lynnae's numbers `scripts/automayt/verify-channel-tax.js`.

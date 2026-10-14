@@ -96,3 +96,111 @@ First full pass: 2026-10-01 on beta1, 22 of 22 steps, run `261001172010`. Replay
 
 - Vendors Prosol, Treeco and the carriers, and a virtual Amazon Fulfillment location: the API can't create vendors or locations.
 - `PO-16xxx` and `SO-025xxx` numbering. beta1 issues `PO-0213` and `SO-0078`.
+
+## Prosol catalogue
+
+Every product Prosol is actively selling becomes an Automayt item, so an order, quote or PO for any Prosol product finds its item without the order flows having to auto-create it. **Rule (Mac, 2026-10-14): a product is imported when it has stock at two or more Prosol branches.** It must also not be discontinued at Prosol, and it needs a cost. Each record keeps its branch count and the as-of date, so a later sync can apply the rule again.
+
+**One import, nothing subtracted (Mac, 2026-10-14).** Automayt doesn't migrate the Salesforce item master; it imports only quantities on hand (QOH). Every product that passes the rule goes in this one import, including the ones Salesforce already has. Automayt's QOH load then matches onto these items by vendor code. Whichever of the two runs second must match by vendor code and never create a duplicate. On our side that's covered by the batch-lookup before each create plus `createItem`'s 409 handling. The Salesforce match is information for the QOH load (`qoh-crosswalk.csv`), never a reason to skip a product.
+
+Three scripts, all built so the run can be repeated:
+
+| Script | What it does | Network |
+|---|---|---|
+| `scripts/automayt/prosol-catalog-pull.js` | Lists (`--phase=lists`): manufacturers, categories, every product (250 a page), every in-stock branch row (1,000 a page), then `catalog.json`. Costs (`--phase=costs`): one offers call per passing product, `--rps=1`, `--limit=N`, resumable. Salesforce (`--phase=sf`): read-only PBSI item codes. | Prosol (read-only), Salesforce (read-only) |
+| `scripts/automayt/prosol-catalog-report.js` | Counts, conflicts, the Salesforce crosswalk. CSVs: `to-import.csv` (Salesforce match as info columns), `qoh-crosswalk.csv`, `conflicts.csv` (scope `import` or `qoh`), `sf-prosol-unmatched.csv` | none |
+| `scripts/automayt/prosol-catalog-import.js` | Dry run by default. `--apply` creates the missing items; `--sync` re-checks imported items against a newer snapshot (PATCHes cost changes with `--apply`, only reports products that fell below the rule or were discontinued) | Automayt |
+
+Snapshots live in `data/prosol-catalog/<date>/` (gitignored). The import progress file (`import-<env>.jsonl`) records each product's outcome: created, exists, duplicate, ambiguous, skipped or error. A re-run skips the finished ones.
+
+**Mapping** (`lib/prosol-catalog.js toItemInput`, tested). Products whose Prosol code is shared with another passing product are held, because Automayt would link the second one to the first one's item; `conflicts.csv` (scope `import`) lists them. At import time, a match on an existing Automayt item that is a short code on another vendor's item, or that is ambiguous, is also held for a person.
+- `vendor_code` is Prosol's code, stripped the run-orders way (no `/` or `-`), which is what `autoCreateItem` writes and the order flows look up.
+- `item_number` is the maker's code, stripped.
+- The raw Prosol code, the maker's code (when it differs, as with Aqua Mix and Mapei) and the barcode are added as aliases.
+- The Prosol product id is an external ref (`system: prosol`).
+- `unit` is `each`, meaning Prosol's selling unit: the piece, roll, carton or pack a Prosol PO line orders. Products Prosol prices by area or length keep the measure in the description ("- 60 SqFt", "- 5 LnFt"), where `lib/pbsi-uom.js` reads coverage from.
+- Cost is our Prosol offer; retail is the offer's regular price, falling back to msrp.
+- Category is mapped from Prosol's category tree to Automayt's ten categories (`CATEGORY_RULES`, default Accessories).
+- `stock_status` is `Special Order`.
+
+**Never a duplicate.** Each product's codes go through `POST /items/batch-lookup` against whatever Automayt already has: items auto-created by an order, seeded, or loaded by the QOH import if it ran first. The codes tried are Prosol's code, its leading-zero form and the maker's code, each also slash-stripped; then the same codes as item numbers, never short numbers. The outcomes:
+- matched: the item exists, so it's recorded and not created.
+- matched, but a short code on another vendor's item: held as a conflict.
+- ambiguous: held for a person.
+- not found: created with `Idempotency-Key: item-<vendorCode>`. A 409 duplicate counts as done, unless the existing item belongs to another vendor; then it's held as a conflict.
+
+If the QOH load runs first and creates items itself, ours come back as "matched" and don't get the Prosol external ref, aliases or our cost. Ask Automayt to load QOH onto our items rather than create its own.
+
+`prosol-catalog-report.js` matches the catalogue offline against a read-only Salesforce pull. It's information only: the crosswalk for the QOH load.
+
+**Guards.** `--apply` against beta1 or staging needs `AUTOMAYT_TEST_CODE_PREFIX` (e.g. `ROTEST-`), so the real catalogue never lands in a shared test tenant. Production needs `--production` and a live key, and refuses the test-only settings. Writes are paced to the key's `write_per_minute` from `/whoami`, minus 5. The transport now reports each response's `x-ratelimit-*` window.
+
+**Prosol API facts (2026-10-14):**
+- `append=is_clearance` returns a 504 at any page size, so clearance isn't pulled.
+- `include=productOffers` returns every Prosol customer's offers (about 3,000 per product, 6 MB). Don't use it.
+- Our price exists only on `/products/{id}/offers`, one product per call. Multi-product filters return a 500 or are ignored.
+- Offers exist only at branches that carry the product, and prices are regional. The cost pull tries Burnaby (10010), then the BC branch with the most stock, then any stocking branch, and records which branch priced it.
+- On raw `/product_inventory_items` rows, `available` is the unit count. The "always 1" flag in `project_prosol_stock_total_bug` is the derived `inStock` in `checkInventory`.
+
+**Automayt API facts (beta1, standard tier):**
+- Limits per minute: 300 reads, 60 writes, 30 batch, 10 export, 8 concurrent.
+- `PATCH /items/{id}` exists (`items:update`; changing cost also needs `items:read_cost`). Setting `stock_status` to "Discontinued" runs Automayt's discontinue steps.
+- Items have no custom field, so the branch count and as-of date live in our snapshot and progress files, not on the item.
+
+**Numbers, snapshot 2026-10-14** (`data/prosol-catalog/2026-10-14/report.json`):
+
+| | Products |
+|---|---|
+| Prosol catalogue (the storefront lists only active products, so `filter[active]=1` changes nothing) | 57,068 |
+| Active and not discontinued (the old default) | 53,670 |
+| Stock at 1 or more branches | 19,413 |
+| Stock at exactly 1 branch | 7,448 |
+| **Stock at 2 or more branches (the rule)** | **11,965** |
+| of which discontinued at Prosol, left out | 1,022 |
+| Importable | 10,943 |
+| share a Prosol code with another passing product, held for a person (`conflicts.csv` scope `import`) | 22 (11 codes) |
+| **to import, in one run** | **10,921** |
+
+Salesforce, for information (`qoh-crosswalk.csv`, `conflicts.csv` scope `qoh`). None of these stops the import:
+
+| | |
+|---|---|
+| Salesforce items / with vendor Prosol | 12,993 / 3,013 |
+| Imported products with exactly one Salesforce match (Vendor Item ID) | 2,094 (37 under another vendor, e.g. Bona via Treeco) |
+| Match two or more Salesforce items (legacy duplicates). Their QOH lands on one item, so the load must sum or pick | 19 |
+| Short Prosol code also on another vendor's Salesforce item (e.g. Crain 341 and an ERV item 341). That QOH is a different product and must not be matched by code | 15 |
+| Salesforce items claimed by two imported products. The QOH belongs to one | 3 |
+| Salesforce Prosol items matching no current Prosol code, so their QOH has no item to land on | 464 |
+| Salesforce Prosol items whose product isn't imported (below the rule or discontinued), so likewise no item | 458 |
+
+How the earlier 56 conflicts changed meaning once nothing is subtracted:
+- The 22 shared Prosol codes still block those products. One vendor code can't be two items, whatever Salesforce has.
+- The 19 Salesforce duplicates and 15 short-code coincidences no longer block anything. Salesforce items don't become Automayt items, so these products are imported. They matter only to the QOH load: sum or pick for the 19, and keep the 15 apart.
+- The Salesforce items claimed by two Prosol products are now 3 (5 counted products the rule drops). That's QOH only.
+
+Matching by Salesforce item Name was tried and dropped. Every one of the 355 Name matches was a short number (CFC's own item numbering, e.g. 05961), and 342 were different products: a Rubi drill bit "matched" an Engineered Floors carpet. Short-number codes now never match by item number, and a maker's code that's a short number isn't looked up (`isShortNumeric`).
+
+**Checks.**
+- Branch counts against Prosol's live inventory (`sync_inventory=true`): 29 of 30 sampled products had the same count, and all 30 landed on the same side of the rule.
+- Cost slice of 300 spread across the importable list: 299 priced. 283 priced at Burnaby, 16 needed a second branch and 1 a third. The median cost is 0.70 × msrp. The slice averaged about 2 s a product at `--rps=1`.
+
+**Run time for the one import (10,921 products).**
+- Cost pull (`--phase=costs`): 10,622 still to price (299 done) at about 2 s a product at `--rps=1` is about 5.9 hours, resumable. Run it overnight, and never alongside another Prosol-heavy job.
+- Creates at 55 a minute: about 3.3 hours (3.0 at the full 60). Lookups add a few minutes: about 85 batch calls against a 30-a-minute limit, interleaved.
+- About 9 to 10 hours end to end. Both steps can be resumed, so they can be split across two nights.
+
+**beta1 rehearsal (2026-10-14, `ROTEST-` codes, Prosol stand-in Pacific Tile & Stone):**
+- 200 products: 199 created, 1 found existing (the e2e's `ROTEST-KEBA100/125/10M`, found via the stripped `KEBA10012510M`). 0 errors, 0 rate-limit hits, 3.6 minutes.
+- Re-run with the progress file moved aside: 200 of 200 found, nothing created.
+- Sync against a simulated next-day snapshot: 2 cost changes PATCHed, then restored. 1 discontinued product and 1 below-rule product reported, not changed.
+- Reusing a create key with a different body returns 422 `idempotency_key_reused`. The importer records it as an error and the next run finds the item.
+
+**Production run order:**
+1. Production key, Prosol vendor mapped. The run doesn't need to wait for Automayt's QOH load, and should preferably go before it, so the load lands on our items.
+2. Run `--phase=lists`, then `--phase=sf` on the same day, then `--phase=costs` overnight.
+3. Run `prosol-catalog-report.js`. A person settles the 22 shared Prosol codes (`conflicts.csv` scope `import`). Hand `qoh-crosswalk.csv` and the `qoh` conflicts to Automayt for their load.
+4. Dry run against production.
+5. `--apply --production`.
+6. After that, run `--sync` weekly.
+
+Open with Automayt: `drafts/automayt-prosol-catalogue-ask.md` in cfc-projects/06-salesforce-exit.
