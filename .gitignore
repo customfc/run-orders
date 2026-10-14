@@ -49,3 +49,6 @@ data/large-order-releases.json
 
 # Automayt beta1/staging rehearsal reports
 data/automayt-e2e/
+
+# Prosol catalogue snapshots for the Automayt import (large; regenerate with scripts/automayt/prosol-catalog-pull.js)
+data/prosol-catalog/
