@@ -80,10 +80,25 @@ function shopifyFixture() {
     customer: { firstName: 'Rehearsal', lastName: 'Buyer' },
     createdAt: new Date().toISOString().slice(0, 10),
     items: [
-      { sku: '4172', title: 'Schluter KERDI-FIX Bright White 290ml', quantity: 2, price: '37.96' },
-      { sku: '11510', title: 'Schluter KERDI-TROWEL 1/8 x 1/8', quantity: 1, price: '39.34' },
-      { sku: '71', title: 'Bona Professional Microfiber Cleaning Pad', quantity: 1, price: '14.99' },
+      { id: 1, sku: '4172', title: 'Schluter KERDI-FIX Bright White 290ml', quantity: 2, price: '37.96' },
+      { id: 2, sku: '11510', title: 'Schluter KERDI-TROWEL 1/8 x 1/8', quantity: 1, price: '39.34' },
+      { id: 3, sku: '71', title: 'Bona Professional Microfiber Cleaning Pad', quantity: 1, price: '14.99' },
     ],
+  };
+}
+
+// What Shopify charged on the fixture: a BC delivery, GST 5% + PST 7% per line and on freight.
+function shopifyFixtureMoney(order) {
+  const t = (g, p) => [{ code: 'GST', amount: g }, { code: 'PST', amount: p }];
+  return {
+    orderNumber: order.orderNumber, province: 'BC', subtotal: 130.25, shipping: 12.99, total: 160.43, fee: 4.95, feeUnknown: false, paidVia: ['shopify_payments'],
+    tax: t('7.17', '10.02'), refunds: [], refunded: 0,
+    lines: [
+      { id: '1', sku: '4172', quantity: 2, total: 75.92, taxCharged: t('3.80', '5.31') },
+      { id: '2', sku: '11510', quantity: 1, total: 39.34, taxCharged: t('1.97', '2.75') },
+      { id: '3', sku: '71', quantity: 1, total: 14.99, taxCharged: t('0.75', '1.05') },
+    ],
+    shippingLines: [{ title: 'Standard', total: 12.99, taxCharged: t('0.65', '0.91') }],
   };
 }
 
@@ -160,12 +175,21 @@ async function main() {
   }
 
   const order = shopifyFixture();
+  const money = shopifyFixtureMoney(order);
   const tracking = `ROTEST${RUN}S1`;
-  await flow('Shopify: SO with all lines, Prosol PO without the own-stock line', () => erpBackend.createShopifySoPo({ shopifyOrder: order, trackingNumber: tracking, carrierCode: 'purolator_walleted' }), (r) => ({
-    ok: !r.errors.length && !!r.soNumber && !!r.poNumber,
-    note: `${r.soNumber} / ${r.poNumber}; auto-created ${r.steps.filter((s) => s.step === 'auto-create-item').map((s) => s.itemNumber).join(', ') || 'none'}${r.errors.length ? `; errors ${JSON.stringify(r.errors)}` : ''}`,
+  let shopSo = null;
+  await flow('Shopify: SO with all lines at paid prices, freight, tax as charged; Prosol PO without the own-stock line', () => erpBackend.createShopifySoPo({ shopifyOrder: order, money, trackingNumber: tracking, carrierCode: 'purolator_walleted' }), (r) => {
+    shopSo = r.soId;
+    return {
+      ok: !r.errors.length && !!r.soNumber && !!r.poNumber && r.moneyCheck && r.moneyCheck.diff === 0,
+      note: `${r.soNumber} / ${r.poNumber}; total ${r.moneyCheck && r.moneyCheck.soTotal} vs Shopify ${money.total}; auto-created ${r.steps.filter((s) => s.step === 'auto-create-item').map((s) => s.itemNumber).join(', ') || 'none'}${r.errors.length ? `; errors ${JSON.stringify(r.errors)}` : ''}`,
+    };
+  });
+  await flow('Shopify: Automayt booked exactly the tax Shopify charged', async () => (await am.get(`/sales-orders/${shopSo}`)).data, (so) => ({
+    ok: so.subtotal === '143.24' && so.tax_total === '17.19' && so.total === '160.43' && JSON.stringify(so.tax_lines.map((l) => [l.code, l.amount])) === JSON.stringify([['GST', '7.17'], ['PST', '10.02']]),
+    note: `subtotal ${so.subtotal}, tax ${so.tax_total} (${so.tax_lines.map((l) => `${l.code} ${l.amount}`).join(', ')}), total ${so.total}`,
   }));
-  await flow('Shopify: same order again is a skip', () => erpBackend.createShopifySoPo({ shopifyOrder: order, trackingNumber: tracking, carrierCode: 'purolator_walleted' }), (r) => ({
+  await flow('Shopify: same order again is a skip', () => erpBackend.createShopifySoPo({ shopifyOrder: order, money, trackingNumber: tracking, carrierCode: 'purolator_walleted' }), (r) => ({
     ok: r.skipped === true && !r.errors.length,
     note: `${r.skipReason}; candidates ${(r.existingCandidates || []).join(', ')}`,
   }));
