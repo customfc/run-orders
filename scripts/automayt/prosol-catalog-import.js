@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 /**
- * Import the Prosol catalogue into Automayt as items (after the Salesforce item
- * migration has landed, so only the missing products are created).
+ * Import the Prosol catalogue into Automayt as items: ONE import of every
+ * product that passes the rule (Mac, 2026-10-14). Automayt does not migrate
+ * the Salesforce item master, only quantities on hand, and its QOH load matches
+ * onto these items by vendor code. Whichever of the two runs second must match
+ * by vendor code and never create a duplicate; on our side that is the
+ * batch-lookup below plus createItem's 409 handling.
  *
  *   node scripts/automayt/prosol-catalog-import.js                       # dry run: what would be created
  *   node scripts/automayt/prosol-catalog-import.js --apply --limit=200   # beta1/staging rehearsal (needs AUTOMAYT_TEST_CODE_PREFIX)
@@ -16,8 +20,8 @@
  * (Mac, 2026-10-14) and is not discontinued at Prosol, and its cost was pulled
  * (createItem refuses an item without cost). For each one: batch-lookup every
  * code it may already be filed under (Prosol code, maker code, leading-zero
- * form, each also slash-stripped); matched = already in Automayt (migrated from
- * Salesforce or auto-created by an order), ambiguous = left for a person,
+ * form, each also slash-stripped); matched = already in Automayt (auto-created
+ * by an order, seeded, or loaded before us), ambiguous = left for a person,
  * not found = created with Idempotency-Key item-<vendorCode>.
  *
  * Progress: data/prosol-catalog/<date>/import-<env>.jsonl, one line per product
@@ -77,7 +81,7 @@ function guard(args) {
   const env = envName(base);
   erp.testSettings();
   if (env === 'production') {
-    if (!args.production) throw new Error('refusing production: pass --production (and run only after the Salesforce item migration has landed)');
+    if (!args.production) throw new Error('refusing production: pass --production');
     if (!key.startsWith('amk_live_')) throw new Error('refusing production without a live key');
   } else if (args.production) {
     throw new Error(`--production given but AUTOMAYT_API_BASE is ${base}`);
@@ -106,8 +110,8 @@ function makePacer(perMinute) {
 }
 
 async function lookupChunk(records) {
-  // Vendor codes first, then the same codes as legacy item numbers (the migrated Salesforce Name),
-  // never a short number: those are CFC's own item numbering (lib/prosol-catalog.js isShortNumeric).
+  // Vendor codes first, then the same codes as item numbers (an item loaded under a legacy
+  // number), never a short number: that is CFC's own item numbering (lib/prosol-catalog.js isShortNumeric).
   const entries = records.map((r) => {
     const { vendorCodes, itemNumbers } = pc.lookupCodes(r);
     return { key: r.id, candidates: [...vendorCodes.map((vendorCode) => ({ vendorCode })), ...itemNumbers.map((itemNumber) => ({ itemNumber }))] };

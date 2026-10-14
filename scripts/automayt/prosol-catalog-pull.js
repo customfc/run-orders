@@ -4,7 +4,7 @@
  *
  *   node scripts/automayt/prosol-catalog-pull.js                 # lists: manufacturers, categories, products, stock, then build
  *   node scripts/automayt/prosol-catalog-pull.js --phase=costs --limit=300
- *   node scripts/automayt/prosol-catalog-pull.js --phase=costs --skip-in-salesforce   # every new product that passes the rule (about 5 h; resumable)
+ *   node scripts/automayt/prosol-catalog-pull.js --phase=costs   # every product that passes the rule (about 6 h at --rps=1; resumable)
  *   node scripts/automayt/prosol-catalog-pull.js --phase=sf      # read-only Salesforce item codes for the dedupe
  *
  * Options: --date=YYYY-MM-DD (snapshot folder, default today Pacific),
@@ -165,20 +165,13 @@ function build(snapDir, { minLocations, asOf }) {
   return catalog;
 }
 
-async function pullCosts(client, snapDir, { rps, limit, minLocations, all, skipInSalesforce }) {
+async function pullCosts(client, snapDir, { rps, limit, minLocations, all }) {
   const catalog = JSON.parse(fs.readFileSync(path.join(snapDir, 'catalog.json'), 'utf8'));
   const costFile = path.join(snapDir, 'costs.jsonl');
   const done = new Set(pc.readJsonl(costFile).map((r) => r.id));
-  // --skip-in-salesforce: products already a Salesforce item migrate on their own, so only price the new ones.
-  let inSf = new Set();
-  if (skipInSalesforce) {
-    const sfItems = JSON.parse(fs.readFileSync(path.join(snapDir, 'sf-items.json'), 'utf8'));
-    const { results } = pc.dedupeAgainstSf(catalog.records, sfItems, { prosolVendorId: '0014x00001P1ScCAAV' }); // Salesforce "Prosol Inc."
-    inSf = new Set([...results.entries()].filter(([, v]) => v.status !== 'new').map(([id]) => id));
-  }
   const todo = catalog.records
     .filter((r) => all || (r.locations >= minLocations && !r.discontinued))
-    .filter((r) => !done.has(r.id) && !inSf.has(r.id));
+    .filter((r) => !done.has(r.id));
   const n = limit ? Math.min(Number(limit), todo.length) : todo.length;
   const gap = Math.max(250, Math.round(1000 / Number(rps || 1)));
   log(`costs: ${done.size} priced already, ${todo.length} to go, this run ${n} at ~${(1000 / gap).toFixed(2)}/s (about ${Math.round((n * (gap + 600)) / 60000)} min)`);
@@ -246,7 +239,7 @@ async function main() {
       await pullLists(client, snapDir, { pauseMs });
       build(snapDir, { minLocations, asOf: date });
     } else if (phase === 'costs') {
-      await pullCosts(client, snapDir, { rps: args.rps || 1, limit: args.limit, minLocations, all: !!args.all, skipInSalesforce: !!args['skip-in-salesforce'] });
+      await pullCosts(client, snapDir, { rps: args.rps || 1, limit: args.limit, minLocations, all: !!args.all });
     } else {
       throw new Error(`unknown --phase=${phase}`);
     }
