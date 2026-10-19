@@ -92,7 +92,11 @@ The day a key arrives: `scripts/automayt/test-day.md` (staging and production, s
 
 **Verified against Lynnae's numbers 2026-10-14** (`scripts/automayt/verify-channel-tax.js`, read-only): all 10 Amazon periods May 7 to Sep 23 match her attached Date Range CSVs to the cent on product sales, tax collected, withheld, CFC tax and net, and the net equals the period SO total she adjusted to. `amazon-compare --csv <file>` repeats the check for any downloaded report. Shopify: of the 63 orders she adjusted Aug to Sep 2026, 43 match subtotal + shipping - fee to the cent (4 of them after refunds); the other 20 are her side, not the formula: 13 SO-price drifts her fee-only adjustment leaves behind (12 at $0.01 to $0.03, #1392 at $0.13), 2 PayPal orders (no fee in Shopify; #1377 refunded outside Shopify), fees swapped between #1361 and #1363 ($0.30 each way), and 3 orders with two SOs (#1366, #1376, #1387). 7 SOs she created with no order number (samples, cancellations) can't be matched.
 
-**Open:** credit notes or a refund path in the API; how Automayt wants the processor fee booked; Amazon period SO lines are still priced from the item (as in Salesforce), so the revenue side of the period order stays an accounting question like the fee.
+**Amazon period order at Amazon's actual prices (Melanie, 2026-10-19).** Each parcel's lines carry what Amazon charged: the ShipStation item's `unitPrice` x quantity (it matched the SP-API order items on all 24 orders checked 2026-10-19), split across a bundle's components by catalogue value, cents exact, and spread over sq ft for area items (`priceAmazonLines`). The shipping the buyer paid goes on as one description-only `delivery` line per Amazon order (ref `<order>:ship`, so the parcels of a multi-package order add it once). An item with no ShipStation price falls back to the catalogue price with a warning on the result. Not on the order: promotional rebates (a few dollars a period) and FBA sales, which never pass through ShipStation.
+
+**Fees (2026-10-19):** expensed, not netted. One entry per Amazon and Shopify payout (fees by type to Digital Operating Expenses, GST/HST on them to 2311, deposit to the bank) once Automayt has a journal-entry call (asked of Aaron). Accounts: GST/HST Payable 2310, GST/HST ITC 2311, PST Payable 2315. Shopify Payments fees carry no GST; Amazon's do.
+
+**Open:** a partial-refund credit note; a journal-entry call for the payout fees.
 
 ## Waiting on Automayt before staging
 
