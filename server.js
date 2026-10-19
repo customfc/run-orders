@@ -2656,6 +2656,12 @@ function pickupIo() {
       try { await c.init(); return await pio.branchStock(c, lines, code, branches); } finally { try { await c.close(); } catch {} }
     },
     ensurePo: (orderName) => pio.ensurePo(orderName, require('./lib/shopify-sf'), require('./lib/salesforce')),
+    // hello@ through the CS agent's Graph client (same as the Amazon inbox); absent on a laptop, so no reply reading there
+    branchReplies: (orderName, rec) => {
+      const yf = process.env.YF_CS_DIR || '/Users/fred/yourfloors-cs';
+      require(path.join(yf, 'lib', 'env.js'));
+      return pio.branchReplies(require(path.join(yf, 'lib', 'graph-mail.js')), orderName, rec);
+    },
     log: (o) => audit.log(o),
   };
 }
