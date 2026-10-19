@@ -4,7 +4,7 @@
  * autosum + "PST remitted by Amazon" file, and her Shopify order PDFs.
  *
  *   amazon-close  --period YYYY-MM-DD | --date YYYY-MM-DD  [--provisional] [--post]
- *       Close one 14-day period (whole period, Pacific days): tax collected,
+ *       Close one period (whole period, Pacific days): tax collected,
  *       withheld by Amazon by province and code, CFC's GST/HST, the net
  *       Lynnae adjusts the period SO to. Writes data/channel-tax/amazon/<start>.{json,csv}.
  *       --post adds CFC's GST/HST to the Automayt period order as a tax-only line.
@@ -17,13 +17,11 @@
  *       Refunded/cancelled orders vs their Automayt SO. Dry run unless --apply,
  *       which cancels an SO refunded in full before invoicing (nothing else can
  *       be posted until Automayt has credit notes).
- *   map-period --period YYYY-MM-DD --so <SO number> [--confirm]
- *       One-time cutover step: map the migrated Salesforce period order to
- *       period:<start> under system run-orders. Prints the order; maps only
- *       with --confirm. A mapping can never be re-pointed.
  *
- * Period schedule: AMAZON_PERIOD_ANCHOR (or --anchor), any Salesforce period
- * start (2026-09-24, 10-08 and 10-22 give the same windows).
+ * Period schedule: Salesforce's 14-day periods (AMAZON_PERIOD_ANCHOR or
+ * --anchor overrides), split at the Nov 1 cutover: --period 2026-10-22 closes
+ * Oct 22 - 31 for the Salesforce order, --period 2026-11-01 closes Nov 1 - 4
+ * for Automayt, and Nov 5 on are whole periods again.
  */
 
 const path = require('path');
@@ -48,9 +46,7 @@ const ymd = (s, name) => {
 };
 
 function anchor() {
-  const a = arg('anchor') || process.env.AMAZON_PERIOD_ANCHOR;
-  if (!a) throw new Error('set AMAZON_PERIOD_ANCHOR (any Salesforce period start, e.g. 2026-10-22) or pass --anchor');
-  return ymd(a, 'anchor');
+  return ymd(arg('anchor') || require('../../lib/automayt-erp').amazonPeriodAnchor(), 'anchor');
 }
 
 function show(r) {
@@ -132,34 +128,7 @@ async function shopifyRefunds() {
   if (!list.length) console.log('no refunded or cancelled orders in range');
 }
 
-async function mapPeriod() {
-  const am = require('../../lib/automayt');
-  const erp = require('../../lib/automayt-erp');
-  const start = ymd(arg('period'), 'period');
-  const number = arg('so');
-  if (!number) throw new Error('--so <SO number> required');
-  const key = `period:${start}`;
-  const existing = await erp.findAmazonPeriodSo(key);
-  if (existing) {
-    console.log(`${key} already resolves to ${existing.number || existing.id}; nothing to do`);
-    return;
-  }
-  const { data } = await am.get('/sales-orders', { number });
-  const so = ((data && data.data) || [])[0];
-  if (!so) throw new Error(`no Automayt sales order ${number}`);
-  const p = erp.amazonPeriod(start, start);
-  console.log(`${so.number}: customer ${so.customer_id}, channel ${so.channel || '-'}, external_ref ${so.external_ref || '-'}, order date ${so.order_date || '-'}, status ${so.status}, total ${so.total}`);
-  console.log(`  notes: ${so.notes || '-'}`);
-  console.log(`  should be the Amazon period ${p.label} (${p.start} to ${p.end}) migrated from Salesforce`);
-  if (!flag('confirm')) {
-    console.log('  dry run: re-run with --confirm to map it (a mapping can never be re-pointed)');
-    return;
-  }
-  await erp.mapAmazonPeriodSo(start, so.id);
-  console.log(`  mapped ${key} → ${so.number} under system ${erp.REF_SYSTEM}`);
-}
-
-const COMMANDS = { 'amazon-close': amazonClose, 'amazon-compare': amazonCompare, 'shopify-record': shopifyRecord, 'shopify-refunds': shopifyRefunds, 'map-period': mapPeriod };
+const COMMANDS = { 'amazon-close': amazonClose, 'amazon-compare': amazonCompare, 'shopify-record': shopifyRecord, 'shopify-refunds': shopifyRefunds };
 
 if (!COMMANDS[cmd]) {
   console.error(`usage: node scripts/automayt/channel-tax.js <${Object.keys(COMMANDS).join('|')}> ...`);

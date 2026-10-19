@@ -42,7 +42,6 @@ Ask Aaron first: staging is CFC's own tenant and it is fine to load the real cat
    ```
    AUTOMAYT_API_BASE=https://staging.automayt.dev/api/v1
    AUTOMAYT_API_KEY=<staging key>
-   AMAZON_PERIOD_ANCHOR=2026-10-22
    ERP_BACKEND=automayt-shadow
    ```
 
@@ -77,8 +76,4 @@ The live key only works from the Mini's IPs, so production runs happen on the Mi
    ```
 
    Then send Aaron `qoh-exceptions-54.csv` for the QOH load.
-3. **Cutover (Nov 1).** Follow "Cutover steps" in `docs/AUTOMAYT.md`. The one choice to make on the day is `AMAZON_ANCHOR_PERIOD`:
-   - `migrated` (default): Automayt brought the Oct 22 - Nov 4 Amazon order over from Salesforce. Map it once with `scripts/automayt/channel-tax.js map-period --period 2026-10-22 --so <SO number> --confirm`.
-   - `open`: it was not migrated. run-orders opens `period:2026-10-22` itself on the first Nov 1 parcel.
-
-   Until one of those is done, every Oct 22 - Nov 4 parcel is refused with an ALERT and nothing is created.
+3. **Cutover (Nov 1).** Follow "Cutover steps" in `docs/AUTOMAYT.md`. The Amazon period is split at the cutover (Mac, 2026-10-19): Oct 22 - 31 stays on the Salesforce order, and run-orders opens `period:2026-11-01` (Nov 1 - 4) in Automayt with the first November parcel. Nothing to map.
