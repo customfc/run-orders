@@ -744,7 +744,7 @@ app.post('/prozone/earnings', express.urlencoded({ extended: false }), async (re
 });
 
 // ── Pickup runner one-taps (Mac) and the customer's trim choice (via the CS agent, loopback only) ──
-const PICKUP_ACTIONS = { ready: 'Mark it ready and email the customer', 'picked-up': 'Mark it picked up and send the thank-you', nudge: 'Re-send the pickup email to the branch' };
+const PICKUP_ACTIONS = { release: 'Send the PO to the branch and email the customer', ready: 'Mark it ready and email the customer', 'picked-up': 'Mark it picked up and send the thank-you', nudge: 'Re-send the pickup email to the branch' };
 app.get('/pickup/:action', (req, res) => {
   const pr = require('./lib/pickup-runner');
   const action = req.params.action;
