@@ -810,14 +810,16 @@
     "active": true,
     "is_main_hub": false,
     "contact_email": [],
-    "contact_phone": [],
-    "lat": 0,
-    "lng": 0,
+    "contact_phone": [
+      "+19056962401"
+    ],
+    "lat": 43.7093,
+    "lng": -79.6503,
     "code": "TRLO",
     "city": "Mississauga",
     "province": "ON",
-    "address": "",
-    "postal_code": "",
+    "address": "1900 Derry Road East",
+    "postal_code": "L5S1Y6",
     "shipstation_warehouse_id": 1521293,
     "non_prosol": true,
     "vendor": "TORLYS"
@@ -827,14 +829,16 @@
     "active": true,
     "is_main_hub": false,
     "contact_email": [],
-    "contact_phone": [],
-    "lat": 0,
-    "lng": 0,
+    "contact_phone": [
+      "+14038755863"
+    ],
+    "lat": 51.1166,
+    "lng": -113.9663,
     "code": "TRLC",
     "city": "Calgary",
     "province": "AB",
-    "address": "",
-    "postal_code": "",
+    "address": "1845 104 Ave NE Unit 171",
+    "postal_code": "T3J0R2",
     "shipstation_warehouse_id": 1493581,
     "non_prosol": true,
     "vendor": "TORLYS"
