@@ -100,6 +100,8 @@ The day a key arrives: `scripts/automayt/test-day.md` (staging and production, s
 
 ## Waiting on Automayt before staging
 
+The running list of API gaps for Aaron is `drafts/automayt-api-gaps-for-aaron.txt` in cfc-projects/06-salesforce-exit. Add to it there. Steph dropped negative fee lines (2026-10-19): the processing fee total goes in a sales order header field he is adding, which for Amazon needs a header update at period close (gap 6).
+
 - Vendors Prosol, Treeco and the carriers, and a virtual Amazon Fulfillment location: the API can't create vendors or locations.
 - `PO-16xxx` and `SO-025xxx` numbering. beta1 issues `PO-0213` and `SO-0078`.
 
