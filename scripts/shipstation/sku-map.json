@@ -4707,16 +4707,18 @@
     },
     "_section_schluter_kerdi_seal": "=== SCHLUTER - KERDI-SEAL ===",
     "B071LJTCVH": {
-      "cost_cad": 6.77,
-      "retail_cad": 11.86,
+      "cost_cad": 60.8,
+      "retail_cad": 106.66,
       "cost_source": "prosol-offers-loc10010",
-      "api_sku": "KMSMV235/114",
-      "prosol_sku": "KMSMV235114",
-      "product": "Schluter KERDI-SEAL-MV Mixing Valve Seal 4-1/2\"",
+      "api_sku": "KMSMV10235114",
+      "prosol_sku": "KMSMV10235114",
+      "product": "Schluter - KERDI-SEAL MIXING VALVE SEAL 4-1/2\" (10)",
+      "note": "Amazon listing is the 10-pack (title '... - 10-Pack - KMSMV10235/114'). Was mapped to the single seal KMSMV235114 with the single's MAP 10.67 until 2026-10-19.",
       "verified": true,
       "brand": "schluter",
-      "schluter_item": "KMSMV235/114",
-      "map_cad": 10.67,
+      "schluter_item": "KMSMV10235/114",
+      "barcode": "4011832115462",
+      "map_cad": 95.99,
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
     },
@@ -5163,12 +5165,17 @@
     },
     "_section_acrylpro": "=== ACRYLPRO / CUSTOM BUILDING PRODUCTS ADHESIVE ===",
     "B094JW5VTX": {
-      "cost_cad": 23.65,
-      "retail_cad": 44.65,
-      "cost_source": "prosol-offers-loc10010",
-      "api_sku": "CARL40001-2",
-      "prosol_sku": "CARL40001",
-      "product": "Custom Building - AcrylPro Tile Adhesive 1 gal",
+      "bundle": true,
+      "components": [
+        {
+          "api_sku": "CARL40001-2",
+          "prosol_sku": "CARL40001",
+          "product": "Custom Building - AcrylPro Tile Adhesive 1 gal",
+          "qty": 2
+        }
+      ],
+      "product": "Custom Building - AcrylPro Tile Adhesive 1 gal (case of 2)",
+      "note": "Amazon listing title ends 'Case of 2': one sellable unit = 2 x CARL40001. Was mapped to a single gallon until 2026-10-19. Same qty convention as B0073IDMMA.",
       "verified": true
     },
     "B00DD1I2SA": {
