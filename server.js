@@ -2666,15 +2666,30 @@ function pickupIo() {
   };
 }
 let pickupRunnerBusy = false;
+// A runner error only ever reached the console, so the one part nobody can see failing — reading the branch's
+// "it's ready" reply out of hello@ — could stay broken for days while every pickup quietly reverted to Mac's
+// one-tap. Page once an hour per distinct failure instead (Graph 504s are transient; a real outage repeats).
+let lastPickupErrAlert = { sig: '', at: 0 };
+async function alertPickupErrors(source, errors) {
+  const sig = [...new Set(errors.map((e) => `${e.key || e.order}: ${String(e.error).slice(0, 80)}`))].sort().join(' | ');
+  if (sig === lastPickupErrAlert.sig && Date.now() - lastPickupErrAlert.at < 3600e3) return;
+  lastPickupErrAlert = { sig, at: Date.now() };
+  await telegram.notify('attn', `Pickup runner: ${errors.length} error${errors.length === 1 ? '' : 's'} (${source})`,
+    `${sig}\n\nCounter pickups fall back to the one-tap links until this clears.\n${publicBaseUrl()}`);
+}
 async function runPickupRunner(source) {
   if (pipelineActive || pickupRunnerBusy) return;
   pickupRunnerBusy = true;
   try {
     const r = await require('./lib/pickup-runner').run({ io: pickupIo() });
     if (r.performed.length || r.errors.length) audit.log({ action: 'pickup-runner-tick', source, performed: r.performed, errors: r.errors });
-    if (r.errors.length) console.error('[pickup-runner]', JSON.stringify(r.errors).slice(0, 500));
+    if (r.errors.length) {
+      console.error('[pickup-runner]', JSON.stringify(r.errors).slice(0, 500));
+      await alertPickupErrors(source, r.errors).catch((e) => console.error('[pickup-runner] alert failed:', e.message));
+    }
   } catch (err) {
     console.error(`[pickup-runner ${source}] failed:`, err.message);
+    await alertPickupErrors(source, [{ key: 'run', error: err.message }]).catch(() => {});
   } finally { pickupRunnerBusy = false; }
 }
 schedule('*/15 * * * *', () => runPickupRunner('15-min'), TZ);
