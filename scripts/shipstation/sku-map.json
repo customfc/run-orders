@@ -1,6 +1,6 @@
 {
   "_comment": "ShipStation SKU \u2192 Prosol API SKU mapping. Used by order router to place POs. CRITICAL: verified against live Prosol API 2026-03-17.",
-  "_updated": "2026-09-23",
+  "_updated": "2026-10-20",
   "_notes": {
     "format": "api_sku = what filter[sku] needs for Prosol API lookups. prosol_sku = real Prosol SKU for PO placement.",
     "sku_patterns": "Quarts: api_sku ends in -4 (e.g. C010382-4). Gallons: api_sku is just the base number (e.g. C010383). Pints: base number only. Each size has a DIFFERENT base number.",
@@ -36111,7 +36111,38 @@
       "source": "catalog-schluter-2026-10-01",
       "verified": true
     },
-    "_section_schluter_profiles_catalog_end": "=== END SCHLUTER PROFILES CATALOGUE ==="
+    "_section_schluter_profiles_catalog_end": "=== END SCHLUTER PROFILES CATALOGUE ===",
+    "KERSB135K": {
+      "cost_cad": 41.83,
+      "retail_cad": 73.37,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "KERSB135K",
+      "prosol_sku": "KERSB135K",
+      "prosol_product_id": 10207,
+      "product": "Schluter - KERDI-KERECK KIT 2 IN + 1 RIGHT + 1 LEFT CORNER",
+      "category": "KERDI",
+      "brand": "schluter",
+      "schluter_item": "KERSB135K",
+      "verified": true,
+      "source": "prosol-live-2026-10-20",
+      "note": "Added 2026-10-20 for order #1415 (Calgary). Live Prosol filter[sku]=KERSB135K hits product 10207 and its name matches the order title exactly; SF item 02616 carries the same PBSI__Vendor_Item_ID__c at cost 41.82. Siblings KERSB135KLR (1 right + 1 left) and KERSB135K5LR (5 + 5) are different kits, never substitute."
+    },
+    "04083": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "TORLYS Bulldog - Easy Plank Replacer (ACC-29)",
+      "brand": "torlys",
+      "vendor_item_id": "WAU6000",
+      "note": "Added 2026-10-20 for order #1424. Special order direct from Torlys (SF acct 0014x00001P1SW4AAN, SF item 04083, cost 109.45). Deliberately no shipstation_warehouse_id: there is no prepaid-label arrangement with Torlys, so staging must reject it to manual review rather than route a label."
+    },
+    "04084": {
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "TORLYS Bulldog Tape 75'",
+      "brand": "torlys",
+      "vendor_item_id": "WAU6001-75",
+      "note": "Added 2026-10-20 for order #1424. Special order direct from Torlys (SF acct 0014x00001P1SW4AAN, SF item 04084, cost 33.83). Same hand-placed route as 04083."
+    }
   },
   "cable_lookup": {
     "_comment": "DHEHK cables are mapped by voltage and sqft. Use this table to resolve UNMAPPED_CABLE entries from order item names.",
