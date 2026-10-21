@@ -636,6 +636,18 @@ app.post('/api/prozone/applications', async (req, res) => {
     const verify = await require('./lib/trade-verify').verifyBusiness(app0);
     const { rec, isNew } = apps.recordApplication({ ...app0, verify, raw: String(req.body?.text || '').slice(0, 4000) });
     audit.log({ action: 'prozone-application', id: rec.id, email: app0.email, business: app0.business, isNew });
+    // Tell Meta an application happened, so a campaign can be bid toward applications instead of cheap clicks.
+    // Only the first one per applicant: a repeat form fill is the same person, not a second lead. The event id is
+    // the application id, so a retry deduplicates. Never let this hold up the record or Mac's email.
+    if (isNew) {
+      const capi = require('./lib/meta-capi');
+      const r = await capi.sendEvents(capi.prozoneLead(rec.app, { id: rec.id }));
+      audit.log({ action: 'prozone-lead-event', id: rec.id, sent: r.sent, reason: r.reason || null });
+      // Carried into Mac's approval email so a quietly broken pixel (an expired token, say) shows up on the next
+      // application instead of weeks later. Applications are rare: this is never noise.
+      rec.leadEvent = r;
+      apps.setStatus(rec.id, { leadEvent: r });
+    }
     if (rec.status === 'pending' && isNew) {
       const { subject, html } = apps.macEmail(rec);
       await require('./lib/emailer').sendEmail({ to: process.env.MAC_CC_EMAIL || 'mac@customfc.ca', subject, html });
