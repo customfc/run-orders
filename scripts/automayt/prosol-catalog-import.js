@@ -90,7 +90,8 @@ function guard(args) {
   }
   // Staging is CFC's own test tenant: the real catalogue (real codes, no prefix) may go there with --real-codes,
   // so shadow mode finds items by their real vendor codes. beta1 is shared and always needs the prefix.
-  if (args['real-codes'] && env !== 'staging') throw new Error('--real-codes is for staging only');
+  // A dry run with real codes may read the beta1 CFC tenant (to see what already matches); writes stay staging-only.
+  if (args['real-codes'] && env !== 'staging' && !(env === 'beta1' && !args.apply)) throw new Error('--real-codes is for staging only (beta1: dry run only)');
   const realCodesOk = env === 'staging' && args['real-codes'] && !process.env.AUTOMAYT_TEST_CODE_PREFIX;
   if (args.apply && env !== 'production' && !process.env.AUTOMAYT_TEST_CODE_PREFIX && !realCodesOk) {
     throw new Error(`refusing to write the real catalogue into ${env}: set AUTOMAYT_TEST_CODE_PREFIX (e.g. ROTEST-) for a rehearsal${env === 'staging' ? ', or pass --real-codes to load the real catalogue into staging' : ''}`);

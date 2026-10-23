@@ -50,6 +50,8 @@ data/large-order-releases.json
 # Automayt beta1/staging rehearsal reports
 data/automayt-e2e/
 data/channel-tax/
+# Vendor-code matching pulls (Automayt items, Salesforce item master) and apply logs
+data/automayt-vendor-codes/
 
 # Prosol catalogue snapshots for the Automayt import (large; regenerate with scripts/automayt/prosol-catalog-pull.js)
 data/prosol-catalog/

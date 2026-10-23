@@ -15,8 +15,9 @@
  * ShipStation with what Amazon charged (item prices, buyer shipping); Shopify
  * orders and what Shopify charged come from Shopify. All reads, nothing is
  * written anywhere but Automayt. Run it after beta1-e2e.js, which sets up the
- * rehearsal house customers. --real-codes (staging only, after the catalogue
- * load) looks items up by their real codes instead of ROTEST- ones. The day's
+ * rehearsal house customers. --real-codes (staging, or the beta1 CFC tenant
+ * once its items carry vendor codes) looks items up by their real codes instead
+ * of ROTEST- ones; an item it can't find would be created with its real code. The day's
  * FBA sales follow: Amazon's Shipment transactions for that Pacific day with
  * AFN items (Finances API, read-only), onto the same period order.
  * --fba-only replays just those. --seed-fba-items first creates the day's FBA
@@ -147,7 +148,9 @@ async function ensureCustomer(refName, name) {
 async function setUp() {
   const { base } = am.config();
   if (/app\.automayt\.com/.test(base)) throw new Error('replay-on-beta1 refuses to run against production');
-  if (REAL_CODES && !/staging\.automayt\.dev/.test(base)) throw new Error('--real-codes runs on staging only (beta1 never gets real codes)');
+  // beta1 now hosts CFC's own tenant (key from 2026-10-23, items carry CFC's real vendor codes);
+  // the old shared beta1 key must never run with --real-codes.
+  if (REAL_CODES && !/(staging|beta1)\.automayt\.dev/.test(base)) throw new Error('--real-codes runs on staging or the beta1 CFC tenant only');
   report.base = base;
 
   // Vendors and locations are Automayt's records: use the real one if present,
