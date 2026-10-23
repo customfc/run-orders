@@ -2661,6 +2661,7 @@ function pickupIo() {
     gql,
     sendEmail: (m) => require('./lib/emailer').sendEmail(m),
     fulfill: (ids) => pio.fulfill(raw, ids),
+    markReady: (ids) => pio.markReady(raw, ids),
     refundTrims: (order, lines) => pio.refundTrims(raw, order, lines),
     branchStock: async (lines, code, branches) => {
       const { ProsolClientV2 } = require('./scripts/shipstation/prosol-client-v2');
