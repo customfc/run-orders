@@ -19,17 +19,19 @@ const erp = require('../../lib/automayt-erp');
 const HINTS = {
   shopifyCustomer: { path: '/customers', name: 'yourfloors', also: /shopify|yourfloors/i },
   amazonCustomer: { path: '/customers', name: 'amazon', also: /amazon/i },
-  prosolVendor: { path: '/vendors', name: 'prosol', also: /^prosol/i },
+  prosolVendor: { path: '/vendors', name: 'prosol', also: /prosol/i },
   treecoVendor: { path: '/vendors', name: 'treeco', also: /treeco/i },
   secheltWarehouse: { path: '/locations', also: /sechelt/i },
   amazonFulfillment: { path: '/locations', also: /amazon|fba|fulfil/i },
 };
 
 async function candidates(hint) {
-  const rows = hint.path === '/locations'
-    ? await am.listAll('/locations', {}, { max: 500 })
-    : ((await am.get(hint.path, { name: hint.name, limit: 50 })).data.data || []);
-  return rows.filter((r) => hint.also.test(r.name || '')).map((r) => `${r.id}  ${r.name}${r.virtual ? ' (virtual)' : ''}`);
+  // The name filter is an exact match ("prosol" misses "Prosol Inc."), so list
+  // vendors and locations whole; customers are too many for that.
+  const rows = hint.path === '/customers'
+    ? ((await am.get(hint.path, { name: hint.name, limit: 50 })).data.data || [])
+    : await am.listAll(hint.path, {}, { max: 2000 });
+  return rows.filter((r) => hint.also.test(r.name || '')).map((r) => `${r.id}  ${r.name}${r.is_virtual || r.virtual ? ' (virtual)' : ''}`);
 }
 
 async function status() {
@@ -39,7 +41,7 @@ async function status() {
       console.log(`  ${name.padEnd(18)} mapped -> ${await erp.resolveRef(name)}`);
     } catch (err) {
       const c = await candidates(HINTS[name]).catch((e) => [`(lookup failed: ${e.message})`]);
-      const none = HINTS[name].path === '/customers' ? 'none (create the house customer in Automayt, then map it)' : 'none (Automayt has to create it; the API cannot create vendors or locations)';
+      const none = HINTS[name].path === '/customers' ? 'none (create the house customer in Automayt, then map it)' : 'none (create it in Automayt, or with POST /vendors or /locations, then map it)';
       console.log(`  ${name.padEnd(18)} UNMAPPED. Candidates: ${c.length ? `\n      ${c.join('\n      ')}` : none}`);
     }
   }

@@ -84,7 +84,7 @@ async function ensureCustomer(refName, name) {
   return data.id;
 }
 
-// Vendors and locations can't be created through the API. Use the real record
+// Vendors and locations are Automayt's records to set up. Use the real record
 // when this environment has it, else a demo stand-in. Stand-ins are passed by
 // id and never mapped: an external ref can't be re-pointed later, and the real
 // "run-orders" mapping must stay free for the record Automayt seeds.

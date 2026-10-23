@@ -27,8 +27,16 @@ The snapshot folder is gitignored. If it is missing, copy it from `~/daddy-dev/r
 Ask Aaron first: staging is CFC's own tenant and it is fine to load the real catalogue codes there. beta1 never gets real codes.
 
 1. **Key.** In the laptop worktree's `.env`: `AUTOMAYT_API_BASE=https://staging.automayt.dev/api/v1` and `AUTOMAYT_API_KEY=<staging key>`. If a call returns `403 ip_not_allowed`, the error names our public IP; send it to Aaron.
-2. **Fixed records.** `node scripts/automayt/map-fixed.js` lists the six (Shopify and Amazon house customers, Prosol, Treeco, Sechelt warehouse, Amazon Fulfillment virtual location) with candidates. For each: `node scripts/automayt/map-fixed.js map <name> <id>`, read the record it prints, then the same command with `--confirm`. A mapping can never be re-pointed. Vendors and locations must exist first; the API can't create them, so Aaron does.
+2. **Fixed records.** `node scripts/automayt/map-fixed.js` lists the six (Shopify and Amazon house customers, Prosol, Treeco, Sechelt warehouse, Amazon Fulfillment virtual location) with candidates. For each: `node scripts/automayt/map-fixed.js map <name> <id>`, read the record it prints, then the same command with `--confirm`. A mapping can never be re-pointed. Vendors and locations must exist first. The API takes `POST /vendors` and `POST /locations` since 2026-10-23, but they're Automayt's records: Aaron sets them up unless Mac says otherwise.
 3. **Call shapes.** `node scripts/automayt/beta1-e2e.js` then `node scripts/automayt/replay-on-beta1.js`. Both refuse production, and both use `ROTEST-` test codes. Every step should be green; the reports land in `data/automayt-e2e/`.
+
+   **One real day (the sample for Automayt):** copy a recent day's pipeline state from the Mini, then replay every Amazon parcel and Shopify order of that day at what Amazon and Shopify actually charged (ROTEST- order numbers, placeholder buyers, each run twice):
+
+   ```
+   scp fred@freds-mac-mini.taila452b5.ts.net:run-orders/data/ops-state/2026-10-22.json data/ops-state/ && node scripts/automayt/replay-on-beta1.js --day=2026-10-22
+   ```
+
+   It sets up the two rehearsal house customers under `run-orders-test` if they're missing (as beta1-e2e does) and never maps anything under `run-orders`. 2026-10-22 = 5 Amazon parcels onto the period order + 1 Shopify order. On CFC's beta1 tenant (2026-10-23, report `replay-day-2026-10-22-261023174601.json`) 4 parcels and the Shopify order went through at the charged prices; the KERDI-BOARD kit (`KBKIT`) failed with `409 DUPLICATE_BARCODE`, because the tenant's own items (`PRD-0001`..`PRD-3212`, loaded 2026-10-20) carry no vendor codes, so run-orders can't find `PRD-2502` by its Prosol code and its auto-create collides on the barcode. Production with real codes would fail the same way until those items carry vendor codes. After the catalogue load (step 4), run it again with `--real-codes` (staging only) so the lines land on the real catalogue items instead of auto-created `ROTEST-` ones. A Shopify SKU that is neither in the sku-map nor in the Prosol catalogue (2026-10-20: TORLYS Bulldog `04083`/`04084`, Salesforce-only items) fails with "Item not found" until Automayt's own item load brings it in; production would fail the same way.
 4. **Catalogue.** Dry run first, then the real load (about 3.3 hours at 55 writes a minute; safe to re-run, it carries on where it stopped):
 
    ```

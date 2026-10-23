@@ -102,7 +102,8 @@ The day a key arrives: `scripts/automayt/test-day.md` (staging and production, s
 
 The running list of API gaps for Aaron is `drafts/automayt-api-gaps-for-aaron.txt` in cfc-projects/06-salesforce-exit. Add to it there. Steph dropped negative fee lines (2026-10-19): the processing fee total goes in a sales order header field he is adding, which for Amazon needs a header update at period close (gap 6).
 
-- Vendors Prosol, Treeco and the carriers, and a virtual Amazon Fulfillment location: the API can't create vendors or locations.
+- Vendors Prosol, Treeco and the carriers, and a virtual Amazon Fulfillment location. The API takes `POST /vendors` and `POST /locations` since 2026-10-23, but these are Automayt's records to set up. CFC's beta1 tenant (2026-10-23) has "Prosol Inc.", "Treeco" and an "Amazon Fulfillment" warehouse that isn't flagged virtual, and no Shopify or Amazon house customer yet (only the `[rehearsal]` pair the day replay set up under `run-orders-test`).
+- Vendor codes on Automayt's own items. CFC's beta1 tenant has 3,212 items numbered `PRD-0001`.. with no `vendor_code` (2026-10-23). run-orders finds items by vendor code or item number only (batch-lookup takes nothing else), so it can't find them, auto-creates duplicates, and fails `409 DUPLICATE_BARCODE` where the barcode is already on a `PRD-` item (Schluter `KBKIT` = `PRD-2502`).
 - `PO-16xxx` and `SO-025xxx` numbering. beta1 issues `PO-0213` and `SO-0078`.
 
 ## Prosol catalogue
