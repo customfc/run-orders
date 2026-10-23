@@ -1,0 +1,8 @@
+[
+  {
+    "brand": "^bona$",
+    "vendor": "Treeco",
+    "why": "Treeco preferred until Prosol pricing is confirmed better (Mac 2026-10-23)",
+    "_flip": "To move Bona to Prosol later: vendor \"Prosol Inc.\", add \"costStale\": true while Prosol's portal price is not confirmed."
+  }
+]
