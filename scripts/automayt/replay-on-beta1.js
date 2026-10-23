@@ -16,7 +16,13 @@
  * orders and what Shopify charged come from Shopify. All reads, nothing is
  * written anywhere but Automayt. Run it after beta1-e2e.js, which sets up the
  * rehearsal house customers. --real-codes (staging only, after the catalogue
- * load) looks items up by their real codes instead of ROTEST- ones.
+ * load) looks items up by their real codes instead of ROTEST- ones. The day's
+ * FBA sales follow: Amazon's Shipment transactions for that Pacific day with
+ * AFN items (Finances API, read-only), onto the same period order.
+ * --fba-only replays just those. --seed-fba-items first creates the day's FBA
+ * items as ROTEST- items without barcodes, for a tenant whose own items hold
+ * those barcodes but no vendor codes (an auto-create there is refused
+ * DUPLICATE_BARCODE; without the flag the replay reports exactly that).
  *
  * Every flow runs twice; the second pass must create nothing. Order numbers,
  * tracking codes and vendor codes are ROTEST-prefixed so nothing collides with
@@ -24,7 +30,7 @@
  * addresses and emails are replaced with placeholders.
  *
  * Usage: node scripts/automayt/replay-on-beta1.js [--ops-state=<dir>] [--run=<id>]
- *        node scripts/automayt/replay-on-beta1.js --day=2026-10-22 [--real-codes]
+ *        node scripts/automayt/replay-on-beta1.js --day=2026-10-22 [--real-codes] [--fba-only]
  * Report: data/automayt-e2e/replay-<run>.json (replay-day-<day>-<run>.json)
  */
 
@@ -38,6 +44,9 @@ const DAY = arg('day');
 const REAL_CODES = process.argv.includes('--real-codes');
 if (DAY && !/^\d{4}-\d{2}-\d{2}$/.test(DAY)) throw new Error(`--day must be YYYY-MM-DD, not "${DAY}"`);
 if (REAL_CODES && !DAY) throw new Error('--real-codes is for the --day sample only');
+const FBA_ONLY = process.argv.includes('--fba-only');
+const SEED_FBA = process.argv.includes('--seed-fba-items');
+if (FBA_ONLY && !DAY) throw new Error('--fba-only is for the --day sample only');
 // A day's file has to be where lib/ops-state reads it too: amazon-po resolves
 // multi-package parcels through it.
 const OPS_STATE_DIR = arg('ops-state')
@@ -47,6 +56,8 @@ const OPS_STATE_DIR = arg('ops-state')
 process.env.ERP_BACKEND = 'automayt';
 process.env.AUTOMAYT_REF_SYSTEM = process.env.AUTOMAYT_E2E_REF_SYSTEM || 'run-orders-test';
 if (!REAL_CODES) process.env.AUTOMAYT_TEST_CODE_PREFIX = 'ROTEST-';
+// The parcel flows never fetch live FBA sales here: the day's are replayed on purpose, renamed.
+process.env.AUTOMAYT_FBA_SALES = '0';
 // The day sample keeps the real 14-day cadence; the fixture replay its old anchor.
 if (!DAY) process.env.AMAZON_PERIOD_ANCHOR = process.env.AMAZON_PERIOD_ANCHOR || '2026-09-18';
 
@@ -54,8 +65,11 @@ const am = require('../../lib/automayt');
 const erp = require('../../lib/automayt-erp');
 const erpBackend = require('../../lib/erp-backend');
 const { loadSkuMap, fetchShopifyOrder } = require('../../lib/shopify-sf');
-const { fetchShippedOrdersForPO } = require('../../lib/amazon-po');
+const { fetchShippedOrdersForPO, resolveSkuForPO } = require('../../lib/amazon-po');
+const { resolveItemCost } = require('../../lib/shopify-sf');
 const channelTaxIo = require('../../lib/channel-tax-io');
+const tax = require('../../lib/channel-tax');
+const automaytOrders = require('../../lib/automayt-orders');
 
 const report = { run: RUN, startedAt: new Date().toISOString(), standIns: [], flows: [], requests: [] };
 am.setRequestLogger((e) => report.requests.push(e));
@@ -326,6 +340,106 @@ function amazonCharged(orders, createdTracking) {
 }
 
 async function replayDay(day) {
+  if (!FBA_ONLY) await replayDayOrders(day);
+  await replayDayFba(day);
+}
+
+/** The day's FBA sales from the Finances API (read-only), counted like the period close, order and shipment ids replaced. */
+async function dayFbaSales(day) {
+  const transactions = await channelTaxIo.fetchAmazonTransactions(tax.amazonWindow({ start: day, end: day }));
+  return automaytOrders.fbaSalesFromTransactions(transactions).map((sale, i) => ({
+    ...sale,
+    real: sale.orderId,
+    orderId: `ROTEST-${RUN}-${sale.orderId.slice(-7)}`,
+    shipmentId: `ROTEST${RUN}F${i + 1}`,
+    transactionId: null,
+  }));
+}
+
+/** --seed-fba-items: each Prosol component of the day's FBA items as a ROTEST- item with no barcode, unless one is there. */
+async function seedFbaItems(sales) {
+  const skuMap = loadSkuMap();
+  const prosolId = JSON.parse(process.env.AUTOMAYT_REF_OVERRIDES || '{}').prosolVendor || null;
+  const done = new Set();
+  for (const it of sales.flatMap((s) => s.items)) {
+    const key = [it.asin, it.sellerSku, (it.sellerSku || '').replace(/-FBA$/i, '')].find((k) => k && skuMap[k] && typeof skuMap[k] === 'object');
+    const entry = key ? skuMap[key] : null;
+    for (const comp of (key && resolveSkuForPO(key, it.quantity, it.name)) || []) {
+      const code = comp.prosolSku.replace(/[\/-]/g, '');
+      if (done.has(code)) continue;
+      done.add(code);
+      const found = (await erp.resolveItems([{ key: 0, candidates: [{ vendorCode: comp.prosolSku }] }])).get(0);
+      if (found.status !== 'not_found') continue;
+      const { cost } = await resolveItemCost(comp.prosolSku, entry.api_sku, entry);
+      const body = {
+        vendor_id: prosolId,
+        vendor_code: `ROTEST-${code}`,
+        item_number: `ROTEST-${String(entry.api_sku || code).replace(/[\/-]/g, '')}`,
+        description: comp.product || entry.product || it.name,
+        category_id: await erp.categoryIdByName(automaytOrders.categoryFor(entry)),
+        unit: 'each',
+        cost: String(cost),
+        retail_price: entry.retail_cad != null ? String(entry.retail_cad) : null,
+        taxable: true,
+        stock_status: 'Special Order',
+      };
+      const { data } = await am.command('/items', body, `replay-seed-${body.vendor_code}`);
+      report.created.push({ seededItem: body.vendor_code, id: data.id, note: 'FBA rehearsal item, no barcode' });
+      console.log(`  + seeded ${body.vendor_code} (${data.id}) without a barcode`);
+    }
+  }
+}
+
+async function replayDayFba(day) {
+  let sales;
+  try {
+    sales = await dayFbaSales(day);
+  } catch (err) {
+    report.flows.push({ name: `FBA: read ${day}'s sales from the Finances API`, channel: 'fba', ok: false, note: err.message, writes: 0, requestIds: [], errors: [] });
+    console.log(`  ✗ FBA: read ${day}'s sales — ${err.message}`);
+    return;
+  }
+  report.day = { ...(report.day || { date: day }), fbaSales: sales.length };
+  if (!sales.length) {
+    console.log(`  – FBA: no FBA sales posted on ${day}`);
+    return;
+  }
+  if (SEED_FBA) await seedFbaItems(sales);
+  const charged = round2(sales.reduce((t, s) => t + s.shipping + s.items.reduce((u, it) => u + round2(it.unitPrice * it.quantity), 0), 0));
+  const periodSos = new Map();
+  await flow(`FBA: ${sales.length} sale(s), Amazon charged ${sales.map((s) => `${s.real} ${s.items.map((it) => `${it.sellerSku} x${it.quantity} @ ${round2(it.unitPrice)}`).join(' + ')}${s.shipping ? ` + shipping ${s.shipping}` : ''}`).join('; ')}`, () => automaytOrders.addFbaSales({ sales }), (r) => {
+    const created = r.orders.filter((o) => o.status === 'created');
+    for (const o of created) periodSos.set(o.soId, o.soName);
+    const bad = r.orders.filter((o) => o.status !== 'created');
+    return {
+      ok: !r.errors.length && created.length === sales.length,
+      note: `${r.soNames.join(', ') || 'no order'}: ${created.map((o) => `${o.orderNumber} ${o.items.map((i) => `${i.item} ${i.qty} @ ${i.salePrice}`).join(' + ')}`).join('; ')}`
+        + `${bad.length ? `; problems: ${JSON.stringify(bad.map((o) => ({ order: o.orderNumber, status: o.status, reason: o.reason, errors: o.errors })))}` : ''}`,
+    };
+  }, { channel: 'fba', sales: sales.map((s) => ({ sourceOrder: s.real, testOrder: s.orderId, day: s.day, items: s.items, shipping: s.shipping })) });
+  if (periodSos.size) {
+    await flow('FBA: the period order carries exactly what Amazon charged', async () => {
+      const lines = [];
+      for (const id of periodSos.keys()) lines.push(...(((await am.get(`/sales-orders/${id}`)).data || {}).lines || []));
+      return lines.filter((l) => String(l.external_line_ref || '').startsWith(`fba:ROTEST-${RUN}-`));
+    }, (lines) => {
+      const booked = round2(lines.reduce((t, l) => t + Number(l.qty) * Number(l.unit_price), 0));
+      return { ok: booked === charged, note: `${[...periodSos.values()].join(', ')}: ${lines.length} FBA line(s), ${booked.toFixed(2)} vs Amazon ${charged.toFixed(2)}` };
+    }, { channel: 'fba' });
+  }
+  await flow('FBA: the same sales again create nothing', () => automaytOrders.addFbaSales({ sales }), (r) => ({
+    ok: !r.errors.length && r.orders.every((o) => o.status === 'skipped'),
+    note: r.orders.map((o) => `${o.orderNumber} ${o.status}${o.reason ? ` (${o.reason})` : ''}`).join(', '),
+  }), { channel: 'fba', pass: 2 });
+  const again = report.flows[report.flows.length - 1];
+  if (again.writes) {
+    again.ok = false;
+    again.note += `; ${again.writes} write(s) on the second pass`;
+    console.log(`  ✗ FBA: second pass made ${again.writes} write(s)`);
+  }
+}
+
+async function replayDayOrders(day) {
   const labels = dayLabels(day);
   report.day = { date: day, labels: labels.length, bySource: labels.reduce((m, l) => ({ ...m, [l.source]: (m[l.source] || 0) + 1 }), {}) };
   console.log(`  ${day}: ${labels.length} label(s) ${JSON.stringify(report.day.bySource)}\n`);
