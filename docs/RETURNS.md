@@ -37,7 +37,12 @@ and never retried; `scripts/ops/issue-refund.js` keeps its per-order lock in `da
 - **Refunds** go only through `scripts/ops/issue-refund.js` `run()`: item-level, `CustomerReturn`, the amount
   pinned to the preview, evidence naming this policy. Run on the Mini only (its `data/audit.jsonl` is the duplicate guard).
 - **Labels**: ShipStation V2 `POST /v2/labels`, `is_return_label`, ship_from = customer, ship_to = branch, weight
-  only (never dimensions). Re-rated at purchase; voided if the charge comes in well over the quote.
+  only (never dimensions). Re-rated at purchase; voided if the charge comes in well over the quote. A quote may
+  carry `packagesLb` (one weight per box): one 64 lb box costs $83.01 with Purolator's heavy-piece surcharge, the
+  same order as its two outbound boxes $42.69 (702-3245580-4010613). The automatic quote is still one box.
+- **Label cost off the refund** (Mac 2026-10-23, change-of-mind returns): an entry with `deductCents` gets the
+  label with an email that states the deduction and the net refund. On arrival it is held "refund $net in Seller
+  Central", because issue-refund only refunds whole items; it never auto-refunds and approve links refuse it.
 - **Buyer emails** go to the Amazon relay address on the ShipStation order, From "CustomFlooring" (the Amazon.ca
   store name) via hello@yourfloors.ca, reply-to hello@. Amazon only relays from approved senders: if hello@ is not on
   Seller Central's messaging permissions list, the first one bounces.
