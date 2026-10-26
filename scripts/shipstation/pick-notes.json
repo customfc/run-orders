@@ -6,6 +6,16 @@
       "note": "Sealer's Choice Gold QUART 946 mL (C030882-01). Do not substitute PFAS-Free (C030882-4-PF) or the pint.",
       "min_spare": 2,
       "why": "2026-10-07: 2 'wrong item' returns and a 1-star on B000UOJGME; Burnaby held 40 PFAS-Free quarts vs 1 regular. Mac approved the pick note + routing."
+    },
+    {
+      "codes": ["DHPS512M"],
+      "note": "DITRA-HEAT-PS PEEL & STICK roll, 134.5 sq ft (DHPS512M), adhesive back with release film. Do not substitute regular DITRA-HEAT or DITRA-HEAT-DUO.",
+      "why": "2026-10-26: buyer on 702-1470217-2233005 (PO-17391, Sudbury) says the 2 rolls received were not peel and stick; Prosol's order 6950012 shows DHPS512M, photo pending. Mac asked for a pick note on every peel and stick send."
+    },
+    {
+      "codes": ["DHPS5MA"],
+      "note": "DITRA-HEAT-PS PEEL & STICK sheet, 8.4 sq ft (DHPS5MA), adhesive back with release film. Do not substitute a regular DITRA-HEAT or DITRA-HEAT-DUO sheet.",
+      "why": "2026-10-26: same as DHPS512M."
     }
   ]
 }
