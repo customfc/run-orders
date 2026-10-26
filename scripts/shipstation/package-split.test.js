@@ -43,3 +43,42 @@ test("item with a sku but no weight is kept (uses fallback weight)", () => {
   assert.strictEqual(pkgs.length, 1);
   assert.strictEqual(pkgs[0].items[0].sku, "REAL");
 });
+
+test("no default box over 50 lb: two 38 lb pails ship as two boxes (#1432)", () => {
+  const items = [{ sku: "1945616", quantity: 2, weight: { value: 17395, units: "grams" } }];
+  const pkgs = planPackages(items, { value: 34790, units: "grams" }, {});
+  assert.strictEqual(pkgs.length, 2);
+  for (const p of pkgs) {
+    assert.strictEqual(p.items[0].quantity, 1);
+    assert.ok(Math.abs(p.totalWeight.value - 38.35) < 0.1, "got " + p.totalWeight.value);
+  }
+});
+
+test("default items pack first-fit up to 50 lb; light items fill the gaps", () => {
+  const items = [
+    { sku: "PAIL", quantity: 3, weight: { value: 20, units: "pounds" } },
+    { sku: "TROWEL", quantity: 2, weight: { value: 2, units: "pounds" } },
+  ];
+  const pkgs = planPackages(items, { value: 64, units: "pounds" }, {});
+  assert.strictEqual(pkgs.length, 2);
+  assert.ok(pkgs.every((p) => p.totalWeight.value <= 50));
+  assert.strictEqual(pkgs.reduce((s, p) => s + p.totalWeight.value, 0), 64);
+});
+
+test("a single unit over 50 lb still gets one box of its own", () => {
+  const items = [
+    { sku: "CUTTER", quantity: 1, weight: { value: 60, units: "pounds" } },
+    { sku: "TROWEL", quantity: 1, weight: { value: 2, units: "pounds" } },
+  ];
+  const pkgs = planPackages(items, { value: 62, units: "pounds" }, {});
+  assert.strictEqual(pkgs.length, 2);
+  assert.deepStrictEqual(pkgs.map((p) => p.totalWeight.value).sort((a, b) => a - b), [2, 60]);
+});
+
+test("solo multiples with max_per_pkg stop at 50 lb unless the sku sets its own cap", () => {
+  const map = { mappings: { CH: { package_shape: "solo", max_per_pkg: 3 } } };
+  const items = [{ sku: "CH", quantity: 3, weight: { value: 20, units: "pounds" } }];
+  const pkgs = planPackages(items, { value: 60, units: "pounds" }, map);
+  assert.strictEqual(pkgs.length, 2);
+  assert.ok(pkgs.every((p) => p.totalWeight.value <= 50));
+});
