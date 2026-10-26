@@ -331,6 +331,10 @@ function isInScope(order) {
 
 function isClearlyOutOfScope(itemName = '') {
   const name = itemName.toLowerCase();
+  // Flooring adhesives name the floor they glue down ("Urethane Adhesive for Hardwood
+  // Flooring") but ship like any other Prosol pail. YourFloors #1432 (2x Mapei
+  // Ultrabond ECO 975) sat held on this until 2026-10-26.
+  if (/\badhesive\b/.test(name)) return false;
   return /(click\s+vinyl|luxury\s+vinyl|laminate\s+floor|hardwood\s+floor|engineered\s+hardwood|sheet\s+vinyl|floor\s+protection)/i.test(name);
 }
 
