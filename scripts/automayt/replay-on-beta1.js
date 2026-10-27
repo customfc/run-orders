@@ -254,13 +254,18 @@ async function replayFixtures() {
     note: `${r.skipReason}; candidates ${(r.existingCandidates || []).join(', ')}`,
   }));
 
-  // A partial refund after invoicing: invoice and post the SO (what Automayt's
-  // own invoicing does), refund one of the two KERDI-FIX, credit note once.
-  await flow('Shopify: invoice the SO and post it', async () => {
-    const { data: inv } = await am.command(`/sales-orders/${shopSo}/invoice`, { notes: 'run-orders rehearsal' }, `rotest-${RUN}-invoice`);
+  // A partial refund after invoicing: run-orders left a draft invoice; post it
+  // (what Steph does in Automayt), refund one of the two KERDI-FIX, credit note once.
+  await flow('Shopify: run-orders left the invoice as a draft; post it (Steph\'s step)', async () => {
+    const draft = ((await am.get(`/sales-orders/${shopSo}`)).data.invoices || []).find((i) => i.type !== 'credit-note' && i.status !== 'void');
+    if (!draft || draft.status !== 'draft') return { draft };
+    const { data: inv } = await am.get(`/invoices/${draft.id}`);
     const { data: posted } = await am.command(`/invoices/${inv.id}/post`, { expected_version: inv.version || null }, `rotest-${RUN}-invoice-post`);
-    return posted.invoice || posted;
-  }, (inv) => ({ ok: ['posted', 'sent', 'paid'].includes(inv.status), note: `${inv.number} ${inv.status}, total ${inv.total}` }));
+    return { draft, posted: posted.invoice || posted };
+  }, ({ draft, posted }) => ({
+    ok: !!posted && ['posted', 'sent', 'paid'].includes(posted.status),
+    note: draft ? `${draft.number} was ${draft.status}${posted ? `, posted: ${posted.status}, total ${posted.total}` : ''}` : 'no draft invoice on the SO',
+  }));
   const line = money.lines[0];
   const lineTax = tax.prorateTax(tax.round2(tax.sumCodes(line.taxCharged) / line.quantity), line.taxCharged);
   const refundMoney = { ...money, refunded: tax.round2(37.96 + tax.sumCodes(lineTax)), refunds: [{ id: `${RUN}1`, createdAt: new Date().toISOString(), total: tax.round2(37.96 + tax.sumCodes(lineTax)), items: [{ lineId: line.id, sku: line.sku, quantity: 1, subtotal: 37.96, tax: lineTax }], shipping: [] }] };
