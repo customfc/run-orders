@@ -108,7 +108,13 @@ The running list of API gaps for Aaron is `drafts/automayt-api-gaps-for-aaron.tx
 
 - Vendors Prosol, Treeco and the carriers, and a virtual Amazon Fulfillment location. The API takes `POST /vendors` and `POST /locations` since 2026-10-23, but these are Automayt's records to set up. CFC's beta1 tenant (2026-10-23) has "Prosol Inc.", "Treeco", an "Amazon Fulfillment" warehouse (flagged virtual 2026-10-23, `PATCH /locations/{id}`), and house customers "Shopify" and "Amazon.ca" (not mapped under `run-orders`; the day replay uses its own `[rehearsal]` pair under `run-orders-test`).
 - Vendor codes on Automayt's own items: see **Vendor codes on Automayt's items** below. Production gets them through Automayt's Salesforce migration, from our crosswalk.
-- Numbering: Automayt is setting `SO-028000` and `PO-18000` (Mac, 2026-10-23: past Salesforce's `SO-025xxx` / `PO-16xxx`, so the two systems never issue the same number). beta1 issued `SO-0001` / `PO-0001`.
+- Numbering: Automayt is setting `SO-028000` and `PO-18000` (Mac, 2026-10-23: past Salesforce's `SO-025xxx` / `PO-16xxx`, so the two systems never issue the same number). beta1 issued `SO-0001` / `PO-0001`; on 2026-10-27 SOs start at `SO-028000` but POs are still `PO-00xx`.
+
+**Where it stands (2026-10-27, full run green on beta1: 211 unit tests, beta1-e2e 68 requests / 35 writes, day replay, Shopify tax to the cent).** Now in the API (live openapi.json): `PATCH /sales-orders/{id}` with `processing_fees`, `/sales-orders/{id}/attachments`, `/sales-orders/{id}/shipments`, `/stock-adjustments` (+ reasons), `/transfers`, `POST /invoices/{id}/credit-notes` (lines with `tax_charged`), `POST /opportunities`, booking and opportunity webhooks, `POST /vendors` and `/locations`. run-orders doesn't call the new routes yet: FBA and parcel shipments out of Amazon Fulfillment, partial refunds as credit notes, the fee on the header and the order PDF are the next builds. Sent to Aaron (and Steph) 2026-10-27 as `drafts/automayt-api-outstanding-2026-10-27.md`; still open:
+
+- Before Nov 1: production key plus seeded vendors (incl. the carrier, still a Shaw stand-in on beta1), locations and house customers; `PO-18000` numbering; an optional `rate` on each `tax_charged` entry (Steph's GST %, GST amount, PST %, PST amount columns; HST to GST, QST to PST; Amazon's CFC GST/HST to go one tax line per rate); the HST tax code (tenant has GST, PST, EXEMPT only, though `tax_charged` books HST).
+- After: journal entries for payout fees; items with more than one vendor; opportunity `campaign` and booking-page owner assignment; click ids (gclid, gbraid, wbraid, fbclid) on the booking page.
+- Fixed on our side 2026-10-27: Automayt's categories now come from the Salesforce migration and "Supplies" is gone, so grout maps to `Grout` and adhesive to `Adhesive` (`AUTOMAYT_CATEGORY_GROUT`, `AUTOMAYT_CATEGORY_ADHESIVE`, `AUTOMAYT_CATEGORY_DEFAULT`).
 
 ## Vendor codes on Automayt's items (2026-10-23)
 
