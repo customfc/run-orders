@@ -214,13 +214,13 @@ async function replayFixtures() {
       const created = r.orders.filter((o) => o.status === 'created');
       const bad = r.orders.filter((o) => o.status !== 'created');
       return {
-        ok: !r.errors.length && !bad.length && created.length === prefetched.shipments.length && created.every((o) => o.received),
-        note: `${created.length}/${prefetched.shipments.length} POs ${created.map((o) => o.poNumber).join(', ')} on ${r.soNames.join(', ')}, qty/parcel ${created.map((o) => o.items.map((i) => i.qty).join('+')).join(', ')}${bad.length ? `; problems: ${JSON.stringify(bad.map((o) => o.errors))}` : ''}${r.errors.length ? `; errors ${JSON.stringify(r.errors)}` : ''}`,
+        ok: !r.errors.length && !bad.length && created.length === prefetched.shipments.length && created.every((o) => o.received && o.shipment && o.shipment.shipped),
+        note: `${created.length}/${prefetched.shipments.length} POs ${created.map((o) => o.poNumber).join(', ')} on ${r.soNames.join(', ')}, qty/parcel ${created.map((o) => o.items.map((i) => i.qty).join('+')).join(', ')}, shipped out of Amazon Fulfillment ${created.filter((o) => o.shipment && o.shipment.shipped).length}/${created.length}${bad.length ? `; problems: ${JSON.stringify(bad.map((o) => o.errors))}` : ''}${r.errors.length ? `; errors ${JSON.stringify(r.errors)}` : ''}`,
       };
     });
     await flow('Amazon: same parcels again create nothing', () => erpBackend.createAmazonPOs({ prefetched }), (r) => ({
-      ok: !r.errors.length && r.orders.every((o) => o.status === 'skipped'),
-      note: r.orders.map((o) => `${o.trackingNumber} ${o.status}`).join(', '),
+      ok: !r.errors.length && r.orders.every((o) => o.status === 'skipped' && !(o.shipment && o.shipment.shipped)),
+      note: r.orders.map((o) => `${o.trackingNumber} ${o.status}${o.shipment ? ` (${o.shipment.reason || 'shipped'})` : ''}`).join(', '),
     }));
   } else {
     console.log('  (no Amazon order in local ops-state; Amazon replay skipped)');
@@ -245,6 +245,44 @@ async function replayFixtures() {
     ok: r.skipped === true && !r.errors.length,
     note: `${r.skipReason}; candidates ${(r.existingCandidates || []).join(', ')}`,
   }));
+
+  // A partial refund after invoicing: invoice and post the SO (what Automayt's
+  // own invoicing does), refund one of the two KERDI-FIX, credit note once.
+  await flow('Shopify: invoice the SO and post it', async () => {
+    const { data: inv } = await am.command(`/sales-orders/${shopSo}/invoice`, { notes: 'run-orders rehearsal' }, `rotest-${RUN}-invoice`);
+    const { data: posted } = await am.command(`/invoices/${inv.id}/post`, { expected_version: inv.version || null }, `rotest-${RUN}-invoice-post`);
+    return posted.invoice || posted;
+  }, (inv) => ({ ok: ['posted', 'sent', 'paid'].includes(inv.status), note: `${inv.number} ${inv.status}, total ${inv.total}` }));
+  const line = money.lines[0];
+  const lineTax = tax.prorateTax(tax.round2(tax.sumCodes(line.taxCharged) / line.quantity), line.taxCharged);
+  const refundMoney = { ...money, refunded: tax.round2(37.96 + tax.sumCodes(lineTax)), refunds: [{ id: `${RUN}1`, createdAt: new Date().toISOString(), total: tax.round2(37.96 + tax.sumCodes(lineTax)), items: [{ lineId: line.id, sku: line.sku, quantity: 1, subtotal: 37.96, tax: lineTax }], shipping: [] }] };
+  let creditNote = null;
+  await flow('Shopify: a partial refund is a credit note on the posted invoice, tax as refunded', () => automaytOrders.reconcileShopifyRefund({ orderNumber: money.orderNumber, money: refundMoney, apply: true }), (r) => {
+    const c = r.creditNotes && r.creditNotes[0];
+    creditNote = c && c.creditNotes && c.creditNotes[0];
+    return { ok: r.action === 'credited' && !!creditNote, note: `${r.action}${creditNote ? `: ${creditNote.number} total ${creditNote.total}` : ''}${r.reason ? `; ${r.reason}` : ''} (refund ${refundMoney.refunds[0].total}: 37.96 + ${lineTax.map((t) => `${t.code} ${t.amount}`).join(' + ')})` };
+  });
+  if (creditNote) {
+    await flow('Shopify: the credit note books the refunded tax to the cent', async () => (await am.get(`/invoices/${creditNote.id}`)).data, (cn) => {
+      const taxes = (cn.taxes || []).map((t) => [t.label, Math.abs(Number(t.amount)).toFixed(2)]);
+      return { ok: Math.abs(Number(cn.total)).toFixed(2) === refundMoney.refunds[0].total.toFixed(2) && JSON.stringify(taxes) === JSON.stringify(lineTax.map((t) => [t.code, t.amount])), note: `${cn.number} ${cn.type}, subtotal ${cn.subtotal}, tax ${(cn.taxes || []).map((t) => `${t.label} ${t.amount}`).join(', ')}, total ${cn.total}` };
+    });
+  }
+  await flow('Shopify: the same refund again posts nothing', () => automaytOrders.reconcileShopifyRefund({ orderNumber: money.orderNumber, money: refundMoney, apply: true }), (r) => ({
+    ok: r.action === 'credited' && r.creditNotes[0].status === 'done' && !r.creditNotes[0].creditNotes,
+    note: `${r.action}, refund ${r.creditNotes.map((c) => `${c.refundId} ${c.status}`).join(', ')}`,
+  }));
+
+  // An FBA sale: on the period order, then out of Amazon Fulfillment.
+  const fbaSale = { orderId: `ROTEST-${RUN}-F`, shipmentId: 'S1', transactionId: `tx-${RUN}`, postedDate: new Date(Date.now() - 3600e3).toISOString().replace(/\.\d+Z$/, 'Z'), day: new Date(Date.now() - 3600e3 - 7 * 3600e3).toISOString().slice(0, 10), items: [{ asin: 'B07QBD5Q86', sellerSku: 'SES3D6EB-FBA', quantity: 1, unitPrice: 189.5, name: 'Shelf' }], shipping: 0 };
+  await flow('FBA sale: on the period order and shipped out of Amazon Fulfillment', () => automaytOrders.addFbaSales({ sales: [fbaSale] }), (r) => {
+    const o = r.orders[0];
+    return { ok: o.status === 'created' && !!(o.shipment && o.shipment.shipped), note: `${o.status} on ${o.soName || '-'}, shipment ${o.shipment ? (o.shipment.id || o.shipment.reason) : 'none'}${o.errors.length ? `; ${o.errors.join('; ')}` : ''}` };
+  });
+  await flow('FBA sale: the same sale again writes nothing', () => automaytOrders.addFbaSales({ sales: [fbaSale] }), (r) => {
+    const o = r.orders[0];
+    return { ok: o.status === 'skipped' && !o.shipment && !o.errors.length, note: `${o.status}: ${o.reason}` };
+  });
 
   const draft = { draftId: `ROTEST-${RUN}-draft`, createdAt: new Date().toISOString() };
   const fbaLines = () => [{ asin: 'B07QBD5Q86', qty: 4, product: 'Schluter SHELF quadrilateral corner', vendor: 'prosol' }];

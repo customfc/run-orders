@@ -123,7 +123,7 @@ async function shopifyRefunds() {
   const list = (await io.listShopifyOrderMoney({ from, to })).filter((o) => o.refunds.length || o.cancelledAt);
   for (const m of list) {
     const r = await orders.reconcileShopifyRefund({ orderNumber: m.orderNumber, money: m, apply: flag('apply') });
-    console.log(`${r.order.padEnd(6)} ${String(r.so || '-').padEnd(10)} ${r.action}${r.applied ? ' (done)' : ''}${r.reason ? `: ${r.reason}` : ''}${r.feeNote ? `; ${r.feeNote}` : ''}`);
+    console.log(`${r.order.padEnd(6)} ${String(r.so || '-').padEnd(10)} ${r.action}${r.applied ? ' (done)' : ''}${r.reason ? `: ${r.reason}` : ''}${r.feeNote ? `; ${r.feeNote}` : ''}${r.creditNotes ? `; credit notes ${r.creditNotes.map((c) => `${c.refundId} ${c.status}`).join(", ")}` : ''}`);
   }
   if (!list.length) console.log('no refunded or cancelled orders in range');
 }
