@@ -127,6 +127,7 @@ function shopifyFixtureMoney(order) {
   const t = (g, p) => [{ code: 'GST', amount: g }, { code: 'PST', amount: p }];
   return {
     orderNumber: order.orderNumber, province: 'BC', subtotal: 130.25, shipping: 12.99, total: 160.43, fee: 4.95, feeUnknown: false, paidVia: ['shopify_payments'],
+    fees: [{ kind: 'SALE', type: 'payment', amount: 4.71, tax: 0.24 }],
     tax: t('7.17', '10.02'), refunds: [], refunded: 0,
     lines: [
       { id: '1', sku: '4172', quantity: 2, total: 75.92, taxCharged: t('3.80', '5.31') },
@@ -222,6 +223,13 @@ async function replayFixtures() {
       ok: !r.errors.length && r.orders.every((o) => o.status === 'skipped' && !(o.shipment && o.shipment.shipped)),
       note: r.orders.map((o) => `${o.trackingNumber} ${o.status}${o.shipment ? ` (${o.shipment.reason || 'shipped'})` : ''}`).join(', '),
     }));
+    // The period close sets Amazon's fees withheld from sales on the period order (pre-cutover periods
+    // refuse postAmazonPeriodTax, so the fee step is called directly here).
+    const periodSo = await erp.findAmazonPeriodSo(erp.amazonPeriod(prefetched.shipments[0].shipDate, erp.amazonPeriodAnchor()).key);
+    await flow('Amazon: period processing fee set on the order header, then a no-op', async () => [await erp.setProcessingFees(periodSo.id, 151.91), await erp.setProcessingFees(periodSo.id, 151.91)], ([a, b]) => ({
+      ok: Number(a.so.processing_fees) === 151.91 && b.changed === false,
+      note: `${periodSo.number} processing fee ${a.so.processing_fees}${a.changed ? ' set' : ' already set'}, second call ${b.changed ? 'wrote again' : 'no-op'}`,
+    }));
   } else {
     console.log('  (no Amazon order in local ops-state; Amazon replay skipped)');
   }
@@ -238,8 +246,8 @@ async function replayFixtures() {
     };
   });
   await flow('Shopify: Automayt booked exactly the tax Shopify charged', async () => (await am.get(`/sales-orders/${shopSo}`)).data, (so) => ({
-    ok: so.subtotal === '143.24' && so.tax_total === '17.19' && so.total === '160.43' && JSON.stringify(so.tax_lines.map((l) => [l.code, l.amount])) === JSON.stringify([['GST', '7.17'], ['PST', '10.02']]),
-    note: `subtotal ${so.subtotal}, tax ${so.tax_total} (${so.tax_lines.map((l) => `${l.code} ${l.amount}`).join(', ')}), total ${so.total}`,
+    ok: so.subtotal === '143.24' && so.tax_total === '17.19' && so.total === '160.43' && JSON.stringify(so.tax_lines.map((l) => [l.code, l.amount])) === JSON.stringify([['GST', '7.17'], ['PST', '10.02']]) && Number(so.processing_fees) === 4.71,
+    note: `subtotal ${so.subtotal}, tax ${so.tax_total} (${so.tax_lines.map((l) => `${l.code} ${l.amount}`).join(', ')}), total ${so.total}, processing fee ${so.processing_fees} (Shopify 4.95 with tax)`,
   }));
   await flow('Shopify: same order again is a skip', () => erpBackend.createShopifySoPo({ shopifyOrder: order, money, trackingNumber: tracking, carrierCode: 'purolator_walleted' }), (r) => ({
     ok: r.skipped === true && !r.errors.length,

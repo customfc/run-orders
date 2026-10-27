@@ -51,6 +51,7 @@ function anchor() {
 
 function show(r) {
   console.log(`Amazon ${r.period.label} (${r.period.start} to ${r.period.end})${r.provisional ? ' PROVISIONAL' : ''}`);
+  if (r.fees) console.log(`  Amazon fees withheld from sales (processing fee, before tax) ${r.fees.total.toFixed(2)}, tax on them ${r.fees.tax.toFixed(2)}: ${Object.entries(r.fees.byType).map(([k, v]) => `${k} ${v.toFixed(2)}`).join(', ')}`);
   console.log(`  transactions counted ${r.transactions.counted} of ${r.transactions.fetched}; product sales ${r.sales.principal.toFixed(2)}, shipping ${r.sales.shipping.toFixed(2)}`);
   console.log(`  tax collected ${r.tax.collected.toFixed(2)} (orders ${r.tax.collectedOnOrders.toFixed(2)}, refunds ${r.tax.refundedOnRefunds.toFixed(2)})`);
   console.log(`  withheld by Amazon ${r.tax.withheld.toFixed(2)}: ${r.withheldByCode.map((c) => `${c.code} ${c.amount}`).join(', ') || 'none'} (Amazon remitted; record only)`);
@@ -73,6 +74,7 @@ async function amazonClose() {
     if (process.env.AUTOMAYT_TAX_AS_CHARGED === '0') throw new Error('AUTOMAYT_TAX_AS_CHARGED=0: posting is off; the record above is the books entry');
     const res = await erp.postAmazonPeriodTax(record);
     console.log(res.posted ? `  posted to ${res.so}` : `  not posted: ${res.reason}`);
+    if (res.fees) console.log(`  processing fee ${res.fees.processingFees} on ${res.so}${res.fees.changed ? '' : ' (already set)'}`);
   }
 }
 

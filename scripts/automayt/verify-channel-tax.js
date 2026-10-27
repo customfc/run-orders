@@ -69,8 +69,14 @@ async function verifyAmazon(conn, { from, to }) {
       so: so.Name, period: period.label, start: period.start, end: period.end, soTotal: so.PBSI__Order_Total__c, lynnaeAdjusted: adjusted,
       api: { collected: api.tax.collected, withheld: api.tax.withheld, cfc: api.tax.cfc, netExTax: api.netExTax, principal: api.sales.principal, shipping: api.sales.shipping, counted: api.transactions.counted },
     };
+    const fees = tax.amazonOrderFees(transactions);
+    row.api.fees = fees;
     if (csvLink) {
-      const csv = tax.dateRangeCsvTotals(await downloadCsv(conn, csvLink.ContentDocument.LatestPublishedVersionId));
+      const csvText = await downloadCsv(conn, csvLink.ContentDocument.LatestPublishedVersionId);
+      const csv = tax.dateRangeCsvTotals(csvText);
+      // The CSV's fee columns carry their tax; processing_fees is before tax.
+      const csvFees = tax.dateRangeCsvOrderFees(csvText);
+      row.fees = { api: fees.total, apiWithTax: tax.round2(fees.total + fees.tax), csvOrderFees: csvFees, match: eq(fees.total + fees.tax, csvFees) };
       row.csv = { file: csvLink.ContentDocument.Title, collected: csv.collected, withheld: csv.withheld, cfc: csv.cfc, netExTax: csv.netExTax, principal: csv.columns['product sales'], shipping: csv.columns['shipping credits'] };
       row.match = {
         principal: eq(api.sales.principal, csv.columns['product sales']),
@@ -85,6 +91,7 @@ async function verifyAmazon(conn, { from, to }) {
     out.push(row);
     const m = row.match;
     console.log(`${so.Name} ${period.label.padEnd(16)} api cfc ${fix(api.tax.cfc).padStart(9)} wh ${fix(api.tax.withheld).padStart(9)} net ${fix(api.netExTax).padStart(10)}`
+      + (row.fees ? ` | fees ${fix(row.fees.api)} (+tax ${fix(row.fees.apiWithTax)}) vs csv ${fix(row.fees.csvOrderFees)} ${row.fees.match ? 'match' : 'MISMATCH fees'}` : ` | fees ${fix(fees.total)}`)
       + (row.csv ? ` | csv cfc ${fix(row.csv.cfc).padStart(9)} wh ${fix(row.csv.withheld).padStart(9)} net ${fix(row.csv.netExTax).padStart(10)} | SO ${fix(so.PBSI__Order_Total__c)} | ${Object.entries(m).filter(([, v]) => v === false).map(([k]) => `MISMATCH ${k}`).join(' ') || 'all match'}` : ` | no CSV; SO ${fix(so.PBSI__Order_Total__c)} ${adjusted ? 'adjusted' : 'not adjusted yet'}`));
   }
   return out;
