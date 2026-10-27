@@ -39,8 +39,8 @@ process.env.AMAZON_PERIOD_ANCHOR = ANCHOR;
 // Real catalogue rows from sku-map, under test-only vendor codes so they can
 // never collide with CFC's catalogue when it is loaded into this environment.
 const TEST_ITEMS = [
-  { key: 'kerdifix', vendorCode: 'ROTEST-KERDIFIX/BW', description: 'Schluter KERDI-FIX Sealing/Bonding Compound Bright White 290ml', category: 'Supplies', cost: 21.64, retail: 37.96, manufacturer: 'Schluter' },
-  { key: 'kerdiband', vendorCode: 'ROTEST-KEBA100/125/10M', description: 'Schluter KERDI-BAND Waterproofing Strip 4" x 32\'10"', category: 'Supplies', cost: 32.98, retail: 57.85, manufacturer: 'Schluter' },
+  { key: 'kerdifix', vendorCode: 'ROTEST-KERDIFIX/BW', description: 'Schluter KERDI-FIX Sealing/Bonding Compound Bright White 290ml', category: 'Shower Waterproofing', cost: 21.64, retail: 37.96, manufacturer: 'Schluter' },
+  { key: 'kerdiband', vendorCode: 'ROTEST-KEBA100/125/10M', description: 'Schluter KERDI-BAND Waterproofing Strip 4" x 32\'10"', category: 'Shower Waterproofing', cost: 32.98, retail: 57.85, manufacturer: 'Schluter' },
   { key: 'shelf', vendorCode: 'ROTEST-SES3D6EB', description: 'Schluter SHELF Quadrilateral Corner Curve Brushed Stainless', category: 'Accessories', cost: 114.92, retail: 201.61, manufacturer: 'Schluter' },
 ];
 

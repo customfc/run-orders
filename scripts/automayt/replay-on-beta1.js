@@ -185,7 +185,7 @@ async function setUp() {
   // so the replay proves the roll → sqft conversion. Own-stock Bona pad is a
   // Sechelt item found by its legacy item number.
   await erp.createItem({ vendorCode: 'DITRAPS25M', itemNumber: 'DITRAPS25M', description: 'Schluter DITRA-PS Uncoupling Membrane Peel & Stick Roll (269 sqft)', category: 'Underlayment', unit: 'sqft', cost: '1.7192', retail: '3.0160', vendorId: overrides.prosolVendor, manufacturer: 'Schluter' });
-  await erp.createItem({ vendorCode: 'BONA-PAD-71', itemNumber: '71', description: 'Bona Professional Microfiber Cleaning Pad', category: 'Supplies', unit: 'each', cost: '6.00', retail: '14.99', manufacturer: 'Bona' });
+  await erp.createItem({ vendorCode: 'BONA-PAD-71', itemNumber: '71', description: 'Bona Professional Microfiber Cleaning Pad', category: 'Cleaner', unit: 'each', cost: '6.00', retail: '14.99', manufacturer: 'Bona' });
 }
 
 async function flow(name, fn, check, meta = {}) {
