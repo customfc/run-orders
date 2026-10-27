@@ -104,7 +104,7 @@ The tax close doesn't change: it already counted FBA sales (its source is every 
 
 ## Waiting on Automayt before staging
 
-The running list of API gaps for Aaron is `drafts/automayt-api-gaps-for-aaron.txt` in cfc-projects/06-salesforce-exit. Add to it there. Steph dropped negative fee lines (2026-10-19): the processing fee total goes in a sales order header field he is adding, which for Amazon needs a header update at period close (gap 6).
+The running list of API gaps for Aaron is `drafts/automayt-api-outstanding-2026-10-27-SENT.md` in cfc-projects/06-salesforce-exit (sent 2026-10-27); start a new list there for anything after it. Steph dropped negative fee lines (2026-10-19): the processing fee total goes in a sales order header field he is adding, which for Amazon needs a header update at period close (gap 6).
 
 - Vendors Prosol, Treeco and the carriers, and a virtual Amazon Fulfillment location. The API takes `POST /vendors` and `POST /locations` since 2026-10-23, but these are Automayt's records to set up. CFC's beta1 tenant (2026-10-23) has "Prosol Inc.", "Treeco", an "Amazon Fulfillment" warehouse (flagged virtual 2026-10-23, `PATCH /locations/{id}`), and house customers "Shopify" and "Amazon.ca" (not mapped under `run-orders`; the day replay uses its own `[rehearsal]` pair under `run-orders-test`).
 - Vendor codes on Automayt's own items: see **Vendor codes on Automayt's items** below. Production gets them through Automayt's Salesforce migration, from our crosswalk.
