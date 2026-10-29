@@ -13,6 +13,78 @@
     "max_pkg_weight_lb": "Max package weight in lb when combining (used with heat_sheet)"
   },
   "mappings": {
+    "DHPS512M": {
+      "api_sku": "DHPS512M",
+      "prosol_sku": "DHPS512M",
+      "product": "Schluter DITRA-HEAT-PS Peel and Stick Heated Floor Membrane, 5 mm, 38-5/8\" x 502-3/4\" Roll (134.5 sq ft)",
+      "note": "Proposed 2026-10-26 by sku-resolver (Opus, high confidence), approved by Mac: This is the Schluter DITRA-HEAT-PS peel-and-stick membrane in the 134.5 sq ft roll. It's a Prosol item with vendor code DHPS512M, and Sechelt shows no stock. The same roll is already mapped for its Amazon listing with api_sku and prosol_sku both set to DHPS512M, so it should drop-ship from Prosol the same way. None of the staging candidates (thermostats and DITRA-HEAT-DUO) were the right product.",
+      "verified": true,
+      "discovered_by": "sku-resolver-ai"
+    },
+    "DHERT105/BW": {
+      "api_sku": "DHERT105/BW",
+      "prosol_sku": "DHERT105BW",
+      "product": "Schluter DITRA-HEAT-E-RS1 Smart Wi-Fi Thermostat, Bright White (DHERT105/BW)",
+      "note": "Proposed 2026-10-23 by sku-resolver (Opus, high confidence), approved by Mac: This is the Schluter DITRA-HEAT-E-RS1 Smart Wi-Fi thermostat in white. Shopify shows 0 stock at Sechelt Warehouse, and Salesforce lists it as a Prosol item with vendor code DHERT105BW, so Prosol should drop-ship it. The Prosol catalog has an exact match: storefront SKU DHERT105/BW, vendor code DHERT105BW. Separate issue: the existing Amazon entry B0BN6TKGZ1 lists prosol_sku as DHERT105/BW (with the slash), which doesn't match Prosol's code DHERT105BW and should be checked.",
+      "verified": true,
+      "discovered_by": "sku-resolver-ai"
+    },
+    "DHERR2/BW": {
+      "api_sku": "DHERR2/BW",
+      "prosol_sku": "DHERR2/BW",
+      "product": "Schluter DITRA-HEAT-E-RRS Power Module, White (for DITRA-HEAT-E-RS1 smart thermostat)",
+      "note": "Proposed 2026-10-23 by sku-resolver (Opus, medium confidence), approved by Mac: This is the Schluter DITRA-HEAT-E-RRS power module in white. It is not the RR power module (DHERR1/BW), which is a different product. Sechelt has 0 in stock, and Salesforce lists it as a Prosol item, so it should be drop-shipped by Prosol using storefront SKU DHERR2/BW. One thing to check: Salesforce and our existing RR mapping write the Prosol code with a slash (DHERR2/BW), but the staging Prosol catalog shows DHERR2BW with no slash. Please confirm which format Prosol accepts.",
+      "verified": true,
+      "discovered_by": "sku-resolver-ai"
+    },
+    "DHEHK240225": {
+      "api_sku": "DHEHK240225",
+      "prosol_sku": "DHEHK240225",
+      "product": "Schluter DITRA-HEAT-E-HK Floor Heating Cable, 240V, 225 sq ft (225.2 SF)",
+      "note": "Proposed 2026-10-23 by sku-resolver (Opus, medium confidence), approved by Mac: This is the Schluter DITRA-HEAT 240V heating cable in the 225 sq ft size. Salesforce item 11475 matches it exactly, lists Prosol as the vendor and carries vendor code DHEHK240225. We have none at the Sechelt Warehouse, so Prosol should drop-ship it. Staging's Prosol search didn't return the cable itself, so the storefront SKU isn't directly confirmed. I set it to DHEHK240225 because every other 240V DITRA-HEAT cable in the sku-map uses the same code for both fields (for example DHEHK240167 and DHEHK240145).",
+      "verified": true,
+      "discovered_by": "sku-resolver-ai"
+    },
+    "4EN": {
+      "api_sku": "4EN",
+      "prosol_sku": "SIGMA4EN",
+      "product": "Sigma Serie 4 \"Nex\" 49-3/16\" Push Manual Tile Cutter (4EN)",
+      "note": "Proposed 2026-10-23 by sku-resolver (Opus, high confidence), approved by Mac: This is the Sigma Series 4 \"Nex\" 49-3/16\" push manual tile cutter. Shopify shows no stock at Sechelt Warehouse; stock exists only at the Prosol distribution warehouses (Calgary, Vancouver, Ontario, Quebec). Prosol's catalog lists the same size with storefront SKU 4EN and vendor code SIGMA4EN, and Salesforce item 12152 (vendor Prosol Inc.) carries the vendor item ID SIGMA4EN, so this ships by Prosol drop-ship.",
+      "verified": true,
+      "discovered_by": "sku-resolver-ai"
+    },
+    "KSLT1395": {
+      "api_sku": "KSLT1395",
+      "prosol_sku": "KSLT1395",
+      "product": "Schluter KERDI-SHOWER Linear Tray (KERDI-SHOWER-LT/LTS) 55\" x 55\", Centre Drain",
+      "note": "Proposed 2026-10-23 by sku-resolver (Opus, high confidence), approved by Mac: This is the Schluter KERDI-SHOWER linear tray, 55\" x 55\" with the drain in the centre. Sechelt Warehouse has none in stock, and Salesforce item 02761 shows Prosol Inc. as the vendor with Prosol code KSLT1395. Prosol's own catalogue lists the same 55\" x 55\" centre tray as KSLT1395, so it should be drop-shipped by Prosol.",
+      "verified": true,
+      "discovered_by": "sku-resolver-ai"
+    },
+    "KL1V60E90": {
+      "api_sku": "KL1V60E90",
+      "prosol_sku": "KL1V60E90",
+      "product": "Schluter KERDI-LINE Linear Drain Channel Body, Center Outlet, Stainless Steel, 90 cm (36\" / 35-7/16\")",
+      "note": "Proposed 2026-10-23 by sku-resolver (Opus, high confidence), approved by Mac: This is the 90 cm (36\") KERDI-LINE drain channel body with a center outlet. It is not one of the tileable grates that staging suggested. Salesforce item 04683 lists Prosol as the vendor with code KL1V60E90. Shopify shows 0 stock at Sechelt Warehouse, so Prosol ships it. The existing Amazon mapping for the same 36\" channel body already uses KL1V60E90 for both the api_sku and the prosol_sku.",
+      "verified": true,
+      "discovered_by": "sku-resolver-ai"
+    },
+    "KL1DRE90": {
+      "api_sku": "KL1DRE90",
+      "prosol_sku": "KL1DRE90",
+      "product": "Schluter KERDI-LINE Linear Drain Frameless Tileable Grate, Brushed Stainless Steel (V4), 1-1/8\" x 35-7/16\" (90 cm / 36\")",
+      "note": "Proposed 2026-10-23 by sku-resolver (Opus, high confidence), approved by Mac: This is the Schluter KERDI-LINE frameless tileable grate, 90 cm (36\"). Sechelt Warehouse shows 0 stock, and Salesforce lists it as a Prosol item with vendor code KL1DRE90. That code matches Prosol's 36\" tile grate, so it should be drop-shipped by Prosol. Our existing Amazon mapping for the same 35-7/16\" grate already uses KL1DRE90 for both SKU fields.",
+      "verified": true,
+      "discovered_by": "sku-resolver-ai"
+    },
+    "DHEHKRK": {
+      "api_sku": "DHEHKRK",
+      "prosol_sku": "DHEHKRK",
+      "product": "Schluter\u00ae REPAIR KIT FOR DITRA-HEAT-E-HK HEATING CABLES (single kit, EA)",
+      "note": "Proposed 2026-10-22 by sku-resolver (Opus, high confidence), approved by Mac: This is the Schluter repair kit for DITRA-HEAT-E-HK heating cables. It comes in one version only: a single kit with no size or colour options. Shopify shows 0 stock at Sechelt Warehouse. Salesforce item 02236 lists Prosol Inc. as the vendor with Prosol code DHEHKRK, and the Prosol catalogue lists the same item as api_sku DHEHKRK. So it should be drop-shipped by Prosol, using DHEHKRK for both SKUs.",
+      "verified": true,
+      "discovered_by": "sku-resolver-ai"
+    },
     "4657": {
       "api_sku": "NON_PROSOL",
       "prosol_sku": "NON_PROSOL",

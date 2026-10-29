@@ -156,6 +156,14 @@ class ProsolClientV2 {
         const exact = products3.find((p) => {
           if (p.sku === prosolSku) return true;
           if (p.manufacturer_sku === prosolSku) return true;
+          // The storefront label and the API field are swapped: the page SKU is
+          // the API external_id, and the page Manufacturer SKU is the API sku.
+          // Aqua Mix is where they differ (page C030882-01 = API sku C030882-4,
+          // external_id C030882-01), so filter[sku] misses it and this guard used
+          // to reject the right product. Found 2026-10-21 when Sealers Choice Gold
+          // quart read as not found while it was in stock. The sku-map stores the
+          // storefront SKU, so external_id is the field that matches it.
+          if (p.external_id === prosolSku) return true;
           const n = typeof p.name === 'object' ? (p.name.en || p.name.fr) : p.name;
           return typeof n === 'string' && n === prosolSku;
         });

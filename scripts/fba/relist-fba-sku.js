@@ -142,15 +142,20 @@ async function fbaUnitsForAsin(asin) {
   }
 
   // 6b. poll for the X00 FNSKU
-  console.log('\n  polling for FNSKU registration (up to ~60s)...');
-  for (let i = 0; i < 6; i++) {
-    await sleep(10000);
+  // Amazon took 10-15 min to surface both relists on 2026-10-21, so a 60s
+  // window reported a false failure twice. Poll for 15 min instead.
+  console.log('\n  polling for FNSKU registration (up to ~15 min)...');
+  for (let i = 0; i < 45; i++) {
+    await sleep(20000);
     try {
       const it = await sp.getListingsItem(newSku, { includedData: 'summaries' });
       const fn = it?.summaries?.[0]?.fnSku;
       if (fn && /^X0/.test(fn)) { console.log(`\n✅ DONE — ${newSku} registered FNSKU ${fn}. Restock-ready (stickered). Update sku-map + queue the PO.`); return; }
-      console.log(`    poll ${i + 1}: fnSku=${fn || '(none yet)'}`);
+      if (i % 3 === 0) console.log(`    poll ${i + 1}: fnSku=${fn || '(none yet)'}`);
     } catch (e) { console.log(`    poll ${i + 1}: ${e.message}`); }
   }
-  console.log('\n⚠️ Created but FNSKU not X00 yet — re-check in a few min: node scripts/fba/scan-fnsku-state.js --asin=' + asin);
+  // NOT scan-fnsku-state.js here: it reads the morning restock-recs snapshot,
+  // so after a relist it still lists the deleted SKU and calls it convert-NOW.
+  console.log('\n⚠️ Created but FNSKU not X00 yet. Check the LIVE listing, not the cached scan:');
+  console.log('   GET /listings/2021-08-01/items/{seller}/' + newSku + '  -> summaries[0].fnSku');
 })().catch(e => { console.error('ERROR:', e.message); process.exit(1); });

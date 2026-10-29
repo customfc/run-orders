@@ -121,6 +121,9 @@ async function resolvePrep(mskus) {
 function loadSpec(p) {
   const spec = JSON.parse(fs.readFileSync(p, 'utf8'));
   if (!spec.name) throw new Error('spec.name required');
+  // Amazon rejects createInboundPlan over 40 chars; check it here so a dry
+  // run catches it rather than the live POST.
+  if (spec.name.length > 40) throw new Error(`spec.name is ${spec.name.length} chars; Amazon's limit is 40`);
   if (!spec.source || !plans.SOURCE_ADDRESSES[spec.source]) {
     throw new Error(`spec.source must be one of: ${Object.keys(plans.SOURCE_ADDRESSES).join(', ')}`);
   }
