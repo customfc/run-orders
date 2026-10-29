@@ -1,21 +1,38 @@
 {
-  "_doc": "Per-product pick instructions for Prosol branches (lib/pick-notes.js). `codes` match the api_sku / prosol_sku the pipeline uses. `note` prints on that order in the branch email. `min_spare` = units a branch must hold beyond the order quantity before routing picks it first (default 1); routing still falls back to exact cover if no branch has the spare.",
+  "_doc": "Per-product pick instructions for Prosol branches (lib/pick-notes.js). `codes` match the api_sku / prosol_sku the pipeline uses. `note` prints on that order in the branch email. `min_spare` = units a branch must hold beyond the order quantity before routing picks it first (default 1); routing still falls back to exact cover if no branch has the spare. `exclude_locations` = Prosol location ids routing never picks for this product (bad stock data there); omit `note` for a routing-only rule.",
   "notes": [
     {
-      "codes": ["C030882-4", "C030882-01"],
+      "codes": [
+        "C030882-4",
+        "C030882-01"
+      ],
       "note": "Sealer's Choice Gold QUART 946 mL (C030882-01). Do not substitute PFAS-Free (C030882-4-PF) or the pint.",
       "min_spare": 2,
       "why": "2026-10-07: 2 'wrong item' returns and a 1-star on B000UOJGME; Burnaby held 40 PFAS-Free quarts vs 1 regular. Mac approved the pick note + routing."
     },
     {
-      "codes": ["DHPS512M"],
+      "codes": [
+        "DHPS512M"
+      ],
       "note": "DITRA-HEAT-PS PEEL & STICK roll, 134.5 sq ft (DHPS512M), adhesive back with release film. Do not substitute regular DITRA-HEAT or DITRA-HEAT-DUO.",
       "why": "2026-10-26: buyer on 702-1470217-2233005 (PO-17391, Sudbury) says the 2 rolls received were not peel and stick; Prosol's order 6950012 shows DHPS512M, photo pending. Mac asked for a pick note on every peel and stick send."
     },
     {
-      "codes": ["DHPS5MA"],
+      "codes": [
+        "DHPS5MA"
+      ],
       "note": "DITRA-HEAT-PS PEEL & STICK sheet, 8.4 sq ft (DHPS5MA), adhesive back with release film. Do not substitute a regular DITRA-HEAT or DITRA-HEAT-DUO sheet.",
       "why": "2026-10-26: same as DHPS512M."
+    },
+    {
+      "codes": [
+        "C010861",
+        "C010861-01"
+      ],
+      "exclude_locations": [
+        10001
+      ],
+      "why": "2026-10-29: Prosol storefront shows 15 Aqua Mix Poultice Stain Remover 3/4 lb at Concord (WCON), but Concord's system can allocate 0 (Rhey, Vaughan inside sales, 10-23). #1418 / PO-17441 sat 10 days unshipped and was rerouted to Quebec. Mac asked to block Concord for this SKU. Remove once Prosol fixes Concord's count."
     }
   ]
 }

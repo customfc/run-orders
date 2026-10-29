@@ -171,3 +171,15 @@ test('pick-notes min_spare: Sealer\'s Choice Gold quart skips a branch holding 2
   const thin = { 'C030882-4': { locationStock: { '10010': { available: true, quantity: 2 } } } };
   assert.equal(determineWarehouse(order, thin).prosolLocId, 10010);
 });
+
+test('determineWarehouse: pick-notes exclude_locations keeps C010861 off Concord (#1418)', () => {
+  // Scarborough delivery; Concord (10001) shows 15 but cannot allocate, Quebec (10035) has 3.
+  const order = { shipTo: { postalCode: 'M1B 1A1' }, normalizedProvince: 'ON', resolvedItems: [{ apiSku: 'C010861', qty: 1 }] };
+  const inv = { C010861: { locationStock: { '10001': { available: true, quantity: 15 }, '10035': { available: true, quantity: 3 } } } };
+  const pick = determineWarehouse(order, inv);
+  assert.ok(pick && pick.prosolLocId === 10035, `routes to Quebec, got ${pick && pick.prosolLocId}`);
+  // Other products still route to Concord.
+  const other = determineWarehouse({ ...order, resolvedItems: [{ apiSku: 'DITRA-XL/175', qty: 1 }] },
+    { 'DITRA-XL/175': { locationStock: { '10001': { available: true, quantity: 15 }, '10035': { available: true, quantity: 3 } } } });
+  assert.ok(other && other.prosolLocId === 10001);
+});
