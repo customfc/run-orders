@@ -4826,6 +4826,21 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
     },
+    "PRMPSQT1": {
+      "cost_cad": 17.52,
+      "retail_cad": 30.72,
+      "cost_source": "prosol-offers-loc10010",
+      "api_sku": "PRMPSQT1",
+      "prosol_sku": "PRMPSQT1",
+      "product": "Schluter PRIMER-PS Peel & Stick Membrane Primer 946ml",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "PRMPSQT1",
+      "map_cad": 27.65,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "note": "Shopify SKU (order #1435). Same item as key 08526."
+    },
     "PRMPS1": {
       "cost_cad": 49.31,
       "retail_cad": 86.5,
