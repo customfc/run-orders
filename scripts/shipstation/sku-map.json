@@ -11435,6 +11435,8 @@
     "B08NXYS23J": {
       "api_sku": "EDQ100GS",
       "prosol_sku": "EDQ100GS",
+      "cost_cad": 3.54,
+      "cost_source": "sku-map ED/Q100GS (prosol-offers-loc10010)",
       "product": "Schluter - QUADEC Outside Corner 90\u00b0 - Aluminum Black 3/8\" (10 mm)",
       "brand": "schluter",
       "msrp_cad": 6.21,

@@ -174,6 +174,8 @@ async function setUp() {
     prosolVendor: pick('prosolVendor', byName(vendors, /prosol/i), byName(vendors, /Pacific Tile/i)),
     treecoVendor: pick('treecoVendor', byName(vendors, /^treeco/i), byName(vendors, /Bruce/i) || byName(vendors, /prosol/i)),
     amazonFulfillment: pick('amazonFulfillment', amazonFc, warehouse),
+    // Own-stock Amazon parcels ship out of the Sechelt warehouse.
+    ...(warehouse ? { secheltWarehouse: warehouse.id } : {}),
   };
   process.env.AUTOMAYT_REF_OVERRIDES = JSON.stringify(overrides);
   report.fixed = { prosolVendor: overrides.prosolVendor, treecoVendor: overrides.treecoVendor, amazonFulfillment: overrides.amazonFulfillment };
@@ -413,6 +415,35 @@ async function dayFbaSales(day) {
 }
 
 /** --seed-fba-items: each Prosol component of the day's FBA items as a ROTEST- item with no barcode, unless one is there. */
+// Own-stock (NON_PROSOL) listings are found by their Salesforce item number,
+// never auto-created; on a tenant without them, seed ROTEST- copies (test cost
+// from the sku-map, else 0).
+async function seedOwnStockItems(parcels) {
+  const skuMap = loadSkuMap();
+  const vendorId = JSON.parse(process.env.AUTOMAYT_REF_OVERRIDES || '{}').prosolVendor || null;
+  const done = new Set();
+  for (const it of parcels.flatMap((p) => p.items || [])) {
+    const entry = skuMap[it.sku];
+    if (!entry || typeof entry !== 'object' || entry.api_sku !== 'NON_PROSOL' || !entry.sf_item_name || done.has(entry.sf_item_name)) continue;
+    done.add(entry.sf_item_name);
+    const found = (await erp.resolveItems([{ key: 0, candidates: [{ itemNumber: entry.sf_item_name }] }])).get(0);
+    if (found.status !== 'not_found') continue;
+    const body = {
+      vendor_id: vendorId,
+      item_number: `ROTEST-${entry.sf_item_name}`,
+      description: entry.product || it.name,
+      category_id: await erp.categoryIdByName(automaytOrders.categoryFor(entry)),
+      unit: 'each',
+      cost: String(entry.unit_cost != null ? entry.unit_cost : 0),
+      taxable: true,
+      stock_status: 'Stock',
+    };
+    const { data } = await am.command('/items', body, `replay-seed-own-${body.item_number}`);
+    report.created.push({ seededItem: body.item_number, id: data.id, note: 'own-stock rehearsal item' });
+    console.log(`  + seeded ${body.item_number} (${data.id}), own stock`);
+  }
+}
+
 async function seedFbaItems(sales) {
   const skuMap = loadSkuMap();
   const prosolId = JSON.parse(process.env.AUTOMAYT_REF_OVERRIDES || '{}').prosolVendor || null;
@@ -502,6 +533,7 @@ async function replayDayOrders(day) {
 
   // Amazon: each order through the live flow, then the whole day again.
   const amazon = await dayAmazonOrders(day, labels);
+  if (SEED_FBA && !REAL_CODES) await seedOwnStockItems(amazon.orders.flatMap((o) => o.parcels));
   const periodSos = new Map();
   const createdTracking = new Set();
   for (const o of amazon.orders) {
@@ -516,8 +548,8 @@ async function replayDayOrders(day) {
       const warnings = r.orders.flatMap((x) => x.warnings || []);
       const autoCreated = r.orders.flatMap((x) => (x.autoCreated || []).map((a) => a.itemNumber));
       return {
-        ok: !r.errors.length && !bad.length && created.length === o.parcels.length && created.every((x) => x.received),
-        note: `${r.soNames.join(', ')}: ${created.map((x) => `${x.poNumber} received, ${x.items.map((i) => `${i.pbsiItem} ${i.qty} @ ${i.salePrice}`).join(' + ')}`).join('; ')}`
+        ok: !r.errors.length && !bad.length && created.length === o.parcels.length && created.every((x) => x.received || (x.items.every((i) => i.ownStock) && x.ownStockShipment && x.ownStockShipment.shipped)),
+        note: `${r.soNames.join(', ')}: ${created.map((x) => `${x.poNumber ? `${x.poNumber} received` : 'own stock, no PO, shipped out of Sechelt'}, ${x.items.map((i) => `${i.pbsiItem} ${i.qty} @ ${i.salePrice}`).join(' + ')}`).join('; ')}`
           + `; auto-created ${autoCreated.join(', ') || 'none'}`
           + `${warnings.length ? `; warnings ${warnings.join('; ')}` : ''}${bad.length ? `; problems: ${JSON.stringify(bad.map((x) => ({ status: x.status, reason: x.reason, errors: x.errors })))}` : ''}${r.errors.length ? `; errors ${JSON.stringify(r.errors)}` : ''}`,
       };
