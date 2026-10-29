@@ -10691,6 +10691,30 @@
       "map_effective": "2025-10-01",
       "map_source": "schluter-map-2025-10-01.csv"
     },
+    "B07XQJNY76": {
+      "cost_cad": 113.23,
+      "cost_source": "prosol-storefront-2026-10-29",
+      "api_sku": "KDIF4GRKEBTD8",
+      "prosol_sku": "KDIF4GRKEBTD8",
+      "product": "Schluter KERDI-DRAIN GRATE KIT 4\" BRUSHED NICKEL PURE",
+      "category": "KERDI",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKEBTD8",
+      "note": "Amazon ASIN (order 702-3620151-6391423, seller SKU KDIF4GRKEBTD8). Prosol storefront SKU and manufacturer SKU both KDIF4GRKEBTD8, confirmed by Mac 2026-10-29."
+    },
+    "KDIF4GRKEBTD8": {
+      "cost_cad": 113.23,
+      "cost_source": "prosol-storefront-2026-10-29",
+      "api_sku": "KDIF4GRKEBTD8",
+      "prosol_sku": "KDIF4GRKEBTD8",
+      "product": "Schluter KERDI-DRAIN GRATE KIT 4\" BRUSHED NICKEL PURE",
+      "category": "KERDI",
+      "verified": true,
+      "brand": "schluter",
+      "schluter_item": "KDIF4GRKEBTD8",
+      "note": "Shopify SKU. Same item as B07XQJNY76."
+    },
     "B07PLL7XXQ": {
       "cost_cad": 279.45,
       "retail_cad": 490.25,
