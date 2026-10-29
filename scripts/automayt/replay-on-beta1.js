@@ -156,10 +156,12 @@ async function setUp() {
 
   // Vendors and locations are Automayt's records: use the real one if present,
   // else a demo stand-in, passed by id (never mapped).
-  const vendors = await am.listAll('/vendors', {}, { max: 2000 });
+  // Active only: staging carries an inactive "Prosol Inc" twin (2026-10-29).
+  const vendors = (await am.listAll('/vendors', {}, { max: 2000 })).filter((v) => v.status !== 'inactive');
   const locations = await am.listAll('/locations', {}, { max: 500 });
   const byName = (rows, re) => rows.find((r) => re.test(r.name)) || null;
-  const warehouse = locations.find((l) => l.primary && l.type !== 'showroom');
+  // Staging has no primary flag on its locations, only "Sechelt Warehouse".
+  const warehouse = locations.find((l) => l.primary && l.type !== 'showroom') || byName(locations, /sechelt warehouse/i);
   const pick = (ref, real, standIn) => {
     if (real) return real.id;
     report.standIns.push({ ref, standIn: standIn.name });
@@ -170,7 +172,7 @@ async function setUp() {
   if (amazonFc && !amazonFc.is_virtual) report.notes = [...(report.notes || []), `location "${amazonFc.name}" (${amazonFc.id}) is used for Amazon Fulfillment but isn't flagged virtual`];
   const overrides = {
     prosolVendor: pick('prosolVendor', byName(vendors, /prosol/i), byName(vendors, /Pacific Tile/i)),
-    treecoVendor: pick('treecoVendor', byName(vendors, /^treeco/i), byName(vendors, /Bruce/i)),
+    treecoVendor: pick('treecoVendor', byName(vendors, /^treeco/i), byName(vendors, /Bruce/i) || byName(vendors, /prosol/i)),
     amazonFulfillment: pick('amazonFulfillment', amazonFc, warehouse),
   };
   process.env.AUTOMAYT_REF_OVERRIDES = JSON.stringify(overrides);
