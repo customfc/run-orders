@@ -39,6 +39,16 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 - `amazon-cancel-request.js` — the buyer's cancel request is on each order ITEM (`BuyerRequestedCancel`), not the order; used by poll-cancellations and the orphan sweep.
 - `amazon-returns-autopilot.js` — Amazon MFN returns: refund without return (≤$60, consumables ≤$150), else prepaid Purolator label to the shipping branch + Prosol heads-up, refund on first scan; holds go to Mac with a one-tap approve (`/returns/approve`). Every 2 h; SHADOW unless `RETURNS_AUTOPILOT_LIVE=1`. IO in `amazon-returns-io.js`, Salesforce RMAs in `amazon-return-sf.js` (`RETURNS_SF_LIVE=1`). State `data/returns-autopilot.json`. See `docs/RETURNS.md`.
 
+## Automayt (replaces Salesforce, see `../docs/AUTOMAYT.md`)
+- `automayt.js` — Open API transport: bearer key, required Idempotency-Key, same-key retries, 8 in flight, `AutomaytError` with `code` + `request_id`.
+- `automayt-erp.js` — domain calls: external-ref fixed records, items (create, `updateItem` PATCH), SOs (procurement external), Amazon 14-day period SO, shipments out of a location, invoices and credit notes, confirmed POs, receipts, cancels, notes, payables.
+- `automayt-orders.js` — Automayt twins of the Shopify, Amazon and FBA SO/PO flows, same result shapes as the Salesforce originals.
+- `prosol-catalog.js` — Prosol catalogue → Automayt items (pure): 2+ branch stock rule, Salesforce dedupe, category mapping, flooring per sq ft / ft (`flooringUnit`, `unitCostFor`; no-coverage flooring left out), shared codes at one price merged (`resolveCollisions`), brand = maker, `toItemInput` for `createItem`. Scripts in `scripts/automayt/prosol-catalog-*.js`, see `../docs/AUTOMAYT.md` "Prosol catalogue".
+- `automayt-vendor-codes.js` — vendor codes for Automayt's migrated items (pure): matches each PRD item back to its Salesforce item exactly (vendor, maker, style, colour + price/cost/barcode), code = Prosol code (Prosol items) else Salesforce Vendor Item ID, holds placeholder/clashing codes; a code Prosol shares is written when same brand + maker's code, with the default vendor/cost by cheaper unit cost or `scripts/automayt/vendor-preferences.json` (Bona → Treeco); `salesforceCrosswalk` keys the same codes by Salesforce item for Automayt's migration. Script `scripts/automayt/set-vendor-codes.js`.
+- `erp-backend.js` — `ERP_BACKEND` switch every SO/PO caller goes through: `salesforce` (default) | `automayt-shadow` (mirror after SF, never fails SF) | `automayt`.
+- `channel-tax.js` — pure tax math: Shopify order money (paid line totals, tax by code as `tax_charged`, fee, refunds), the Amazon Finances transactions counted like Seller Central's Date Range report, CFC GST/HST vs Amazon-withheld provincial tax by province, the period tax line, a Date Range CSV parser.
+- `channel-tax-io.js` — Finances API pull, Amazon order provinces (analytics DB, then Orders API), Shopify money fetch, records under `data/channel-tax/` (gitignored). CLI `scripts/automayt/channel-tax.js`; read-only check against Lynnae's numbers `scripts/automayt/verify-channel-tax.js`.
+
 ## FBA
 - `fba-inbound-orchestrator.js` · `fba-inbound-plans.js` — FBA inbound flow + plans.
 - `fba-po-drafts.js` · `fba-po-sender.js` — FBA PO draft + send.
