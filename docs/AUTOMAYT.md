@@ -37,6 +37,8 @@ An unknown value throws, so a typo stops the pos phase loudly instead of guessin
 
 **Deliberate differences from Salesforce:** no fuzzy title or code-prefix item match (a miss auto-creates from the sku-map or goes to review); a vendor code shared by two items stops the line; PO lines carry the item cost (the Salesforce Shopify flow wrote the sale price there); a Shopify order whose SO already exists is skipped, as in Salesforce, but the guard can only see SOs that carry `channel: shopify` and the order number, so staff entering a Shopify order by hand in Automayt must fill both.
 
+**Salesforce side paths under `automayt` (2026-11-01).** Outside the SO/PO writes, the paths that read Salesforce stand down when `ERP_BACKEND=automayt` (exactly; `lib/erp-mode.js`), and run as today for every other value: stage's mapping guard compares the order line with the Automayt item's description (one `/items/batch-lookup` per order; a miss, a shared code or a lookup error never blocks staging); the sku-resolver exact tier is skipped and the AI tier loses its `salesforce_item_search` tool; the Shopify SO reconcile sweep returns "skipped (ERP_BACKEND=automayt)" (porting it to Automayt is open, see the note in `lib/shopify-so-reconcile.js`); the nightly ETL skips `item-costs` and `sku-map-canonical`. An auto-created item whose mapped category the environment lacks (production has no "Adhesive") goes under `AUTOMAYT_CATEGORY_DEFAULT` (default Accessories) with a warning.
+
 ## Rules the code depends on
 
 - **Fixed records are external refs, never ids in code.** System `run-orders`, keys `shopify-house`, `amazon-house`, `prosol`, `treeco`, `sechelt-warehouse`, `amazon-fulfillment`. A mapping can never be re-pointed, so map only the real record.

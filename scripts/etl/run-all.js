@@ -23,14 +23,15 @@
 
 require('dotenv').config();
 const telegram = require('../../lib/telegram');
+const erpMode = require('../../lib/erp-mode');
 
 const STEPS = [
   { name: 'amazon-orders',         mod: './sync-amazon-orders',         supportsBackfill: true },
   { name: 'amazon-finances',       mod: './sync-amazon-finances',       supportsBackfill: true },
   { name: 'amazon-finances-deep',  mod: './sync-amazon-finances-deep',  supportsBackfill: false }, // daily top-up only; use manual --backfill for cold start
   { name: 'shopify',               mod: './sync-shopify',               supportsBackfill: true },
-  { name: 'item-costs',            mod: './sync-item-costs',            supportsBackfill: false },
-  { name: 'sku-map-canonical',     mod: './sync-sku-map',               supportsBackfill: false },
+  { name: 'item-costs',            mod: './sync-item-costs',            supportsBackfill: false, salesforce: true },
+  { name: 'sku-map-canonical',     mod: './sync-sku-map',               supportsBackfill: false, salesforce: true },
   { name: 'shipping-labels',       mod: './sync-shipping-labels',       supportsBackfill: true },
   { name: 'amazon-returns',        mod: './sync-amazon-returns',        supportsBackfill: true },
   { name: 'snapshots',             mod: './sync-snapshots',             supportsBackfill: false },
@@ -49,6 +50,12 @@ function parseArgs() {
     }
   }
   return args;
+}
+
+// Steps that read Salesforce stand down when it is off (ERP_BACKEND=automayt),
+// so the 03:00 run stops paging on a system that is gone. Returns the reason.
+function skipReason(step) {
+  return step.salesforce && erpMode.automaytOnly() ? 'skipped (ERP_BACKEND=automayt)' : null;
 }
 
 async function runStep(step, args) {
@@ -86,6 +93,12 @@ async function main() {
   for (const step of STEPS) {
     if (only && !only.includes(step.name)) continue;
     console.log(`\n── [${step.name}] ──`);
+    const skipped = skipReason(step);
+    if (skipped) {
+      console.log(`  - ${step.name} ${skipped}`);
+      results.push({ step: step.name, ok: true, skipped, durationMs: 0 });
+      continue;
+    }
     const r = await runStep(step, args);
     results.push({ step: step.name, ...r });
     const durSec = (r.durationMs / 1000).toFixed(1);
@@ -104,6 +117,7 @@ async function main() {
     : `Analytics ETL — all ${results.length} step(s) ok (${total}s)`;
   const body = results.map((r) => {
     const dur = (r.durationMs / 1000).toFixed(1);
+    if (r.skipped) return `- ${r.step} ${r.skipped}`;
     const tag = r.ok ? '✓' : '✗';
     return `${tag} ${r.step} (${dur}s)${r.error ? ` — ${r.error.slice(0, 150)}` : ''}`;
   }).join('\n');
@@ -116,4 +130,4 @@ if (require.main === module) {
   main().catch((e) => { console.error('[run-all] ERROR:', e.message); process.exit(1); });
 }
 
-module.exports = { main };
+module.exports = { main, STEPS, skipReason };

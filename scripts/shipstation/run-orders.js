@@ -18,6 +18,7 @@ const { isPickupOnly, pickupOnlyMessage } = require('../../lib/trade-pickup-only
 const { isCatalogEntry } = require('../../lib/trade-skumap');
 const { localVerdict } = require('../../lib/local-fulfillment');
 const kerdiCheck = require('../../lib/kerdi-check');
+const erpMode = require('../../lib/erp-mode');
 
 // Airtight mapping guard: before staging an order, confirm the Prosol code we
 // resolved is the same product/size the customer actually ordered — comparing
@@ -28,6 +29,7 @@ const kerdiCheck = require('../../lib/kerdi-check');
 // "Grout Haze Clean-Up" (sku-map mislabeled). See lib/mapping-guard.js.
 const _guardSfCache = new Map();
 async function checkMappingGuard(resolvedItems) {
+  if (erpMode.automaytOnly()) return checkMappingGuardAutomayt(resolvedItems);
   try {
     const sf = require('../../lib/salesforce');
     let conn = null;
@@ -50,6 +52,38 @@ async function checkMappingGuard(resolvedItems) {
     return null;
   } catch (e) {
     return null; // never block staging on a guard/SF error
+  }
+}
+
+// ERP_BACKEND=automayt: the same check against the Automayt item's description,
+// found by vendor code in one batch lookup (lib/automayt-erp.js resolveItems,
+// same code forms the order flows use). Salesforce is never called. Same
+// fail-safe: a lookup error, a code Automayt lacks, or a code two items share
+// never blocks staging. Only hits are cached, so an item auto-created later in
+// the day is checked on the next pass.
+const _guardAmCache = new Map();
+async function checkMappingGuardAutomayt(resolvedItems) {
+  try {
+    const items = resolvedItems.filter((item) => !item.catalog && String(item.prosolSku || '').trim());
+    const todo = [...new Set(items.map((item) => String(item.prosolSku).trim()))].filter((code) => !_guardAmCache.has(code));
+    if (todo.length) {
+      const verdicts = await require('../../lib/automayt-erp').resolveItems(todo.map((code) => ({ key: code, vendorCodes: [code] })));
+      for (const code of todo) {
+        const v = verdicts.get(code);
+        if (v && v.status === 'matched' && v.item && v.item.description) _guardAmCache.set(code, v.item.description);
+      }
+    }
+    for (const item of items) {
+      const code = String(item.prosolSku).trim();
+      const amProduct = _guardAmCache.get(code);
+      if (!amProduct) continue; // not (uniquely) in Automayt: can't verify here, don't block
+      const v = validateMapping(item.name, amProduct);
+      if (!v.ok) return `Mapping guard HALT — ordered "${item.name}" but ${code} is "${amProduct}": ${v.reason}`;
+    }
+    return null;
+  } catch (e) {
+    console.warn(`[mapping-guard] Automayt lookup failed, guard skipped this order: ${e.message}`);
+    return null; // never block staging on a guard/Automayt error
   }
 }
 
@@ -1475,4 +1509,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runOrders, normalizeProvince, normalizeShipTo, orderSource, isShopifyOrder, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, liveSetMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage, bestCommonService, chooseNonCpCarrier };
+module.exports = { runOrders, checkMappingGuard, normalizeProvince, normalizeShipTo, orderSource, isShopifyOrder, buildSuggestQuery, suggestProsolCandidates, renderSuggestLines, liveAddMapping, liveSetMapping, resolveMappedEntry, resolveOrderItems, requiredQtyBySku, scoreWarehouseAgainstOrder, determineWarehouse, summarizeCoverage, bestCommonService, chooseNonCpCarrier };
