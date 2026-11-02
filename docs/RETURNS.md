@@ -48,14 +48,16 @@ and never retried; `scripts/ops/issue-refund.js` keeps its per-order lock in `da
   Seller Central's messaging permissions list, the first one bounces.
 - **Prosol heads-up** (Mac 2026-10-07, "prosol should know"): one email to Kaitlyn per label going to a Prosol branch,
   cc Mac: item, PO, Amazon ref, return tracking, "please receive and credit". No customer address.
-- **Prosol delivered** (Mac 2026-11-02, "let prosol know it was delivered and what it was for"): when a return label
-  to a Prosol branch shows delivered, Kaitlyn (cc Mac) gets one email: delivered date, items in Prosol codes, PO,
-  Amazon ref, return reason, every box's tracking, "please receive into stock and credit PO-x", and for 2+ boxes
-  "let me know if any are missing" (ShipStation only tracks the first box of a multi-box label). Every label is
-  watched, whatever the refund stage, for up to 45 days (`RETURNS_DELIVERY_WATCH_DAYS`); a delivery older than 3 days
-  (`RETURNS_BRANCH_DELIVERED_MAX_AGE_DAYS`) is marked, never announced late. Sends only with
-  `RETURNS_BRANCH_DELIVERED_EMAIL=1`; without it the delivery date is still recorded. Preview one without sending:
-  `branchDeliveredEmail(ret, entry)` in `lib/amazon-returns-io.js`.
+- **Prosol arrived note** (Mac 2026-11-02: "follow up in the heads up email thread with hey this has now arrived,
+  please process refund"): when a return label to a Prosol branch shows delivered, Kaitlyn (cc Mac) gets a reply in
+  the heads-up's own thread (`Re: Return coming in - <branch>`, In-Reply-To the heads-up): "This return has now
+  arrived at <branch>, delivered <date>. Please process the refund for PO-x", Amazon ref, every box's tracking.
+  The heads-up's Message-ID is kept on the label since 2026-11-02; older ones are found in hello@'s Sent Items
+  (`scripts/ops/find-heads-up.js`, Graph via yourfloors-cs, child process). No heads-up found = a standalone
+  "Return arrived" email that also lists the items. Every label is watched, whatever the refund stage, for up to
+  45 days (`RETURNS_DELIVERY_WATCH_DAYS`); a delivery older than 3 days (`RETURNS_BRANCH_DELIVERED_MAX_AGE_DAYS`)
+  is marked, never announced late. Sends only with `RETURNS_BRANCH_DELIVERED_EMAIL=1`; without it the delivery
+  date is still recorded. Preview without sending: `branchDeliveredEmail(ret, entry)` in `lib/amazon-returns-io.js`.
 - **Closing a Seller Central refund**: a `deductCents` return held for Mac's Seller Central refund checks Amazon's
   finances every run (`refundPosted`: RefundEventList charges, matched to the cent on two known refunds). Once the
   refund shows (posting lags about a day) it closes: Salesforce/Automayt step, stage done, and Mac's run email says
