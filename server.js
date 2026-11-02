@@ -2745,6 +2745,22 @@ schedule('5,35 9-23 * * *', async () => {
   finally { amazonInboxBusy = false; }
 }, TZ);
 
+// Amazon unshipped check (lib/amazon-unshipped.js): 08:30 BC every day, Amazon's own Unshipped MFN list against
+// ShipStation. A live label Amazon never took gets its tracking sent with confirmShipment; anything past or due ship-by
+// with no label goes to Mac with why. Mac 2026-11-01, after two delivered Aqua Mix orders sat "unshipped" for 11 days.
+let amazonUnshippedBusy = false;
+schedule('30 8 * * *', async () => {
+  if (amazonUnshippedBusy) return;
+  amazonUnshippedBusy = true;
+  try {
+    await new Promise((resolve, reject) => require('child_process').execFile(process.execPath, [path.join(__dirname, 'scripts', 'ops', 'amazon-unshipped.js'), '--live'],
+      { cwd: __dirname, timeout: 20 * 60 * 1000, maxBuffer: 8e6 }, (err, stdout, stderr) => (err ? reject(new Error((stderr || err.message).slice(-600))) : resolve(stdout))));
+  } catch (err) {
+    console.error('[amazon-unshipped] failed:', err.message);
+    audit.log({ action: 'amazon-unshipped-failed', error: err.message.slice(0, 500) });
+  } finally { amazonUnshippedBusy = false; }
+}, { timezone: 'Etc/GMT+7' }); // BC's permanent UTC-7, as counter stock
+
 // Counter stock (lib/counter-stock.js, scripts/trade/counter-stock-sync.js): Prosol stock -> Shopify inventory at each
 // counter location (Shopify's own pickup offers a counter only when it can fill the cart there) and, for Prosol-profile
 // variants, "don't sell when out of stock" with shipping stock = Prosol's network total at Calgary Warehouse (Mac
@@ -3874,6 +3890,7 @@ app.listen(PORT, () => {
   console.log(`  03:00 daily — analytics ETL (SP-API orders + settlements, Shopify, SF costs, snapshots)`);
   console.log(`  07:15 weekdays — daily analytics alerts (cost hikes, BB losers, low cover, new dogs, margin drop)`);
   console.log(`  08:00 weekdays + 10:00 Sat — stale-tracker scan`);
+  console.log(`  08:30 BC daily — Amazon unshipped check (resend missing tracking, late orders to Mac)`);
   if (!CRON_DISABLED) {
     telegram.startPolling({
       allowedChatId: process.env.TELEGRAM_CHAT_ID,

@@ -151,7 +151,7 @@ async function notifyMac(out) {
   };
   out.fresh.forEach((e) => card(e, ''));
   if (out.stale.length) { L.push('STILL UNANSWERED (Amazon wants a reply within 24 h):', ''); out.stale.forEach((e) => card(e, 'STILL WAITING ')); }
-  if (out.auto.length) { L.push('Answered automatically (carrier facts):'); for (const e of out.auto) L.push(`  ${e.orderId}: ${e.reply.split('\n').slice(2, 3).join(' ')}`); L.push(''); }
+  if (out.auto.length) { L.push('Answered automatically:'); for (const e of out.auto) L.push(`  ${e.orderId}: ${e.kerdiReleasedAt ? '(Kerdi-Line hold released, buyer confirmed the part) ' : ''}${e.reply.split('\n').slice(2, 3).join(' ')}`); L.push(''); }
   if (out.errors.length) { L.push('Errors:'); for (const e of out.errors) L.push(`  ${e.subject}: ${e.error}`); }
   const n = out.fresh.length + out.stale.length;
   await require('../../lib/emailer').sendEmail({
