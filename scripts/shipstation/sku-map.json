@@ -679,7 +679,10 @@
       "schluter_item": "DHEHK12043",
       "package_shape": "cable_kit",
       "max_per_pkg": 2,
-      "note": "Shopify SKU = Schluter item = Prosol api_sku and vendor code, exact filter[sku] hit (collection 48), cost 268.36. Package fields as the 240V DHEHK cables. Added 2026-11-02 for order 1443, held on the unmapped SKU."
+      "map_cad": 423.72,
+      "map_effective": "2025-10-01",
+      "map_source": "schluter-map-2025-10-01.csv",
+      "note": "Shopify SKU = Schluter item = Prosol api_sku and vendor code, exact filter[sku] hit (collection 48), cost 268.36. Package fields as the 240V DHEHK cables. Added 2026-11-02 for order 1443, held on the unmapped SKU. The Mini sku-resolver auto-applied the same entry as a twin during the 2026-11-02 cutover pass (audit sku-resolver-auto-applied); its MAP fields are kept here."
     },
     "DHERT102/BW": {
       "cost_cad": 184.1,
