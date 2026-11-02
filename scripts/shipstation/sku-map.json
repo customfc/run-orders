@@ -161,14 +161,15 @@
       "note": "Shopify SKU (Schluter\u00ae DITRA-HEAT Heated Floor Membrane for Tile, 134.5 sq ft Roll); exact Prosol filter[sku] hit DH512M -> DH512M \"Schluter - DITRA-HEAT ROLL 3'2-5/8\" X 41'10-3/4\" = 134.5 SF\", cost 261.22 on 2026-11-02. Same product as existing key(s) B018A2XNC6, fields copied. Added 2026-11-02 with the DITRA-HEAT catalogue mapping."
     },
     "11564": {
-      "cost_cad": 29.31,
-      "retail_cad": 49,
-      "cost_source": "prosol-offers-loc10010",
-      "api_sku": "C030881",
-      "prosol_sku": "C030881-05",
-      "product": "Aqua Mix - Sealers Choice Gold 473ml (Pint)",
+      "api_sku": "NON_PROSOL",
+      "prosol_sku": "NON_PROSOL",
+      "product": "Aqua Mix Sealer's Choice Gold, Penetrating Grout and Natural Stone Sealer - Pint (473mL)",
+      "note": "Ships from CFC Sechelt own stock (14 at Sechelt Warehouse on 2026-11-02); SF item 11564 = Automayt PRD-011564. The 2026-11-02 sku-resolver Opus proposal (high confidence, route sechelt) was correct and only failed the ERP item re-check, fixed in 7c10b74. Replaces a Prosol C030881 entry written earlier the same day for order 1441. Prosol C030881-05 (SCG 473 ml) is the restock source if Sechelt is out.",
+      "source": "SECHELT_OR_FBA",
+      "route_to": "CFC_SECHELT",
+      "shipstation_warehouse_id": 147654,
       "verified": true,
-      "note": "Shopify SKU for the Sealer's Choice Gold pint (variant Pint (473mL)); same product as Amazon key B0039ZDMLC (Prosol C030881 / C030881-05). Siblings 11565 quart and 11566 gallon were mapped, the pint was not. Added 2026-11-02 for order 1441."
+      "discovered_by": "sku-resolver-ai"
     },
     "DHEHK240204": {
       "cost_cad": 695.24,
