@@ -57,7 +57,7 @@ The sku-map is loaded once at server start (`scripts/shipstation/run-orders.js` 
 
 1. Commit (sku-map.json + resolver + premap tool + docs) and push to main.
 2. Pick a quiet window: read the schedule in `server.js`. On 2026-11-02 the passes ran in BC time at 10:00 and 11:30 (stage), 12:00 (email), 12:30 (pickups), 13:00 (digest). Restart after the digest or before the first morning pass, never during a pass (no concurrent runs, and a kickstart kills a running one).
-3. On the Mini (`ssh fred@freds-mac-mini.taila452b5.ts.net`, repo `~/run-orders` or the path in `reference_mac_mini_access`): `git status` first. The resolver writes `sku-map.json` there itself, so expect local changes. Diff them, fold anything worth keeping into a follow-up commit, back up the file to `/tmp/sku-map-mini-<date>.json`, `git checkout -- scripts/shipstation/sku-map.json`, then `git pull --ff-only`.
+3. On the Mini (`ssh fred@freds-mac-mini.taila452b5.ts.net`, repo `/Users/fred/run-orders`): `git status` first. The resolver writes `sku-map.json` there itself, so expect local changes. Diff them, fold anything worth keeping into a follow-up commit, back up the file to `/tmp/sku-map-mini-<date>.json`, `git checkout -- scripts/shipstation/sku-map.json`, then `git pull --ff-only`.
 4. `launchctl kickstart -k gui/$(id -u)/com.fred.run-orders`, then confirm a new PID and the :3456 listener.
 5. Check it took: on the Mini, `node -e` load the map and print the key count and three new keys (one alias, one Prosol tier, 4657).
 
