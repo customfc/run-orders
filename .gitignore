@@ -71,3 +71,6 @@ data/automayt-vendor-codes/
 
 # Prosol catalogue snapshots for the Automayt import (large; regenerate with scripts/automayt/prosol-catalog-pull.js)
 data/prosol-catalog/
+
+# premap-catalog dry-run reports (scripts/ops/premap-catalog.js)
+data/premap-catalog/
