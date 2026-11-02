@@ -11,7 +11,6 @@ const { planPackages } = require('../../lib/package-split');
 const { validateMapping } = require('../../lib/mapping-guard');
 const { sampleOf, sampleRefHandle } = require('../../lib/sample-item');
 const largeReleases = require('../../lib/large-order-releases');
-const skuResolver = require('../../lib/sku-resolver');
 const discontinued = require('../../lib/discontinued');
 const skuMapFile = require('../../lib/sku-map-file');
 const { isPickupOnly, pickupOnlyMessage } = require('../../lib/trade-pickup-only');
@@ -418,35 +417,10 @@ function isUnmappedLine(item) {
   return typeof m === 'object' && (m.api_sku === 'UNMAPPED' || m.api_sku === 'UNMAPPED_GROUT');
 }
 
-// Exact-identity pre-pass (lib/sku-resolver.js tier 1): before staging, map any
-// unmapped SKU that is provably our own Sechelt stock, so its order ships on
-// THIS pass instead of being rejected. Only lines with no entry at all qualify.
-// Isolated: any failure leaves the order to be rejected exactly as before.
-async function autoResolveExact(orders, { dryRun, onProgress }) {
-  const bySku = new Map();
-  for (const order of orders) {
-    for (const item of (order.items || [])) {
-      if (!isUnmappedLine(item) || resolveMappedEntry(item.sku)) continue;
-      const cur = bySku.get(item.sku) || { sku: item.sku, itemName: item.name, qty: 0, orders: [] };
-      cur.qty += Number(item.quantity) || 1;
-      if (!cur.orders.includes(order.orderNumber)) cur.orders.push(order.orderNumber);
-      bySku.set(item.sku, cur);
-    }
-  }
-  const autoMapped = [];
-  for (const line of bySku.values()) {
-    try {
-      const r = await skuResolver.tryExact(line);
-      if (!r.entry) continue;
-      if (!dryRun) liveAddMapping(line.sku, r.entry);
-      autoMapped.push({ sku: line.sku, orders: line.orders, summary: r.summary, entry: r.entry, dryRun });
-      onProgress({ type: 'status', message: `${dryRun ? 'Would auto-map' : 'Auto-mapped'} ${line.sku} to Sechelt (${r.summary})` });
-    } catch (e) {
-      console.error(`[sku-resolver] exact ${line.sku}: ${e.message}`);
-    }
-  }
-  return autoMapped;
-}
+// The sku-resolver's exact tier used to map provable Sechelt stock here, before
+// staging (autoResolveExact). Removed 2026-11-02: Mac, "we prefer not to ship
+// anything from sechelt, unless i say so". Unmapped lines are rejected and the
+// resolver (lib/sku-resolver.js handleStageResult) proposes after the pass.
 
 // Pull a SKU-shaped trailing token from an Amazon listing title.
 // Many Schluter / Mapei listings end with " - <SKU>" where SKU is the canonical
@@ -1126,13 +1100,6 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
   const shopifyCount = inScope.filter(isShopifyOrder).length;
   onProgress({ type: 'status', message: `Found ${allOrders.length} total · ${amazonCount} Amazon · ${shopifyCount} Shopify. Filtering...` });
 
-  let autoMapped = [];
-  try {
-    autoMapped = await autoResolveExact(inScope, { dryRun, onProgress });
-  } catch (e) {
-    console.error(`[sku-resolver] exact pre-pass failed, staging unchanged: ${e.message}`);
-  }
-
   for (const order of inScope) {
     // Pickup and local-delivery orders never get a courier label, and neither does an order Shopify shows as cancelled,
     // refunded in full (a pending refund counts) or emptied of lines (lib/local-fulfillment.js). Fails closed: a
@@ -1468,7 +1435,6 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
       assignments,
       manualReview: [...rejected, ...planningErrors].sort((a, b) => String(a.orderNumber).localeCompare(String(b.orderNumber))),
       errors: stagingErrors,
-      autoMapped,
     };
   } finally {
     await client.close();
