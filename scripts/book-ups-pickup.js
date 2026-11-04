@@ -9,6 +9,8 @@
  * Presets available:
  *   --preset=treeco_delta     1230 Cliveden Ave, Delta BC
  *   --preset=treeco_calgary   5211 52 St SE, Calgary AB
+ *   --preset=prosol_wcas      Prosol Calgary (WCAS) dock
+ *   --preset=prosol_wcon      Prosol Concord (WCON) dock
  *
  * Usage:
  *   node scripts/book-ups-pickup.js --preset=treeco_delta \
@@ -44,19 +46,37 @@ const PRESETS = {
     countryCode: 'CA',
     residential: false,
   },
+  // Prosol branches have NO regular UPS pickup: every FBA run needs a booked one.
+  // Book as "Prosol Inc." at the dock and name YourFloors + PO in --instruction: the 2026-10-23
+  // Concord pickup booked as "Custom Flooring" / front door was marked complete with nothing collected.
   prosol_wcas: {
-    companyName: 'Prosol Calgary',
-    contactName: 'Prosol Calgary',
-    phone: '403-253-2214',
-    email: 'order.calgary@prosol.ca',
-    address1: '5760 9 St SE #105',
+    companyName: 'Prosol Inc.',
+    contactName: 'Kaitlyn Lazzarotto',
+    phone: '403-253-4642',
+    email: 'klazzarotto@prosol.ca',
+    address1: '5760 9 St SE Unit 105',
     city: 'Calgary',
     stateProvince: 'AB',
     postalCode: 'T2H 1Z9',
     countryCode: 'CA',
     residential: false,
   },
+  prosol_wcon: {
+    companyName: 'Prosol Inc.',
+    contactName: 'Shipping/Receiving',
+    phone: '905-418-1082',
+    email: 'order.vaughan@prosol.ca',
+    address1: '161 Cidermill Ave',
+    city: 'Concord',
+    stateProvince: 'ON',
+    postalCode: 'L4K 4G5',
+    countryCode: 'CA',
+    residential: false,
+  },
 };
+
+// Default instruction when none is passed: dock + who the boxes belong to.
+const defaultInstruction = (ref) => `Shipping/receiving dock. Boxes for YourFloors Amazon FBA${ref ? `, ${ref}` : ''}.`;
 
 function parseArgs() {
   const args = {};
@@ -101,7 +121,7 @@ async function main() {
     quantity: Number(args.boxes || 1),
     totalWeightLb: Number(args.weight || 10),
     serviceCode: args.service || '003',
-    specialInstruction: args['instruction'] || '',
+    specialInstruction: args['instruction'] || defaultInstruction(args.ref),
   };
 
   const trackingNumbers = args.tracking ? String(args.tracking).split(',').map((s) => s.trim()).filter(Boolean) : null;
