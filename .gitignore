@@ -12,6 +12,7 @@ data/telegram-state.json
 data/telegram-outbox.jsonl
 data/alerts-log.jsonl
 data/ops-state/
+data/order-autocancel/
 data/fba/
 data/analytics.sqlite
 data/analytics.sqlite-shm
