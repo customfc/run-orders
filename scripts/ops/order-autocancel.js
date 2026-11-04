@@ -9,6 +9,7 @@
  *   node scripts/ops/order-autocancel.js --email a@b.ca --order 1444 --ignore-cancel-state
  *        dry-run harness only: reads refunds / a CANCELLED pickup / cancelled ERP records as their earlier state
  *        ("what would it have done before this was handled by hand"); refuses --commit.
+ *   ... --ignore-scans   dry-run harness only: carrier scans on our labels read as unmoved; refuses --commit.
  * Runs on the Mini (live ops-state, pickup-state, audit.jsonl).
  */
 'use strict';
@@ -23,7 +24,8 @@ const out = (o) => process.stdout.write(JSON.stringify(o) + '\n');
 (async () => {
   const commit = process.argv.includes('--commit');
   const asBefore = process.argv.includes('--ignore-cancel-state');
-  if (commit && asBefore) throw new Error('--ignore-cancel-state is a dry-run harness; it never commits');
+  const noScans = process.argv.includes('--ignore-scans');
+  if (commit && (asBefore || noScans)) throw new Error('--ignore-cancel-state / --ignore-scans are dry-run harness flags; they never commit');
   const sender = (arg('--email') || '').trim().toLowerCase();
   if (!sender) throw new Error('--email required');
   const orderNumbers = (arg('--order') || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -43,17 +45,18 @@ const out = (o) => process.stdout.write(JSON.stringify(o) + '\n');
     get am() { return require('../../lib/automayt'); },
   };
   const facts = await ac.gather({ orderNumbers, sender }, deps);
-  const ev = ac.evaluate(facts, { ignoreCancelState: asBefore });
+  const ev = ac.evaluate(facts, { ignoreCancelState: asBefore, ignoreScans: noScans });
   const brief = { eligible: ev.eligible, holds: ev.holds, summary: ev.summary, order: ev.order || null,
     plan: ev.plan.map((s) => ({ key: s.key, type: s.type, ...(s.type === 'branch_email' ? { to: s.to, cc: s.cc, subject: s.subject, text: s.text } : {}), ...(s.type === 'refund' ? { amount: s.amount, note: s.note } : {}), ...(s.number ? { number: s.number } : {}), ...(s.trackingNumber ? { trackingNumber: s.trackingNumber } : {}) })) };
-  const factsBrief = { lookup: facts.lookup, order: facts.order && { name: facts.order.name, email: facts.order.email, financial: facts.order.financial, fulfillment: facts.order.fulfillmentStatus, total: facts.order.total, cancelledAt: facts.order.cancelledAt, refunds: facts.order.refundCount, transactions: facts.order.transactions.map((t) => `${t.kind} ${t.status} ${t.amount}`) },
+  const factsBrief = { lookup: facts.lookup, order: facts.order && { name: facts.order.name, email: facts.order.email, financial: facts.order.financial, fulfillment: facts.order.fulfillmentStatus, closed: facts.order.closed, total: facts.order.total, cancelledAt: facts.order.cancelledAt, refunds: facts.order.refundCount, transactions: facts.order.transactions.map((t) => `${t.kind} ${t.status} ${t.amount}`), fulfillments: facts.order.fulfillments },
     shipstation: facts.shipstation, opsState: facts.opsState, pickup: facts.pickup, erp: facts.erp, refund: facts.refund && { amount: facts.refund.amount, error: facts.refund.error } };
-  if (!commit) return out({ mode: asBefore ? 'dry-run-ignore-cancel-state' : 'preview', ...brief, facts: factsBrief });
+  if (!commit) return out({ mode: [asBefore ? 'dry-run-ignore-cancel-state' : null, noScans ? 'dry-run-ignore-scans' : null].filter(Boolean).join('+') || 'preview', ...brief, facts: factsBrief });
   if (!ev.eligible) return out({ mode: 'commit', committed: false, ...brief, facts: factsBrief });
   const r = await ac.execute(ev, { requestNote: arg('--note') || '', requestedAt: arg('--requested-at') || new Date().toISOString() }, {
     ...deps,
     ssCancelOrder: (id) => ss.cancelOrder(id),
     ssGetOrder: async (id) => { const x = await ss.v1Request('GET', `/orders/${id}`); if (x.status === 404) return null; if (x.status !== 200) throw new Error(`ShipStation GET order ${id} HTTP ${x.status}`); return JSON.parse(x.body); },
+    ssCreateOrder: async (order) => { const x = await ss.v1Request('POST', '/orders/createorder', order); if (x.status !== 200) throw new Error(`ShipStation createorder HTTP ${x.status} ${String(x.body).slice(0, 200)}`); return JSON.parse(x.body); },
     emailer: require('../../lib/emailer'),
     audit: require('../../lib/audit'),
   });
