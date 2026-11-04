@@ -1123,7 +1123,9 @@ async function runOrders({ dryRun = false, filterOrderNumber = null, onProgress 
     if (failures.length) {
       const unmappedItems = (order.items || []).filter(isUnmappedLine)
         .map((it) => ({ sku: it.sku, name: it.name || null, qty: it.quantity || 1 }));
-      rejected.push({ orderNumber: order.orderNumber, reason: failures.join('; '), _suggestInputs: failureItems, ...(unmappedItems.length ? { unmappedItems } : {}) });
+      // All-sample orders belong to the sample desk (lib/sample-desk.js); the flag lets lib/pipeline.js skip the page.
+      const allSamples = (order.items || []).length > 0 && (order.items || []).every((it) => sampleOf(it) || /^order a sample$/i.test(String(it.name || '').trim()));
+      rejected.push({ orderNumber: order.orderNumber, reason: failures.join('; '), _suggestInputs: failureItems, ...(unmappedItems.length ? { unmappedItems } : {}), ...(allSamples ? { sample: true } : {}) });
       continue;
     }
     const fixedWarehouseIds = [...new Set(fixedWarehouseItems.map((item) => item.warehouseId))];

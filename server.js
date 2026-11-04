@@ -2558,6 +2558,26 @@ async function sampleWatch(source) {
   }
 }
 schedule('30 8 * * 1-5', () => sampleWatch('08:30 weekday'), TZ);
+
+// Sample desk (lib/sample-desk.js): asks the vendor for each sample order, reads the replies, buys the UPS label,
+// books the dock pickup, fulfils. Mac 2026-11-04 (#1446): "i want the pipeline to handle these ... and handle the
+// back and forth". Every 30 min, 07:10-18:40 BC. Shadow (logs only) unless SAMPLE_DESK_LIVE=1.
+let sampleDeskBusy = false;
+let sampleDeskFailMailed = null;
+schedule('10,40 7-18 * * *', async () => {
+  if (sampleDeskBusy || process.env.SAMPLE_DESK_LIVE !== '1') return;
+  sampleDeskBusy = true;
+  try { await require('./lib/sample-desk').tick({ live: true, log: (s) => console.log(`[sample-desk] ${s}`) }); }
+  catch (err) {
+    console.error('[sample-desk] failed:', err.message);
+    audit.log({ action: 'sample-desk-failed', error: String(err.message).slice(0, 500) });
+    const day = new Date().toISOString().slice(0, 10);
+    if (sampleDeskFailMailed !== day) {
+      sampleDeskFailMailed = day;
+      require('./lib/emailer').sendEmail({ to: process.env.SAMPLE_DESK_EMAIL || 'mac@customfc.ca', subject: 'Sample desk is failing', text: `The sample desk pass failed: ${err.message}\n\nSample orders are not being asked for or answered until this is fixed. It retries every 30 minutes; this email goes out once a day.` }).catch(() => {});
+    }
+  } finally { sampleDeskBusy = false; }
+}, TZ);
 schedule('0 10 * * 6', () => morningStaleScan('10:00 Saturday'), TZ);
 schedule('0 10 * * 0', () => morningStaleScan('10:00 Sunday'), TZ); // weekend pileups must not wait until Monday to surface
 
