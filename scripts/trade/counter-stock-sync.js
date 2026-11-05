@@ -7,13 +7,18 @@
  * things that are out of stock"). Counter locations: scripts/trade/native-counters.js.
  *
  *   node scripts/trade/counter-stock-sync.js              dry run: reads Shopify + Prosol, writes the snapshot, prints
+ *   node scripts/trade/counter-stock-sync.js --dry-run    the same, said out loud (refuses to run with --apply)
  *   node scripts/trade/counter-stock-sync.js --apply      also writes the inventory, activations and policies
  *   node scripts/trade/counter-stock-sync.js --limit 20   first 20 products only (testing)
  *   node scripts/trade/counter-stock-sync.js --compare 5  also checks 5 products against checkInventory (live sync)
+ *   ... --report <file.csv> [--report-profile Bulky]      per variant: Shopify counts now and after the plan
  *
- * Products: ACTIVE products with variants in the Prosol profile (pooled: DENY + network total) and the "Local pickup
+ * Products: ACTIVE products with variants in the Prosol profile (pooled: DENY + network total), the "Local pickup
  * only" profile (full-length trims: Coast pickup ships off Sechelt/PR, so their policy and shipping stock stay; they
- * are gated at counters by being stocked there or not).
+ * are gated at counters by being stocked there or not) and "Bulky Items (50lbs)" (Prosol-sourced items over 20 lb
+ * live there since 2026-11-04; pooled like the Prosol profile, but only variants whose sku-map entry is a Prosol code:
+ * the profile also holds heavy goods that aren't Prosol's, and those stay with the rest of the catalog, untouched
+ * here. COUNTER_STOCK_BULKY=0 leaves the whole profile out).
  * Prosol, gently (Mac 2026-10-02: don't get us locked out): one session, every request COUNTER_STOCK_GAP_MS apart
  * (default 2000). SKU -> Prosol product id is cached in data/trade/prosol-product-ids.json (seeded from the FBA stock
  * snapshots; misses looked up 40 SKUs a request, then one by one; not-found re-checked weekly), so a normal run is
@@ -44,9 +49,13 @@ const RECHECK_MISSING_MS = 7 * 864e5;
 const SKU_BATCH = 40;
 // The pickup products and how they're stocked (2026-10-02). Shipping pool: Calgary Warehouse carries the Prosol network
 // total; the other shipping warehouses' placeholder counts go to 0 for these variants. Sechelt / Powell River untouched.
+// mappedOnly: only variants the sku-map sends to Prosol join (no Schluter-UPC / Salesforce / raw-SKU guess); the rest
+// stay in the "other products" part below, as before. Bulky ships from the same six warehouses as Prosol (Calgary
+// included), so the pool is shippable there.
 const PROFILES = [
   { id: 'gid://shopify/DeliveryProfile/102840008871', name: 'Prosol', pooled: true },
   { id: 'gid://shopify/DeliveryProfile/106780786855', name: 'Local pickup only', pooled: false },
+  { id: 'gid://shopify/DeliveryProfile/86107652263', name: 'Bulky Items (50lbs)', pooled: true, mappedOnly: true, off: 'COUNTER_STOCK_BULKY' },
 ];
 const POOL = {
   locationId: 'gid://shopify/Location/66856386727', // Calgary Warehouse
@@ -100,11 +109,11 @@ async function gqlRetry(query, variables) {
   }
 }
 
-/** The pickup profiles (PROFILES), checked to exist. */
-async function pickupProfiles(gql) {
+/** The pickup profiles (PROFILES), checked to exist; a profile with `off: ENV` is left out while ENV=0. */
+async function pickupProfiles(gql, env = process.env) {
   const d = await gql(`{ deliveryProfiles(first: 30) { nodes { id name } } }`);
   const live = new Set(d.deliveryProfiles.nodes.map((p) => p.id));
-  return PROFILES.filter((p) => live.has(p.id));
+  return PROFILES.filter((p) => live.has(p.id) && !(p.off && env[p.off] === '0'));
 }
 
 /** Shopify's inventory levels at the given locations: Map `${itemId}|${locationId}` -> { levelId, qty }. */
@@ -123,12 +132,12 @@ async function readLevels(gql, locationIds) {
   return out;
 }
 
-/** ACTIVE products with their variants in the given profiles: [{ id, title, tags, variants: [{ id, sku, itemId, policy, pooled }] }]. */
+/** ACTIVE products with their variants in the given profiles: [{ id, title, tags, variants: [{ id, sku, itemId, policy, pooled, mappedOnly, profile }] }]. */
 async function profileProducts(gql, profiles) {
   const byId = new Map();
   const counts = { items: 0, inactive: 0, overflow: 0 };
   const profileIds = profiles.map((p) => p.id);
-  const pooledOf = new Map(profiles.map((p) => [p.id, !!p.pooled]));
+  const byProfile = new Map(profiles.map((p) => [p.id, p]));
   const want = new Set(profileIds);
   for (const pid of profileIds) {
     let after = null;
@@ -154,7 +163,12 @@ async function profileProducts(gql, profiles) {
           } while (va);
         }
         const p = byId.get(it.product.id) || { id: it.product.id, title: it.product.title, tags: it.product.tags, variants: [] };
-        for (const v of variants) if (!p.variants.some((x) => x.id === v.id)) p.variants.push({ id: v.id, sku: v.sku || null, title: v.title || '', barcode: v.barcode || null, itemId: v.inventoryItem ? v.inventoryItem.id : null, policy: v.inventoryPolicy, pooled: pooledOf.get(pid) });
+        for (const v of variants) {
+          if (p.variants.some((x) => x.id === v.id)) continue;
+          // An overflow product can be split across profiles: each variant takes its own profile's rules.
+          const prof = byProfile.get((v.deliveryProfile && v.deliveryProfile.id) || pid) || byProfile.get(pid);
+          p.variants.push({ id: v.id, sku: v.sku || null, title: v.title || '', barcode: v.barcode || null, itemId: v.inventoryItem ? v.inventoryItem.id : null, policy: v.inventoryPolicy, pooled: !!prof.pooled, mappedOnly: !!prof.mappedOnly, profile: prof.name });
+        }
         byId.set(it.product.id, p);
       }
       after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
@@ -337,16 +351,29 @@ async function sfVendorCodes(names) {
   return out;
 }
 
-async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = console.log, gql = gqlRetry, makeClient, sfItems, sfShelf, snapDir = SNAP_DIR, gapMs = GAP_MS, idCache = ID_CACHE, snapshots = FBA_SNAPSHOTS } = {}) {
+/**
+ * mappedOnly-profile variants (Bulky) that stay out of the sync, with why: anything the sku-map doesn't send to Prosol
+ * (no entry, SKIP / NON_PROSOL / HALT_, no SKU) and shelf-only SKUs. Their stock is left to the "other products" part.
+ */
+function leftOutReason(v) {
+  if (!v.mappedOnly) return null;
+  if (!v.sku) return 'no SKU';
+  if (!String(v.via).startsWith('sku-map')) return `not in the sku-map (would have guessed ${v.via}${v.apiSku ? ` ${v.apiSku}` : ''})`;
+  if (!v.prosolSku) return `${v.via}: not a Prosol item`;
+  if (SHELF_ONLY.has(v.sku)) return 'shelf-only SKU';
+  return null;
+}
+
+async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = console.log, gql = gqlRetry, makeClient, sfItems, sfShelf, snapDir = SNAP_DIR, gapMs = GAP_MS, idCache = ID_CACHE, snapshots = FBA_SNAPSHOTS, skuMap, env = process.env } = {}) {
   const started = Date.now();
   const counters = cs.countersFrom(JSON.parse(fs.readFileSync(BRANCHES, 'utf8')).branches);
   const located = counters.filter((c) => c.locationId);
   if (!located.length) throw new Error('no counter has a Shopify location (run scripts/trade/native-counters.js create)');
-  const profiles = await pickupProfiles(gql);
+  const profiles = await pickupProfiles(gql, env);
   if (!profiles.length) throw new Error('the pickup delivery profiles are gone');
   const { products: all, counts } = await profileProducts(gql, profiles);
-  const products = limit ? all.slice(0, limit) : all;
-  const map = JSON.parse(fs.readFileSync(SKU_MAP, 'utf8')).mappings || {};
+  let products = limit ? all.slice(0, limit) : all;
+  const map = skuMap || JSON.parse(fs.readFileSync(SKU_MAP, 'utf8')).mappings || {};
   const { prosolCodes } = require('../../lib/pickup-runner');
   const sm = require('../../lib/schluter-map');
   const csvPath = sm.latestCsvPath();
@@ -358,13 +385,25 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
   const unmapped = [...new Set(products.flatMap((p) => p.variants.map((v) => v.sku)).filter((k) => k && !map[k]))];
   try { sfIndex = await (sfItems || sfVendorCodes)(unmapped); } catch (e) { log(`Salesforce item lookup failed, skipped: ${e.message}`); }
   if (!upcIndex) log('no Schluter MAP CSV in data/fba/maps: Schluter variants not in the sku-map resolve by their raw SKU');
+  for (const p of products) for (const v of p.variants) Object.assign(v, cs.codesFor(v, { map, upcIndex, sfIndex, itemIndex, prosolCodes }));
+  // Bulky: only what the sku-map sends to Prosol. The rest never reaches Prosol, the pool, DENY or a counter here, and
+  // stays in the "other products" part below exactly as before the profile joined.
+  const leftOut = [];
+  for (const p of products) {
+    p.variants = p.variants.filter((v) => {
+      const why = leftOutReason(v);
+      if (why) leftOut.push({ productId: p.id, title: p.title, variantId: v.id, variantTitle: v.title, sku: v.sku, via: v.via, itemId: v.itemId, policy: v.policy, profile: v.profile, why });
+      return !why;
+    });
+  }
+  products = products.filter((p) => p.variants.length);
   const via = {};
   let noSku = 0;
   for (const p of products) for (const v of p.variants) {
     if (!v.sku) noSku++;
-    Object.assign(v, cs.codesFor(v, { map, upcIndex, sfIndex, itemIndex, prosolCodes }));
     via[v.via] = (via[v.via] || 0) + 1;
   }
+  if (leftOut.length) log(`${leftOut.length} ${[...new Set(leftOut.map((x) => x.profile))].join(', ')} variants left out (not Prosol in the sku-map), their stock left as it is`);
   const codes = new Map();
   for (const p of products) for (const v of p.variants) if (v.prosolSku && !codes.has(v.prosolSku)) codes.set(v.prosolSku, { apiSku: v.apiSku, prosolSku: v.prosolSku });
   log(`${products.length} products, ${products.reduce((n, p) => n + p.variants.length, 0)} variants, ${codes.size} SKUs, ${located.length} counter locations (profiles: ${profiles.map((p) => p.name).join(', ')})`);
@@ -395,6 +434,13 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
     }
   } catch (e) { log(`Salesforce shelf stock failed, Sechelt/Powell River left as they are: ${e.message}`); }
   const plan = cs.planLocations({ variants, stockBySku, counters: located, pool: POOL, levels, cfc: shelf ? { bySku: shelf, locations: Object.keys(CFC), pickup: coastPickup } : null });
+  // A left-out variant can't be vouched for at a counter, so it isn't stocked there (the "not at Prosol" rule; Mac
+  // 2026-10-02: no pickup without stock). 609 SpeedSet and 4677 MegaLite were counter-stocked while in the Prosol
+  // profile (by their Salesforce vendor code) and froze there on 11-04. Their shipping stock and policy stay.
+  for (const x of leftOut) for (const c of located) {
+    const l = x.itemId ? levels.get(`${x.itemId}|${c.locationId}`) : null;
+    if (l) plan.deactivate.push({ itemId: x.itemId, locationId: c.locationId, levelId: l.levelId });
+  }
   // The rest of the catalog at the Sechelt / Powell River shipping locations (flooring, bulky, general): real shelf
   // where Salesforce has the item and the unit converts; everything else is left as it is.
   let otherShelf = [];
@@ -482,7 +528,7 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
   const summary = {
     mode: apply ? (aborted ? 'apply-aborted' : 'apply') : 'dry-run', runtimeSec: Math.round((Date.now() - started) / 1000),
     profiles: profiles.map((p) => p.name), profileItems: counts.items, inactiveSkipped: counts.inactive, variantOverflow: counts.overflow,
-    products: products.length, skus: codes.size, variantsWithoutSku: noSku, resolvedVia: via,
+    products: products.length, skus: codes.size, variantsWithoutSku: noSku, resolvedVia: via, leftOut: leftOut.length,
     lookups: { ok: by('ok').length, notFound: notFound.length, failed: failed.length }, prosolRequests: requests, pullSec, gapMs, comparison, aborted,
     plan: counts2, done, writeErrors: writeErrors.length, perCounter,
     pickupAnywhere: products.filter((p) => located.some((c) => p.variants.length && p.variants.every((v) => stockedAt(v, c)))).length,
@@ -490,16 +536,84 @@ async function syncCounterStock({ apply = false, limit = 0, compare = 0, log = c
   fs.mkdirSync(snapDir, { recursive: true });
   const snapshotPath = path.join(snapDir, `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
   fs.writeFileSync(snapshotPath, JSON.stringify({ at: new Date().toISOString(), summary, counters: located, lookups,
-    products: products.map((p) => ({ id: p.id, title: p.title, variants: p.variants.map((v) => ({ id: v.id, sku: v.sku, barcode: v.barcode, prosolSku: v.prosolSku, via: v.via, policy: v.policy, pooled: v.pooled })) })),
-    plan, writeErrors }, null, 1));
+    products: products.map((p) => ({ id: p.id, title: p.title, variants: p.variants.map((v) => ({ id: v.id, sku: v.sku, barcode: v.barcode, prosolSku: v.prosolSku, via: v.via, policy: v.policy, pooled: v.pooled, profile: v.profile })) })),
+    leftOut, plan, writeErrors }, null, 1));
   prune(snapDir);
-  return { summary, snapshotPath, notFound, failed, products, plan };
+  return { summary, snapshotPath, notFound, failed, products, plan, leftOut, levels, lookups };
+}
+
+const LOCATION_NAMES = {
+  [POOL.locationId]: 'calgary', [POOL.zero[0]]: 'ontario', [POOL.zero[1]]: 'quebec', [MOVE_TO]: 'vancouver',
+  'gid://shopify/Location/65050771623': 'sechelt', 'gid://shopify/Location/65050837159': 'powell_river',
+};
+const SHIP = Object.keys(LOCATION_NAMES);
+
+/**
+ * Per variant: Shopify's counts now and after the plan (activate -> 0, set -> qty, deactivate -> gone; the order the
+ * sync writes them), for the six shipping warehouses one by one and the counters / Coast pickup locations summed.
+ * rows: synced variants and left-out ones. -> [{ ...columns }], change = what the six-warehouse total does.
+ */
+function variantReport({ products, leftOut = [], plan, levels, lookups = {}, counterIds = [], coastIds = [], profile = null }) {
+  const after = new Map();
+  const touch = (itemId) => { if (!after.has(itemId)) after.set(itemId, new Map()); return after.get(itemId); };
+  for (const [k, l] of levels) { const [itemId, loc] = k.split('|'); touch(itemId).set(loc, l.qty); }
+  const before = new Map([...after].map(([k, m]) => [k, new Map(m)]));
+  for (const x of plan.activate) { const m = touch(x.itemId); if (!m.has(x.locationId)) m.set(x.locationId, 0); }
+  for (const x of plan.set) touch(x.itemId).set(x.locationId, x.qty);
+  for (const x of plan.deactivate) touch(x.itemId).delete(x.locationId);
+  const denied = new Set(plan.deny.map((x) => x.variantId));
+  const q = (m, loc) => (m && m.has(loc) ? m.get(loc) : '');
+  const sum = (m, locs) => locs.reduce((n, loc) => n + Math.max(0, Number(q(m, loc)) || 0), 0);
+  const stocked = (m, locs) => locs.filter((loc) => m && m.has(loc)).length;
+  const rows = [];
+  const add = (v, extra) => {
+    if (profile && !String(v.profile || '').toLowerCase().includes(profile.toLowerCase())) return;
+    const b = before.get(v.itemId);
+    const a = after.get(v.itemId);
+    const shipNow = sum(b, SHIP);
+    const shipAfter = sum(a, SHIP);
+    const row = { profile: v.profile, synced: extra.synced, sku: v.sku || '', title: extra.title, via: v.via || '', prosol_sku: v.prosolSku || '', prosol: extra.prosol, left_out_why: extra.why || '',
+      policy_now: v.policy, policy_after: denied.has(v.id) ? 'DENY' : v.policy, prosol_network: extra.network };
+    for (const loc of SHIP) { row[`${LOCATION_NAMES[loc]}_now`] = q(b, loc); row[`${LOCATION_NAMES[loc]}_after`] = q(a, loc); }
+    Object.assign(row, { ship_total_now: shipNow, ship_total_after: shipAfter,
+      change: shipAfter === shipNow ? (shipNow ? 'unchanged' : 'stays 0') : shipAfter === 0 ? 'to 0' : shipAfter > shipNow ? (shipNow ? 'up' : 'up from 0') : 'down',
+      counters_stocked_now: stocked(b, counterIds), counters_stocked_after: stocked(a, counterIds), counters_qty_now: sum(b, counterIds), counters_qty_after: sum(a, counterIds),
+      coast_pickup_now: sum(b, coastIds), coast_pickup_after: sum(a, coastIds) });
+    rows.push(row);
+  };
+  for (const p of products) for (const v of p.variants) {
+    const l = v.prosolSku ? lookups[v.prosolSku] : null;
+    const network = l && l.status === 'ok' ? Object.values(l.stock).reduce((n, x) => n + Math.max(0, Math.floor(Number(x) || 0)), 0) : '';
+    add(v, { synced: 'yes', title: `${p.title}${v.title && v.title !== 'Default Title' ? ` / ${v.title}` : ''}`, prosol: l ? l.status : 'no code', network });
+  }
+  for (const x of leftOut) add({ ...x, id: x.variantId }, { synced: 'no', title: `${x.title}${x.variantTitle && x.variantTitle !== 'Default Title' ? ` / ${x.variantTitle}` : ''}`, prosol: '', network: '', why: x.why });
+  return rows;
+}
+
+function toCsv(rows) {
+  if (!rows.length) return '';
+  const cols = Object.keys(rows[0]);
+  const cell = (x) => { const s = String(x === undefined || x === null ? '' : x); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  return [cols.join(','), ...rows.map((r) => cols.map((c) => cell(r[c])).join(','))].join('\n') + '\n';
 }
 
 if (require.main === module) {
   const apply = process.argv.includes('--apply');
+  if (apply && process.argv.includes('--dry-run')) { console.error('--dry-run and --apply together: pick one'); process.exit(1); }
   const arg = (name) => { const i = process.argv.indexOf(name); return i > 0 ? Number(process.argv[i + 1]) || 0 : 0; };
-  syncCounterStock({ apply, limit: arg('--limit'), compare: arg('--compare') }).then(({ summary, snapshotPath, notFound, failed, products }) => {
+  const str = (name) => { const i = process.argv.indexOf(name); return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : null; };
+  const reportPath = str('--report');
+  syncCounterStock({ apply, limit: arg('--limit'), compare: arg('--compare') }).then(({ summary, snapshotPath, notFound, failed, products, leftOut, plan, levels, lookups }) => {
+    if (reportPath) {
+      const branches = JSON.parse(fs.readFileSync(BRANCHES, 'utf8')).branches;
+      const rows = variantReport({ products, leftOut, plan, levels, lookups, profile: str('--report-profile'),
+        counterIds: cs.countersFrom(branches).map((c) => c.locationId).filter(Boolean),
+        coastIds: branches.filter((b) => b.coast && b.pickup_location_id).map((b) => b.pickup_location_id) });
+      fs.writeFileSync(reportPath, toCsv(rows));
+      const tally = (k) => rows.reduce((m, r) => ({ ...m, [r[k]]: (m[r[k]] || 0) + 1 }), {});
+      console.log(`Report: ${rows.length} variants -> ${reportPath}\n  six-warehouse total: ${JSON.stringify(tally('change'))}\n  policy: ${JSON.stringify(rows.reduce((m, r) => { const k = `${r.policy_now}->${r.policy_after}`; return { ...m, [k]: (m[k] || 0) + 1 }; }, {}))}`);
+    }
+    if (leftOut.length) console.log(`Left out (not Prosol in the sku-map, stock untouched here): ${leftOut.length}\n${leftOut.slice(0, 25).map((x) => `  ${x.sku || '-'} ${x.title.slice(0, 50)}: ${x.why}`).join('\n')}`);
     const titleOf = (sku) => { const p = products.find((x) => x.variants.some((v) => v.prosolSku === sku)); return p ? p.title : '?'; };
     console.log(`\n${summary.mode}: ${summary.runtimeSec}s. ${summary.products} products (${summary.profileItems} profile items, ${summary.inactiveSkipped} not active), ${summary.skus} SKUs, ${summary.variantsWithoutSku} variants without a SKU`);
     console.log(`Variant codes from: ${Object.entries(summary.resolvedVia).map(([k, n]) => `${k} ${n}`).join(', ')}`);
@@ -518,4 +632,4 @@ if (require.main === module) {
   }).catch((e) => { console.error(e.stack || e.message); process.exit(1); });
 }
 
-module.exports = { syncCounterStock, pickupProfiles, profileProducts, readLevels, pullStock, snapshotIds, sfShelfStock, GAP_MS, PROFILES, POOL, CFC, SHELF_ONLY, MOVE_TO };
+module.exports = { syncCounterStock, pickupProfiles, profileProducts, readLevels, pullStock, snapshotIds, sfShelfStock, leftOutReason, variantReport, toCsv, GAP_MS, PROFILES, POOL, CFC, SHELF_ONLY, MOVE_TO };
