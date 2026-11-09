@@ -2406,7 +2406,8 @@ app.get('/api/health', (req, res) => {
 // ── Autonomous schedule (node-cron, America/Toronto) ─────────────────────────
 //
 // Replaces the old 10-min dry-run interval with purposeful phase-specific ticks:
-//   07:00, 10:00, 12:00, 13:30 ET — stage + buy + POs (idempotent, skips no-ops)
+//   07:00, 10:00, 12:00, 13:30, 13:50 ET — stage + buy + POs (idempotent, skips no-ops).
+//     Each pass first asks ShipStation to import new store orders (lib/store-refresh.js).
 //   14:00 + 20:00 ET DAILY — email Kaitlyn sweep (one email per warehouse).
 //     Two ticks, and daily rather than weekdays-only, because a label bought
 //     after the day's only tick used to never be emailed at all (2026-07-21).
@@ -2418,7 +2419,11 @@ app.get('/api/health', (req, res) => {
 const cron = require('node-cron');
 const TZ = { timezone: 'America/Toronto' };
 
-async function runCronPipeline(source, phases) {
+async function runCronPipeline(source, phases, { waitForIdleMs = 0 } = {}) {
+  // A tick that must not be lost (the warehouse email) waits for a running pass
+  // to finish instead of skipping the whole day's run.
+  const waitUntil = Date.now() + waitForIdleMs;
+  while (pipelineActive && Date.now() < waitUntil) await new Promise((r) => setTimeout(r, 15_000));
   if (pipelineActive) { console.log(`[cron ${source}] skipped — pipeline already running`); return; }
   if (opsState.isPaused()) { console.log(`[cron ${source}] skipped — OPS paused`); return; }
   pipelineActive = true;
@@ -2445,11 +2450,15 @@ schedule('0 7 * * 1-5',  () => runCronPipeline('07:00-stage', ['stage', 'buy', '
 schedule('0 10 * * 1-5', () => runCronPipeline('10:00-stage', ['stage', 'buy', 'pos']), TZ);
 schedule('0 12 * * 1-5', () => runCronPipeline('12:00-stage', ['stage', 'buy', 'pos']), TZ);
 schedule('30 13 * * 1-5', () => runCronPipeline('13:30-stage', ['stage', 'buy', 'pos']), TZ);
+// Last call before the 14:00 warehouse email (Mac 2026-11-09): orders placed late
+// morning BC make the same-day email instead of waiting for tomorrow's 07:00.
+schedule('50 13 * * 1-5', () => runCronPipeline('13:50-stage', ['stage', 'buy', 'pos']), TZ);
 
 // Email sweep — after last stage tick.
 // DAILY, not weekdays-only: labels get bought on weekends by manual/telegram
 // runs, and a weekend buy used to have no email tick until Monday.
-schedule('0 14 * * *', () => runCronPipeline('14:00-email', ['email']), TZ);
+// Waits up to 20 min for the 13:50 pass rather than skipping the day's email.
+schedule('0 14 * * *', () => runCronPipeline('14:00-email', ['email'], { waitForIdleMs: 20 * 60_000 }), TZ);
 
 // NOTE (2026-09-01, Mac): there used to be a second email tick at 20:00 ET here,
 // added after the 2026-07-21 bug where the 14:00 tick was the day's ONLY email run

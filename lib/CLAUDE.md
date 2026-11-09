@@ -15,6 +15,7 @@ Helper modules for the pipeline + server. (See `../CLAUDE.md` for ops rules.) On
 
 ## Carriers / labels / pickups
 - `shipstation-v2.js` — ShipStation V2 API (labels, `bookPickup`).
+- `store-refresh.js` — every stage pass first asks ShipStation to import new orders from its auto-import stores (Shopify, Amazon CA) and waits for each to finish (cap 90 s, takes ~3 s), because ShipStation's own import lags 1-3 h (2026-11-09: #1461-1463 missed the last pass by 9 s). Fails open; audit `ss-store-refresh`; off with `SS_REFRESH_BEFORE_STAGE=0`.
 - `ups-api.js` — UPS API.
 - `pickups.js` — pickup booking orchestration (UPS / Purolator / Canada Post).
 - `auto-rebooker.js` — auto re-book stuck pickups. Sechelt Purolator is reported as "needs crew drop-off" instead of booked (no carrier pickup there); a carrier "already scheduled" answer is reported as locked, not failed.
