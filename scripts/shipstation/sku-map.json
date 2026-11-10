@@ -3903,7 +3903,8 @@
       "verified": true,
       "source": "prosol-offers-loc10010",
       "auto_discovered": true,
-      "discovered_by": "premap-catalog"
+      "discovered_by": "premap-catalog",
+      "coverage_sqft": 110
     },
     "DITRAPSMA": {
       "cost_cad": 15.43,
@@ -8435,7 +8436,8 @@
       "note": "Pre-mapped 2026-11-02 by premap-catalog: Shopify SKU KERDI200/10M is the api_sku of verified key B003C6EQPE (all KERDI200/10M / KERDI200/10M); copied from B003C6EQPE without its channel fields; \"Schluter\u00ae KERDI Shower Waterproofing Membrane, 3'3\" Wide Rolls - 33' (108 sq ft)\" passed the mapping guard against \"KERDI WATERPROOFING MEMBRANE 3'3\" X 33' = 108 SF\".",
       "source": "premap-catalog-alias",
       "auto_discovered": true,
-      "discovered_by": "premap-catalog"
+      "discovered_by": "premap-catalog",
+      "coverage_sqft": 108
     },
     "KERDI200/7M": {
       "cost_cad": 121.74,
@@ -11209,7 +11211,8 @@
       "product": "Schluter DITRA-HEAT-PS Peel and Stick Heated Floor Membrane, 5 mm, 38-5/8\" x 502-3/4\" Roll (134.5 sq ft)",
       "note": "Proposed 2026-10-26 by sku-resolver (Opus, high confidence), approved by Mac: This is the Schluter DITRA-HEAT-PS peel-and-stick membrane in the 134.5 sq ft roll. It's a Prosol item with vendor code DHPS512M, and Sechelt shows no stock. The same roll is already mapped for its Amazon listing with api_sku and prosol_sku both set to DHPS512M, so it should drop-ship from Prosol the same way. None of the staging candidates (thermostats and DITRA-HEAT-DUO) were the right product.",
       "verified": true,
-      "discovered_by": "sku-resolver-ai"
+      "discovered_by": "sku-resolver-ai",
+      "coverage_sqft": 134.5
     },
     "DHERT105/BW": {
       "api_sku": "DHERT105/BW",
@@ -15736,7 +15739,8 @@
       "brand": "schluter",
       "schluter_item": "DHPS512M",
       "prosol_cost_cad": 326.54,
-      "map_source": "prosol-portal-2026-06-02"
+      "map_source": "prosol-portal-2026-06-02",
+      "coverage_sqft": 134.5
     },
     "_section_schluter_ditra_heat_membrane": "=== SCHLUTER - DITRA-HEAT MEMBRANE ===",
     "B018A2XNC6": {
@@ -20524,7 +20528,8 @@
       "schluter_item": "KERDI200/10M",
       "map_cad": 274.04,
       "map_effective": "2025-10-01",
-      "map_source": "schluter-map-2025-10-01.csv"
+      "map_source": "schluter-map-2025-10-01.csv",
+      "coverage_sqft": 108
     },
     "B00FJ9LJ16": {
       "cost_cad": 13.2,
