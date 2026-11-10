@@ -624,6 +624,48 @@ app.post('/amazon-inbox/send', express.urlencoded({ extended: false }), async (r
   }
 });
 
+// ── Prosol branch replies: Mac's Send link (lib/branch-replies.js, docs/BRANCH-REPLIES.md) ──
+// GET shows the branch's words, the tied orders and the draft to Kaitlyn in an editable box; POST sends it into the
+// branch's thread from hello@ (to Kaitlyn only, CC Mac), as a child process like the Amazon inbox.
+function runBranchRepliesCli(args) {
+  return new Promise((resolve, reject) => {
+    require('child_process').execFile(process.execPath, [path.join(__dirname, 'scripts', 'ops', 'branch-replies.js'), ...args],
+      { cwd: __dirname, timeout: 10 * 60 * 1000, maxBuffer: 8e6 }, (err, stdout, stderr) => (err ? reject(new Error((stderr || err.message).slice(-600))) : resolve(stdout)));
+  });
+}
+app.get('/branch-replies/send', (req, res) => {
+  const br = require('./lib/branch-replies');
+  const k = String(req.query.k || ''), t = String(req.query.t || '');
+  if (!br.verifySend(k, t)) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  const e = br.loadState().messages?.[k];
+  if (!e || !e.graphId) return res.status(404).send(skuApprovePage('Not found', () => '<h2>Reply not found.</h2>'));
+  if (e.status === 'sent') return res.send(skuApprovePage('Already sent', (x) => `<h2>Already sent ${x(e.sentAt || '')}.</h2><pre>${x(e.sentText || e.draft || '')}</pre>`));
+  const card = br.cardText(e, null);
+  res.send(skuApprovePage(`Reply to ${e.warehouse}`, (x) => `
+<h2>${x(card.subject)}</h2>
+<pre style="white-space:pre-wrap">${x(card.text.split('\nDraft to Kaitlyn')[0])}</pre>
+${e.lastSendError ? `<p><strong>Last send failed:</strong> ${x(e.lastSendError)}</p>` : ''}
+<form method="post" action="/branch-replies/send">
+<input type="hidden" name="k" value="${x(k)}"><input type="hidden" name="t" value="${x(t)}">
+<p>To Kaitlyn (${x(process.env.KAITLYN_EMAIL || 'klazzarotto@prosol.ca')}) only, CC you, in this thread:</p>
+<textarea name="text" rows="12" style="width:100%;font:15px/1.4 -apple-system,system-ui,sans-serif">${x(e.draft || '')}</textarea>
+<p><button type="submit">Send to Kaitlyn</button></p></form>`));
+});
+app.post('/branch-replies/send', express.urlencoded({ extended: false }), async (req, res) => {
+  const br = require('./lib/branch-replies');
+  const k = String(req.body?.k || ''), t = String(req.body?.t || '');
+  if (!br.verifySend(k, t)) return res.status(403).send(skuApprovePage('Link not valid', () => '<h2>This link is not valid.</h2>'));
+  const text = String(req.body?.text || '').trim();
+  if (!text) return res.status(400).send(skuApprovePage('Empty', () => '<h2>The reply is empty.</h2>'));
+  try {
+    await runBranchRepliesCli([`--send=${k}`, `--text-b64=${Buffer.from(text, 'utf8').toString('base64')}`]);
+    res.send(skuApprovePage('Sent', (x) => `<h2>Sent to Kaitlyn.</h2><pre>${x(text)}</pre>`));
+  } catch (err) {
+    res.locals.tapError = err.message;
+    res.status(500).send(skuApprovePage('Failed', (x) => `<h2>Send failed</h2><pre>${x(err.message)}</pre>`));
+  }
+});
+
 // ── ProZone one-tap approve (lib/trade-applications.js, lib/trade-accounts.js) ──
 // The YourFloors CS agent on this Mini hands each ProZone application in (loopback only); Mac gets an email with a
 // signed Review link; the page shows the applicant and the welcome email; Approve turns their pricing on and sends it.
@@ -2773,6 +2815,32 @@ schedule('5,35 9-23 * * *', async () => {
   catch (err) { console.error('[amazon-inbox] failed:', err.message); audit.log({ action: 'amazon-inbox-failed', error: err.message.slice(0, 500) }); }
   finally { amazonInboxBusy = false; }
 }, TZ);
+
+// Prosol branch replies (lib/branch-replies.js, docs/BRANCH-REPLIES.md): every 15 min, weekdays 07:00-18:00 BC, read
+// hello@ for @prosol.ca replies in the "Order - <Branch> (<CODE>)" threads, classify (ack / cant_ship / question /
+// other) and tie them to the orders sent. BRANCH_REPLIES_LIVE=1: Mac gets a card with a Send link for anything not an
+// ack, and cant_ship is logged as a vendor error. Without it, SHADOW: state + audit only, no emails. Nothing goes to
+// Prosol without Mac's tap. BRANCH_REPLIES_OFF=1 stops the pass entirely. Failures email Mac once a day (live only).
+let branchRepliesBusy = false;
+let branchRepliesFailMailed = null;
+async function runBranchReplies() {
+  if (branchRepliesBusy || process.env.BRANCH_REPLIES_OFF === '1') return;
+  branchRepliesBusy = true;
+  const live = process.env.BRANCH_REPLIES_LIVE === '1';
+  try { await runBranchRepliesCli([live ? '--live' : '--shadow']); }
+  catch (err) {
+    console.error('[branch-replies] failed:', err.message);
+    audit.log({ action: 'branch-replies-failed', live, error: String(err.message).slice(0, 500) });
+    const day = new Date().toISOString().slice(0, 10);
+    if (live && branchRepliesFailMailed !== day) {
+      branchRepliesFailMailed = day;
+      require('./lib/emailer').sendEmail({ to: process.env.MAC_CC_EMAIL || 'mac@customfc.ca', subject: 'Branch replies reader is failing', text: `The Prosol branch-reply pass failed: ${err.message}\n\nBranch replies in the "Order - <Branch>" threads are not being read until this is fixed. It retries every 15 minutes; this email goes out once a day.` }).catch(() => {});
+    }
+  } finally { branchRepliesBusy = false; }
+}
+const BC_TZ = { timezone: 'America/Vancouver' };
+schedule('*/15 7-17 * * 1-5', runBranchReplies, BC_TZ);
+schedule('0 18 * * 1-5', runBranchReplies, BC_TZ);
 
 // Amazon unshipped check (lib/amazon-unshipped.js): 08:30 BC every day, Amazon's own Unshipped MFN list against
 // ShipStation. A live label Amazon never took gets its tracking sent with confirmShipment; anything past or due ship-by
