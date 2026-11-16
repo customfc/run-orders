@@ -3085,6 +3085,18 @@ async function runAnalyticsEtl(source) {
 }
 schedule('0 3 * * *', () => runAnalyticsEtl('03:00 daily'), TZ);
 
+// Automayt item index — 01:30 nightly. Full /items scan (~20 min) so an item
+// carrying a code only in its description is still found before auto-create
+// (lib/automayt-item-index.js). Read-only; a failed scan keeps yesterday's file.
+schedule('30 1 * * *', async () => {
+  try {
+    const r = await require('./lib/automayt-item-index').rebuild();
+    console.log(`[cron automayt-item-index] ${r.items} items, ${r.pages} pages`);
+  } catch (err) {
+    console.error('[cron automayt-item-index] failed:', err.message);
+  }
+}, TZ);
+
 // Daily analytics DB backup — 02:30 (before the ETL run writes fresh data)
 schedule('30 2 * * *', async () => {
   try {
