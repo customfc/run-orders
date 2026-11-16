@@ -29,6 +29,14 @@ and the account averaged 69.9 h. This reads Amazon mail only, so supplier traffi
    CLI). Why: 702-4021580-3477824 (2026-10-09) was told "We have issued a full refund" and none existed for 41 h.
 6. A carded message still unanswered after 18 h is listed once more ("still unanswered").
 7. A-to-z notices are carded with the facts and "answer in Seller Central".
+8. An Amazon customer-service message asking us to take a shipped item back (the draft's `return_request`, only
+   when "This is Amazon's Customer Service team" is in the mail) on an order the returns autopilot hasn't seen goes
+   to the autopilot first (`data/returns-cs-requests.json`, docs/RETURNS.md). The message waits as
+   `waiting_returns` with no card; the server runs the autopilot right after that inbox pass. On a later pass, once
+   the autopilot has acted, the reply is drafted from what it did (refunded, label emailed, or held) and carded as
+   usual. If it hasn't acted after 6 h the card goes to Mac anyway, saying so. Why: Rick 701-3219418-6121847
+   (2026-11-13) had no return in Seller Central, the autopilot never saw it, and the card sat past Amazon's 48 h.
+   Buyers writing directly about a return are carded as before.
 
 ## Switches
 

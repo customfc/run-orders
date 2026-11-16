@@ -25,6 +25,15 @@ All thresholds are env vars (`RETURNS_RETURNLESS_MAX`, `RETURNS_CONSUMABLE_MAX`,
 Two lines of one order are refunded together in one feed. A refund that does not confirm is held for Seller Central
 and never retried; `scripts/ops/issue-refund.js` keeps its per-order lock in `data/refund-attempts/`.
 
+**Requests that only came through Amazon customer service.** Amazon CS sometimes writes "Return requested: No ...
+Send free shipping prepaid return label ... process the full refund" (Rick, 701-3219418-6121847, 2026-11-13). There
+is no return in Seller Central, so the returns report has no row. The inbox handler records the request in
+`data/returns-cs-requests.json` (`lib/returns-cs-requests.js`) and the server runs the autopilot straight away. The
+order's shipped lines (SP-API order items, quantity shipped) stand in for report rows, reason `AMAZON-CS-REQUEST`,
+request date = the CS message, and the same policy decides: refund without return, prepaid label, or hold. Orders
+with a report row, nothing shipped, or a request older than the window are skipped. The entry carries
+`source: amazon_cs`, and the refund evidence says no return request existed.
+
 ## Switches
 
 - `RETURNS_AUTOPILOT_LIVE=1`: refunds, labels, buyer and Prosol emails, Mac's email. Without it the server runs in

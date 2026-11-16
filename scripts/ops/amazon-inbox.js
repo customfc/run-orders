@@ -94,9 +94,11 @@ async function facts(orderId, { trackings = [] } = {}) {
     await sleep(300);
   }
   let returns = null;
+  let returnsStage = null;
   try {
     const e = require('../../lib/amazon-returns-autopilot').loadState().orders?.[orderId];
     if (e) {
+      returnsStage = e.stage || null;
       const last = (e.history || []).slice(-3).map((h) => h.msg).join('; ');
       returns = `${e.stage}${e.label ? `, return label ${e.label.tracking}` : ''}${e.refund ? `, refunded $${(e.refund.cents / 100).toFixed(2)} on ${e.refund.at.slice(0, 10)}` : ''}${last ? ` (${last})` : ''}`;
     }
@@ -104,7 +106,7 @@ async function facts(orderId, { trackings = [] } = {}) {
   return {
     orderId, status: order.OrderStatus, placed: String(order.PurchaseDate || '').slice(0, 10), total: order.OrderTotal?.Amount,
     items: items.map((i) => ({ qty: i.QuantityOrdered, title: String(i.Title || '').slice(0, 90), shipped: i.QuantityShipped, cancelRequested: String(i.BuyerRequestedCancel?.IsBuyerRequestedCancel) === 'true' })),
-    shipments, refunds, refundCents, claims, returns,
+    shipments, refunds, refundCents, claims, returns, returnsStage,
   };
 }
 
@@ -166,6 +168,7 @@ const io = {
   bodyText: (m) => graph.bodyText(m.body),
   draft: (args) => inbox.draftWithClaude(args),
   markRead: (id) => graph.markRead(id),
+  queueReturn: (order, r) => require('../../lib/returns-cs-requests').add(order, r),
 };
 
 (async () => {
@@ -182,7 +185,7 @@ const io = {
   }
   const live = has('live');
   const out = await inbox.run({ io, live, autosend: process.env.AMAZON_INBOX_AUTOSEND === '1' });
-  if (live) { console.log(JSON.stringify({ fresh: out.fresh.length, auto: out.auto.length, stale: out.stale.length, skipped: out.skipped.length, errors: out.errors.length })); return; }
+  if (live) { console.log(JSON.stringify({ queued: out.queued.length, fresh: out.fresh.length, auto: out.auto.length, stale: out.stale.length, skipped: out.skipped.length, errors: out.errors.length })); return; }
   for (const e of out.fresh) {
     console.log(`\n=== ${e.orderId || '-'}  ${e.name || ''}  [${e.category}${e.needsMac ? ', needs Mac' : ''}]  ${e.receivedAt}`);
     console.log(`They wrote: ${e.said.slice(0, 300)}`);
@@ -190,6 +193,7 @@ const io = {
     if (e.action) console.log(`ACTION: ${e.action}`);
     console.log(`--- draft ---\n${e.reply || '(none)'}`);
   }
+  for (const q of out.queued) console.log(`queued for the returns autopilot (Amazon CS return request): ${q.orderId}`);
   for (const s of out.skipped) console.log(`skip: ${s.subject.slice(0, 80)} (${s.why})`);
   for (const e of out.errors) console.log(`ERROR: ${e.subject}: ${e.error}`);
   if (!out.fresh.length) console.log('No unanswered Amazon messages.');

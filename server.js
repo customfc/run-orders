@@ -2811,7 +2811,14 @@ let amazonInboxBusy = false;
 schedule('5,35 9-23 * * *', async () => {
   if (amazonInboxBusy || process.env.AMAZON_INBOX_LIVE !== '1') return;
   amazonInboxBusy = true;
-  try { await runAmazonInboxCli(['--live']); }
+  try {
+    const stdout = await runAmazonInboxCli(['--live']);
+    // An Amazon CS return request was handed to the returns autopilot: settle it now, not at the next 2-hourly run,
+    // so the inbox card (held until the autopilot acts) goes out on the next inbox pass.
+    let queued = 0;
+    try { queued = JSON.parse(String(stdout).trim().split('\n').pop()).queued || 0; } catch { /* older output */ }
+    if (queued) setImmediate(() => runReturnsAutopilot('amazon-cs'));
+  }
   catch (err) { console.error('[amazon-inbox] failed:', err.message); audit.log({ action: 'amazon-inbox-failed', error: err.message.slice(0, 500) }); }
   finally { amazonInboxBusy = false; }
 }, TZ);
