@@ -16432,7 +16432,8 @@
       "route_to": "CFC_SECHELT",
       "shipstation_warehouse_id": 147654,
       "package_shape": "solo",
-      "max_per_pkg": 4
+      "max_per_pkg": 4,
+      "sf_item_name": "11239"
     },
     "_section_ardex": "=== ARDEX ===",
     "B0073IDMMA": {
