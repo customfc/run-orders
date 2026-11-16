@@ -3203,7 +3203,9 @@
       "verified": true,
       "source": "prosol-offers-loc10010",
       "auto_discovered": true,
-      "discovered_by": "premap-catalog"
+      "discovered_by": "premap-catalog",
+      "automayt_item_id": "cmvyso6o3073yo502gqkez88p",
+      "automayt_item_for": "KDH2/ABS/FL"
     },
     "KDA7FLKABS": {
       "cost_cad": 79.75,
@@ -18315,7 +18317,9 @@
       "brand": "mapei",
       "category": "Grout / Sealant",
       "verified": true,
-      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)"
+      "source": "mapei-prosol-sku-map.json (ported 2026-05-19)",
+      "automayt_item_id": "cmvym6o55054rmu0249q7p3ne",
+      "automayt_item_for": "3BU002391"
     },
     "3BU002791": {
       "cost_cad": 15.86,
