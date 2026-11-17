@@ -248,9 +248,14 @@ items AS (
   -- Principal row. Net qty = sale units - refunded units. COGS uses net
   -- qty so a refunded unit doesn't double-charge COGS.
   -- Accept both 'Order' (settlement CSV) and 'Shipment' (Finances API)
-  -- as sale transactions. If quantity missing (finances-api refund rows,
-  -- or settlement refund rows where Amazon empties the column), count
-  -- -1 per row as a unit refunded.
+  -- as sale transactions.
+  --
+  -- Refund rows carry no quantity, so the units refunded come from the
+  -- money: refund amount / the per-unit price the same order paid for the
+  -- same SKU, rounded. One refund row is often several units (a 3-roll
+  -- DITRA order refunded as one $1,063.44 row, 2026-09), and counting it as
+  -- -1 left 2 rolls of COGS on the books. A small goodwill refund rounds to
+  -- 0 units (nothing came back). No original sale on file → -1, as before.
   --
   -- cost_confidence: 'ok' when a cost is resolved > 0; 'missing' when not.
   -- Consumers should prefer trusted rollups that exclude 'missing' rows
@@ -258,22 +263,33 @@ items AS (
   SELECT
     e.seller_sku        AS sku,
     substr(e.posted_at, 1, 7) AS month,
-    SUM(CASE
-      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type IN ('Order','Shipment') AND e.quantity > 0 THEN e.quantity
-      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type IN ('Order','Shipment') AND (e.quantity IS NULL OR e.quantity = 0) AND e.amount_cad > 0 THEN 1
-      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Refund' THEN -1
-      ELSE 0
-    END) AS qty_sold,
-    SUM(CASE
-      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type IN ('Order','Shipment') AND e.quantity > 0 THEN e.quantity
-      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type IN ('Order','Shipment') AND (e.quantity IS NULL OR e.quantity = 0) AND e.amount_cad > 0 THEN 1
-      WHEN e.fee_type = 'ItemPrice:Principal' AND e.transaction_type = 'Refund' THEN -1
-      ELSE 0
-    END * COALESCE(sm.cost_cad, ic_via_map.cost_cad, ic_direct.cost_cad, 0)
+    SUM(e.units) AS qty_sold,
+    SUM(e.units * COALESCE(sm.cost_cad, ic_via_map.cost_cad, ic_direct.cost_cad, 0)
       * COALESCE(sm.qty_per_unit, 1)) AS cogs,
     CASE WHEN COALESCE(sm.cost_cad, ic_via_map.cost_cad, ic_direct.cost_cad, 0) > 0
          THEN 'ok' ELSE 'missing' END AS cost_confidence
-  FROM amazon_financial_events e
+  FROM (
+    SELECT
+      p.*,
+      CASE
+        WHEN p.transaction_type IN ('Order','Shipment') AND p.quantity > 0 THEN p.quantity
+        WHEN p.transaction_type IN ('Order','Shipment') AND p.amount_cad > 0 THEN 1
+        WHEN p.transaction_type = 'Refund' AND p.quantity > 0 THEN -p.quantity
+        WHEN p.transaction_type = 'Refund' THEN COALESCE(-CAST(ROUND(ABS(p.amount_cad) / (
+          SELECT SUM(o.amount_cad) / SUM(CASE WHEN o.quantity > 0 THEN o.quantity ELSE 1 END)
+          FROM amazon_financial_events o
+          WHERE o.amazon_order_id = p.amazon_order_id
+            AND o.seller_sku = p.seller_sku
+            AND o.fee_type = 'ItemPrice:Principal'
+            AND o.transaction_type IN ('Order','Shipment')
+            AND o.amount_cad > 0
+        )) AS INTEGER), -1)
+        ELSE 0
+      END AS units
+    FROM amazon_financial_events p
+    WHERE p.seller_sku IS NOT NULL
+      AND p.fee_type = 'ItemPrice:Principal'
+  ) e
   LEFT JOIN sku_map_canonical sm ON sm.amazon_msku = e.seller_sku
   LEFT JOIN item_costs ic_via_map ON ic_via_map.sku = sm.sf_item_name
   LEFT JOIN item_costs ic_direct ON ic_direct.sku = e.seller_sku
@@ -306,23 +322,36 @@ freight AS (
 -- joins via order_number → amazon_order_id → amazon_order_items.
 -- For each order's label cost, allocate across its items proportionally
 -- by qty_shipped. Per-SKU cost per month then sums.
+--
+-- A label lands in the month its order's sale SETTLED (first Order/Shipment
+-- Principal row), the same month the revenue lands in, not the month it was
+-- bought. Bought-month put September labels against October revenue and made
+-- a profitable SKU read as a dog (DV-MMYJ-QZ2O-fbm, 2026-09). A label whose
+-- order hasn't settled yet stays in the month it was bought.
 labels AS (
-  SELECT
-    i.seller_sku AS sku,
-    substr(sl.purchased_at, 1, 7) AS month,
-    SUM(
+  SELECT sku, month, SUM(label_cost) AS label_cost
+  FROM (
+    SELECT
+      i.seller_sku AS sku,
+      COALESCE(
+        (SELECT substr(MIN(f.posted_at), 1, 7)
+           FROM amazon_financial_events f
+          WHERE f.amazon_order_id = sl.order_number
+            AND f.fee_type = 'ItemPrice:Principal'
+            AND f.transaction_type IN ('Order','Shipment')),
+        substr(sl.purchased_at, 1, 7)) AS month,
       sl.label_cost_cad *
       (COALESCE(i.qty_shipped, 0) * 1.0 /
        NULLIF((SELECT SUM(COALESCE(qty_shipped, 0))
                FROM amazon_order_items
-               WHERE amazon_order_id = i.amazon_order_id), 0))
-    ) AS label_cost
-  FROM shipping_labels sl
-  JOIN amazon_order_items i ON i.amazon_order_id = sl.order_number
-  WHERE sl.channel = 'amazon-mfn'
-    AND sl.purchased_at IS NOT NULL
-    AND i.seller_sku IS NOT NULL
-  GROUP BY i.seller_sku, substr(sl.purchased_at, 1, 7)
+               WHERE amazon_order_id = i.amazon_order_id), 0)) AS label_cost
+    FROM shipping_labels sl
+    JOIN amazon_order_items i ON i.amazon_order_id = sl.order_number
+    WHERE sl.channel = 'amazon-mfn'
+      AND sl.purchased_at IS NOT NULL
+      AND i.seller_sku IS NOT NULL
+  )
+  GROUP BY sku, month
 )
 SELECT
   COALESCE(amz.sku, items.sku)                                AS sku,
